@@ -113,19 +113,19 @@ vec4 getColor(uint material, float d, vec3 hit)
     switch (material)
     {
         case MAT_STONE:
-            c = vec3(0.15);
+            c = vec3(0.15) * (1.0 - (semiRandomFloat(ivec3(hit.z + (uint(semiRandomFloat(ivec3(hit/2))*2)), 0, 0)) - 0.5) * 0.15);
             break;
         case MAT_STONE2:
-            c = vec3(0.2);
+            c = vec3(0.15) * (1.0 - (semiRandomFloat(ivec3(hit.z+(uint(semiRandomFloat(ivec3(hit/3))*2)), 0, 0)) - 0.5) * 0.15);
             break;
         case MAT_STONE3:
-            c = vec3(0.05);
+            c = vec3(0.15) * (1.0 - (semiRandomFloat(ivec3(hit.z+(uint(semiRandomFloat(ivec3(hit/4))*2)), 0, 0)) - 0.5) * 0.15);
             break;
         case MAT_GRASS:
-            c = vec3(0, 0.5, 0) * (1.0 - (semiRandomFloat(ivec3(hit)) - 0.5) * 0.2);
+            c = vec3(0.2, 0.5, 0) * (1.0 - (semiRandomFloat(ivec3(hit.z, 0, 0)) - 0.5) * 0.2);
             break;
         case MAT_FLOWER:
-            c = FLOWER_COLRS[int(floor(min(semiRandomFloat(ivec3(hit)) * 4, 3.5)))];
+            c = FLOWER_COLRS[int(floor(min(semiRandomFloat(ivec3(hit.z, 0, 0)) * 4, 3.5)))];
             break;
         case MAT_WATER:
             c = vec3(0.0, 0.1, 0.5);
@@ -135,7 +135,7 @@ vec4 getColor(uint material, float d, vec3 hit)
     }
     if (material != MAT_AIR)
     {
-        c = mix(c, FOG_COLOR, clamp((d - 150.0) / 250.0, 0.0, 1.0));
+        c = mix(c, FOG_COLOR, clamp((d - 100.0) / 50.0, 0.0, 1.0));
     }
     return vec4(c, 1.0);
 }
@@ -168,7 +168,7 @@ vec4 march(vec3 rayOrigin, vec3 rayDir)
             distanceToBox = abs(tMax);
         }
         hit += rayDir * distanceToBox; //distanceToBox;
-        hit += rayDir * 0.001;
+        hit += rayDir * 0.005;
 
         value = GetVoxel(ivec3(hit));
         layer = ((value >> 5) & 7);

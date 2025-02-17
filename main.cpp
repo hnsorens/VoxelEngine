@@ -237,6 +237,7 @@ private:
     double lastTime = 0;
 
     void initWindow() {
+        noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -910,6 +911,7 @@ private:
         SortChunks();
         for (int i = 0; i < 513; i++)
         {
+            std::lock_guard<std::mutex> lock(queueMutex);
              glm::vec3 cameraGlobal = -cameraPosition + glm::vec3(chunkPosition) * 128.0f;
              uint16_t id = chunkQueue[i];
             printf("CHUNK: x %f y %f z %f x %i y %i z %i %i %f\n", cameraGlobal.x, cameraGlobal.y, cameraGlobal.z, voxelData[id].position.x, voxelData[id].position.y, voxelData[id].position.z, chunkQueue[i], glm::distance(cameraGlobal, glm::vec3(voxelData[id].position)));
@@ -1697,13 +1699,7 @@ private:
         {
             throw std::runtime_error("failed to begin recording command buffer!");
         }
-        if (imageIndex == 0)
-        {
-            transitionImageLayout(commandBuffer, voxelChunkMapTexture, VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1);
-            UpdateVoxels(commandBuffer, section);
-            transitionImageLayout(commandBuffer, voxelChunkMapTexture, VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
-        }
-
+   
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracingPipeline);
 
         vkCmdBindDescriptorSets(
@@ -1718,6 +1714,7 @@ private:
         );
 
         PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(device, "vkCmdTraceRaysKHR"));
+
         vkCmdTraceRaysKHR(
             commandBuffer,
             &raygenRegion,
@@ -1728,7 +1725,12 @@ private:
             swapChainExtent.height,
             1
         );
+
+            transitionImageLayout(commandBuffer, voxelChunkMapTexture, VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1);
+            UpdateVoxels(commandBuffer, section);
+            transitionImageLayout(commandBuffer, voxelChunkMapTexture, VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
         
+
 
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
         {
@@ -2093,80 +2095,46 @@ private:
     std::mutex queueMutex;
     std::condition_variable queueCond;
     bool stopThreads = false;
-    
-    void UpdateChunks()
-    {
-        struct {
-            float& pos;
-            int lowerBound, upperBound, offset, modValue, shift;
-        } checks[] = {
-            {cameraPosition.x, -640, -340, 128, 8, 1},
-            {cameraPosition.y, -640, -340, 128, 64, 8},
-            {cameraPosition.z, -640, -340, 128, 512, 64}
-        };
 
-
-        for (auto& check : checks) {
-            if (check.pos < check.lowerBound) {
-                check.pos += check.offset;
-                updateVoxelChunkMap(check.modValue, check.shift);
-            } else if (check.pos > check.upperBound) {
-                check.pos -= check.offset;
-                updateVoxelChunkMap(check.modValue, check.modValue - check.shift);
-            }
-        }
-    }
 
     void generateChunk(VoxelChunk& chunk)
     {
         glm::ivec3 position = chunk.position;
         uint8_t* chunkData = chunk.data;
+        #pragma omp parallel for collapse(2)
         for (int x = 0; x < 128; x++)
         {
             for (int y = 0; y < 128; y++)
             {
                 for (int z = 0; z < 128; z++)
                 {
-                    // float v = (noise.GetNoise((position.x + x) * 0.1f * TERRAIN_SCALE, (position.y + y) * 0.1f * TERRAIN_SCALE, (position.z + z) * 0.4f * TERRAIN_SCALE) + noise.GetNoise(x * 1.5f * TERRAIN_SCALE, y * 1.5f * TERRAIN_SCALE, z * 1.0f * TERRAIN_SCALE) * 0.03) / 1.03f;
-                    // if (v > 0)
-                    // {
-                    //     voxChunk(chunkData,x,y,z) = MAT_GRASS;
-                    // }
-                    // else
-                    // {
-                    //     voxChunk(chunkData,x,y,z) = MAT_AIR;
-                    // }
                     glm::ivec3 samplePosition = position + glm::ivec3(x, y, z);
                     uint8_t base = 0;//0b11100000;
                     float v = (noise.GetNoise(samplePosition.x * 0.1f * TERRAIN_SCALE, samplePosition.y * 0.1f * TERRAIN_SCALE, samplePosition.z * 0.4f * TERRAIN_SCALE) + noise.GetNoise(samplePosition.x * 1.5f * TERRAIN_SCALE, samplePosition.y * 1.5f * TERRAIN_SCALE, samplePosition.z * 1.0f * TERRAIN_SCALE) * 0.03) / 1.03f;
-                    float v_above = (noise.GetNoise(samplePosition.x * 0.1f * TERRAIN_SCALE, samplePosition.y * 0.1f * TERRAIN_SCALE, (samplePosition.z+1) * 0.4f * TERRAIN_SCALE) + noise.GetNoise(samplePosition.x * 1.5f * TERRAIN_SCALE, samplePosition.y * 1.5f * TERRAIN_SCALE, (samplePosition.z+1) * 1.0f * TERRAIN_SCALE) * 0.03) / 1.03f;
+                    float v_above = (noise.GetNoise(samplePosition.x * 0.1f * TERRAIN_SCALE, samplePosition.y * 0.1f * TERRAIN_SCALE, (samplePosition.z-1) * 0.4f * TERRAIN_SCALE) + noise.GetNoise(samplePosition.x * 1.5f * TERRAIN_SCALE, samplePosition.y * 1.5f * TERRAIN_SCALE, (samplePosition.z-1) * 1.0f * TERRAIN_SCALE) * 0.03) / 1.03f;
                     int material = v <= 0.1;
                     if (material != MAT_AIR)
                     {
                         if (z > 0 && (v_above <= 0.1))
                         {
-                            material = MAT_GRASS;
-                            // float v = semiRandomFloat(x, y, z);
-                            // if (v < 0.08)
-                            // {
-                            //     vox(x, y, z - 1) |= MAT_GRASS;
-
-                            //     if (z > 1 && v < 0.008)
-                            //     {
-                            //         vox(x, y, z - 2) |= MAT_FLOWER;
-                            //     }
-                            // }
+                            float v = noise.GetNoise(x * 10.0f * TERRAIN_SCALE, y * 10.0f * TERRAIN_SCALE, z * 10.0f * TERRAIN_SCALE) * 0.7f + noise.GetNoise(x * 5.0f * TERRAIN_SCALE, y * 5.0f * TERRAIN_SCALE, z * 5.0f * TERRAIN_SCALE) * 0.3f;
+                            if (v > 0.33)
+                            {
+                                material = MAT_STONE;
+                            }
+                            else if (v > -0.33)
+                            {
+                                material = MAT_STONE2;
+                            }
+                            else
+                            {
+                                material = MAT_STONE3;
+                            }
                         }
                         else
                         {
-                            float v = noise.GetNoise(x * 1.5f * TERRAIN_SCALE, y * 1.5f * TERRAIN_SCALE, z * 1.f * TERRAIN_SCALE);
-                            int32_t i = *((int32_t*)&v);
-                            int32_t i2 = i | 9;
-                            float v2 = *((float*)(&i2));
-                            if (v2 < -0.15)
-                            {
-                                material = (i & 15) < 2 ? MAT_STONE2 : MAT_STONE3;
-                            }
+                            material = MAT_GRASS;
+                            
                         }
                     }
 
@@ -2176,7 +2144,7 @@ private:
         }
 
         // Set the base
-
+        #pragma omp parallel for collapse(2)
         for (int x = 0; x < 128; x+=2)
         {
             for (int y = 0; y < 128; y+=2)
@@ -2205,7 +2173,7 @@ private:
                 }
             }
         }
-
+        #pragma omp parallel for collapse(2)
         for (int x = 0; x < 128; x+=4)
         {
             for (int y = 0; y < 128; y+=4)
@@ -2237,7 +2205,7 @@ private:
             }
         }
 
-
+        #pragma omp parallel for collapse(2)
         for (int x = 0; x < 128; x+=8)
         {
             for (int y = 0; y < 128; y+=8)
@@ -2268,7 +2236,7 @@ private:
                 }
             }
         }
-
+        #pragma omp parallel for collapse(2)
         for (int x = 0; x < 128; x+=16)
         {
             for (int y = 0; y < 128; y+=16)
@@ -2299,6 +2267,7 @@ private:
                 }
             }
         }
+        #pragma omp parallel for collapse(2)
         for (int x = 0; x < 128; x+=32)
         {
             for (int y = 0; y < 128; y+=32)
@@ -2351,6 +2320,7 @@ private:
                 }
             }
             voxelData[chunkID].inQueue = false;
+
             generateChunk(voxelData[chunkID]);
             chunkUpdateQueue[++chunkUpdateQueue[0]] = chunkID;
         }
@@ -2375,6 +2345,7 @@ private:
 
     void SortChunks()
     {
+        std::lock_guard<std::mutex> lock(queueMutex);
         if (chunkQueue[0] > 5)
         std::sort(chunkQueue.begin() + 1, chunkQueue.begin() + chunkQueue[0], [this](uint16_t a, uint16_t b){return ChunkSort(a,b);});
     }
@@ -2508,6 +2479,16 @@ private:
 
     void UpdateUBO(int currentFrame)
     {
+
+          struct {
+            float& pos;
+            int lowerBound, upperBound, offset, modValue, shift;
+        } checks[] = {
+            {cameraPosition.x, -640, -340, 128, 8, 1},
+            {cameraPosition.y, -640, -340, 128, 64, 8},
+            {cameraPosition.z, -640, -340, 128, 512, 64}
+        };
+        
         cameraPosition.z += cameraVelocity.z * deltaTime;
         cameraTargetPoint.z += cameraVelocity.z * deltaTime;
 
@@ -2546,16 +2527,18 @@ private:
         }
         else
         {
-            cameraVelocity.z -= 9.8 * 7 * deltaTime;
+            cameraVelocity.z -= 20 * 7 * deltaTime;
         }
 
         if (isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
             // Hide the cursor and capture mouse movement
+
+            
             hideCursor();
 
             float deltaTime = 0.1f;
 
-            movementSpeed = isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 14 : 4.0;
+            movementSpeed = isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
             
             if (isKeyPressed(GLFW_KEY_S)) { cameraPosition += movementSpeed * deltaTime * glm::normalize(cameraTargetPoint - cameraPosition) * glm::vec3(1, 1, 0); }
             if (isKeyPressed(GLFW_KEY_W)) { cameraPosition -= movementSpeed * deltaTime * glm::normalize(cameraTargetPoint - cameraPosition) * glm::vec3(1, 1, 0); }
@@ -2566,7 +2549,7 @@ private:
             if (isKeyPressed(GLFW_KEY_Q)) { cameraPosition.z -= movementSpeed * 2 * deltaTime; }
             if ((isKeyPressed(GLFW_KEY_SPACE) || isKeyPressed(GLFW_KEY_E)) && is_grounded)
             {
-                cameraVelocity.z += 400 * deltaTime;
+                cameraVelocity.z += 600 * deltaTime;
             }
 
             double currentMouseX, currentMouseY;
@@ -2611,15 +2594,26 @@ private:
 
 
 
+
         ubo.view = glm::inverse(glm::lookAt(cameraPosition, cameraTargetPoint, glm::vec3(0.0f, 0.0f, 1.0f)));
 
         printf("\rPOSITION: %i %i %i\tCHUNK: %i %i %i\tDELTA TIME: %f\to: %i", (int)cameraPosition.x, (int)cameraPosition.y, (int)cameraPosition.z, chunkPosition.x, chunkPosition.y, chunkPosition.z, deltaTime, is_ouch);
 
         memcpy(uniformBuffersMapped, &ubo, sizeof(TransformUBO));
+        
 
-        UpdateChunks();
+        for (auto& check : checks) {
+            if (check.pos < check.lowerBound) {
+                check.pos += check.offset;
+                updateVoxelChunkMap(check.modValue, check.shift);
+            } else if (check.pos > check.upperBound) {
+                check.pos -= check.offset;
+                updateVoxelChunkMap(check.modValue, check.modValue - check.shift);
+            }
+        }
 
         SortChunks();
+
 
 
         // Raycast and print distance
@@ -2648,112 +2642,11 @@ private:
                 uint16_t chunkID = getChunkID(hitPosition);
                 
                 chunkUpdateQueue[++chunkUpdateQueue[0]] = chunkID;
-                printf("CHUNKID: %i\n", chunkID);
             }
         }
         
        
 
-
-        // if (cameraPosition.x < -640)
-        // {
-        //     cameraPosition.x += 128;
-        //     for (int z = 0; z < 8; z++)
-        //     {
-        //         for (int y = 0; y < 8; y++)
-        //         {
-        //             for (int x = 0; x < 8; x++)
-        //             {
-        //                 int chunk = voxelChunkMapData[z*8*8 + y*8 + x];
-        //                 int chunkX = chunk % 8;
-        //                 voxelChunkMapData[z*8*8 + y*8 + x] = (chunk - chunkX) + (chunkX + 1) % 8;
-        //             }
-        //         }
-        //     }
-        // }
-        // else if (cameraPosition.x > -340)
-        // {
-        //     cameraPosition.x -= 128;
-        //     for (int z = 0; z < 8; z++)
-        //     {
-        //         for (int y = 0; y < 8; y++)
-        //         {
-        //             for (int x = 0; x < 8; x++)
-        //             {
-        //                 int chunk = voxelChunkMapData[z*8*8 + y*8 + x];
-        //                 int chunkX = chunk % 8;
-        //                 voxelChunkMapData[z*8*8 + y*8 + x] = (chunk - chunkX) + (chunkX + 7) % 8;
-        //             }
-        //         }
-        //     }
-        // }
-        // else if (cameraPosition.y < -640)
-        // {
-        //     cameraPosition.y += 128;
-        //     for (int z = 0; z < 8; z++)
-        //     {
-        //         for (int y = 0; y < 8; y++)
-        //         {
-        //             for (int x = 0; x < 8; x++)
-        //             {
-        //                 int chunk = voxelChunkMapData[z*8*8 + y*8 + x];
-        //                 int chunkY = ((chunk - (chunk % 8)) % 64);
-        //                 voxelChunkMapData[z*8*8 + y*8 + x] = (chunk - chunkY) + (chunkY + 8) % 64;
-        //             }
-        //         }
-        //     }
-        // }
-        // else if (cameraPosition.y > -340)
-        // {
-        //     cameraPosition.y -= 128;
-        //     for (int z = 0; z < 8; z++)
-        //     {
-        //         for (int y = 0; y < 8; y++)
-        //         {
-        //             for (int x = 0; x < 8; x++)
-        //             {
-        //                 int chunk = voxelChunkMapData[z*8*8 + y*8 + x];
-        //                 int chunkY = ((chunk - (chunk % 8)) % 64);
-        //                 printf("CHUNK Y: %i\n", chunkY);
-        //                 voxelChunkMapData[z*8*8 + y*8 + x] = (chunk - chunkY) + (chunkY + 56) % 64;
-        //             }
-        //         }
-        //     }
-        // }
-        // else if (cameraPosition.z < -640)
-        // {
-        //     cameraPosition.z += 128;
-        //     for (int z = 0; z < 8; z++)
-        //     {
-        //         for (int y = 0; y < 8; y++)
-        //         {
-        //             for (int x = 0; x < 8; x++)
-        //             {
-        //                 int chunk = voxelChunkMapData[z*8*8 + y*8 + x];
-        //                 int chunkZ = ((chunk - (chunk % 64)) % 512);
-        //                 printf("CHUNK Y: %i\n", chunkZ);
-        //                 voxelChunkMapData[z*8*8 + y*8 + x] = (chunk - chunkZ) + (chunkZ + 64) % 512;
-        //             }
-        //         }
-        //     }
-        // }
-        // else if (cameraPosition.z > -340)
-        // {
-        //     cameraPosition.z -= 128;
-        //     for (int z = 0; z < 8; z++)
-        //     {
-        //         for (int y = 0; y < 8; y++)
-        //         {
-        //             for (int x = 0; x < 8; x++)
-        //             {
-        //                 int chunk = voxelChunkMapData[z*8*8 + y*8 + x];
-        //                 int chunkZ = ((chunk - (chunk % 64)) % 512);
-        //                 printf("CHUNK Y: %i\n", chunkZ);
-        //                 voxelChunkMapData[z*8*8 + y*8 + x] = (chunk - chunkZ) + (chunkZ + 448) % 512;
-        //             }
-        //         }
-        //     }
-        // }
 
     }
     
