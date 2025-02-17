@@ -1,216 +1,14 @@
-// #version 460
-
-// #extension GL_EXT_ray_tracing : enable
-
-// layout (set = 0, binding = 0) uniform writeonly image2D imageOutput;
-
-
-// layout (set = 0, binding = 3, r8ui) uniform readonly uimage3D upperVoxelData;
-// layout (set = 0, binding = 2, r8ui) uniform readonly uimage3D lowerVoxelData;
-// layout (set = 0, binding = 4, r16ui) uniform readonly uimage3D voxelChunkMap;
-
-
-
-// layout (set = 0, binding = 1) uniform Transform
-// {
-//     mat4 view;
-//     mat4 invproj;
-// } transform;
-
-// bool RayIntersectsCube(vec3 corner, float size, vec3 rayOrigin, vec3 rayDir, out float tMin, out float tMax) {
-//     // The cube is defined from corner (0, 0, 0) to corner (size, size, size)
-//     vec3 minBound = corner;                  // Minimum corner at (0,0,0)
-//     vec3 maxBound = corner + vec3(size);     // Maximum corner at (size, size, size)
-
-//     vec3 invDir = 1.0 / rayDir;
-//     vec3 t1 = (minBound - rayOrigin) * invDir;
-//     vec3 t2 = (maxBound - rayOrigin) * invDir;
-
-//     vec3 tMinVec = min(t1, t2);
-//     vec3 tMaxVec = max(t1, t2);
-
-//     tMin = max(max(tMinVec.x, tMinVec.y), tMinVec.z);
-//     tMax = min(min(tMaxVec.x, tMaxVec.y), tMaxVec.z);
-
-//     return tMax >= tMin && tMax >= 0.0;
-// }
-
-// bool DistanceToCubeSurface(vec3 pointInside, vec3 direction, vec3 corner, float size, out float distance) {
-//     // Define the minimum and maximum bounds of the cube
-//     direction = normalize(direction);
-//     vec3 minBound = corner;                  // Minimum corner at (0, 0, 0)
-//     vec3 maxBound = corner + vec3(size);     // Maximum corner at (size, size, size)
-    
-//    // Calculate t values for each axis (distance to each face in the direction)
-//     vec3 t1 = (minBound - pointInside) / direction;
-//     vec3 t2 = (maxBound - pointInside) / direction;
-    
-//     // Swap t1 and t2 if direction is negative (so t1 refers to the closer intersection)
-//     vec3 tMinVec = min(t1, t2);  // Smallest values for entry to the cube
-//     vec3 tMaxVec = max(t1, t2);  // Largest values for exit from the cube
-    
-//     // The distance is the smallest positive tMax where the direction is outward
-//     distance = max(max(tMinVec.x, tMinVec.y), tMinVec.z);  // Use the smallest positive tMax for the hit point
-    
-    
-//     // Check if the point is actually inside the cube and the direction is outward
-//     return (distance >= 0.0); 
-// }
-
-// vec4 computer_ray_dir(uvec3 launchID, uvec3 launchSize)
-// {
-//     float x = (2 * float(launchID.x) + 0.5) / float(launchSize.x) - 1.0;
-//     float y = (1.0 - 2 * (float(launchID.y) + 0.5) / float(launchSize.y));
-
-//     vec4 direction = transform.invproj * vec4(x,y,1,1);
-//     direction = normalize(direction);
-
-//     return direction;
-// }
-
-// ivec3 TransformIndex(ivec3 position)
-// {
-//     ivec3 chunkPosition = ivec3(vec3(float(position.x / 128.0), float(position.y / 128.0), float(position.z / 128.0)));
-//     uint value = uint(imageLoad(voxelChunkMap, ivec3(chunkPosition)));
-
-//     ivec3 newPosition = ivec3((value & 7) * 128, ((value >> 3) & 7) * 128, ((value >> 6) & 7) * 128) + position - (chunkPosition * 128);
-
-
-//     return newPosition;
-// }
-
-// float semiRandomFloat(ivec3 inp) {
-//     // A simple hashing function using the input vector components
-//     uint hash = inp.x * 123456789 + inp.y * 987654321 + inp.z * 567890123;
-    
-//     // A bitwise operation to mix the hash value
-//     hash = (hash ^ (hash >> 21)) * 2654435761u;
-//     hash = hash ^ (hash >> 21);
-//     hash = hash * 668265263;
-//     hash = hash ^ (hash >> 21);
-
-//     // Return a float between 0 and 1 based on the hash
-//     return float(hash & 0xFFFFFFF) / float(0xFFFFFFF);
-// }
-
-// vec4 calculateColor(vec3 rayOrigin, vec3 rayDir)
-// {
-//     vec4 finalColor;
-//     float tMax = 0, tMin = 0;
-
-//     ivec3 origin = ivec3(0);
-//     int size = 1024;
-
-//     if (rayOrigin.x > 0 && rayOrigin.y > 0 && rayOrigin.z > 0)
-//     {
-//         origin = ivec3(rayOrigin);
-//         size = 1;
-//     }
-
-
-//     if (RayIntersectsCube(origin, size, rayOrigin, rayDir, tMin, tMax))
-//     {   
-//         finalColor = vec4(0.0, 0.0, 0.0, 1.0);
-
-//         vec3 hit = rayOrigin;
-//         float distanceToBox = tMin;
-
-//         if (rayOrigin.x > 0 && rayOrigin.y > 0 && rayOrigin.z > 0)
-//         {
-//             distanceToBox = abs(tMax);
-//         }
-//         hit += rayDir * distanceToBox; //distanceToBox;
-//         hit += rayDir * 0.001;
-
-//         uint value = uint(imageLoad(upperVoxelData, TransformIndex(ivec3(hit))));
-//         uint layer = (value >> 5) & 7;
-//         uint material = value & 31;
-
-//         if (material == 1)
-//         {
-//             uint value2 = uint(imageLoad(upperVoxelData, TransformIndex(ivec3(hit)) + ivec3(0, 0, 3)));
-//             uint material2 = value2 & 31;
-//             if (material2 != 1)
-//             {
-//                 return vec4(0.15, 0.15, 0.15, 1.0);
-//             }
-//             else
-//             {
-//                 return vec4(0.0, 0.5, 0.0, 1.0);
-//             }
-            
-//         }
-//         else if (material == 0)
-//         {
-//             for (int i = 0; i < 500; i++)
-//             {
-//                 RayIntersectsCube(ivec3(hit), 1, rayOrigin, rayDir, tMin, tMax);
-//                 distanceToBox = abs(tMin - tMax);
-//                 hit += rayDir * distanceToBox;
-
-//                 uint value = uint(imageLoad(upperVoxelData, TransformIndex(ivec3(hit))));
-//                 uint layer = (value >> 5) & 7;
-//                 uint material = value & 31;
-
-//                 finalColor = vec4(0.0, 0.0, 0.0, 1.0);
-//                 if (material == 1)
-//                 {
-//                     float d = length(rayOrigin - hit);
-//                     // return vec4(0.15 * (1.0 - d/350.0), 0.15 * (1.0 - d/350.0), 0.15 * (1.0 - d/350.0), 1.0);
-
-//                     uint value2 = uint(imageLoad(upperVoxelData, TransformIndex(ivec3(hit)) + ivec3(0, 0, 3)));
-//                     uint material2 = value2 & 31;
-
-//                     float v = semiRandomFloat(ivec3(hit)) / 15.0;
-//                     if (material2 != 1)
-//                     {
-//                         return vec4((0.15+v), (0.15+v), (0.15+v) , 1.0);
-//                     }
-//                     else
-//                     {
-//                         return vec4(0.0  * v, (v + 0.4), 0.0 * v, 1.0);
-//                     }
-//                 }
-//             }
-//         }
-        
-//     }
-//     else
-//     {
-//         return vec4(0.0, 0.0, 0.0, 1.0);
-//     }
-//     return finalColor;
-// }
-
-// void main()
-// {
-//     ivec2 pixelCoord = ivec2(gl_LaunchIDEXT.xy);
-//     // vec2 ndc = (vec2(pixelCoord) / gl_LaunchSizeEXT.xy) * 2.0 - 1.0;
-//     vec3 rayOrigin = -transform.view[3].xyz;
-
-//     vec4 rayWorldSpace = computer_ray_dir(gl_LaunchIDEXT.xyz, gl_LaunchSizeEXT.xyz);
-//     // rayWorldSpace /= rayWorldSpace.w;
-//     mat4 copy = transform.view;
-//     copy[3] = vec4(0.0, 0.0, 0.0, 1.0);
-//     vec3 rayDir = normalize((copy * rayWorldSpace).xyz);
-
-
-//     vec4 finalColor = calculateColor(rayOrigin, rayDir);
-
-
-//     imageStore(imageOutput, pixelCoord, finalColor);
-// }
 
 
 #version 460
 
 #extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 layout (set = 0, binding = 0) uniform writeonly image2D imageOutput;
 
 
-layout (set = 0, binding = 3, r8ui) uniform readonly uimage3D upperVoxelData;
-layout (set = 0, binding = 2, r8ui) uniform readonly uimage3D lowerVoxelData;
+layout (set = 0, binding = 3, r8ui) uniform readonly uimage3D voxelData[512];
 layout (set = 0, binding = 4, r16ui) uniform readonly uimage3D voxelChunkMap;
 
 
@@ -284,15 +82,12 @@ vec4 computer_ray_dir(uvec3 launchID, uvec3 launchSize)
     return direction;
 }
 
-ivec3 TransformIndex(ivec3 position)
+uint GetVoxel(ivec3 position)
 {
     ivec3 chunkPosition = ivec3(vec3(float(position.x / 128.0), float(position.y / 128.0), float(position.z / 128.0)));
     uint value = uint(imageLoad(voxelChunkMap, ivec3(chunkPosition)));
 
-    ivec3 newPosition = ivec3((value & 7) * 128, ((value >> 3) & 7) * 128, ((value >> 6) & 7) * 128) + position - (chunkPosition * 128);
-
-
-    return newPosition;
+    return uint(imageLoad(voxelData[nonuniformEXT(value)], ivec3(mod(position.x, 128), mod(position.y, 128), mod(position.z, 128))));
 }
 
 float semiRandomFloat(ivec3 inp) {
@@ -309,7 +104,7 @@ float semiRandomFloat(ivec3 inp) {
     return float(hash & 0xFFFFFFF) / float(0xFFFFFFF);
 }
 
-const vec3 FOG_COLOR = vec3(138.0/256.0, 236.0/256.0, 227.0/256);
+const vec3 FOG_COLOR = vec3(5.0/256.0, 5.0/256.0, 5.0/256);
 const vec3 FLOWER_COLRS[] = {vec3(0.8, 0.2, 0.2), vec3(0.0, 0.4, 0.2), vec3(0.5, 0.5, 0.1), vec3(0.95, 0.95, 0.95)};
 
 vec4 getColor(uint material, float d, vec3 hit)
@@ -327,7 +122,7 @@ vec4 getColor(uint material, float d, vec3 hit)
             c = vec3(0.05);
             break;
         case MAT_GRASS:
-            c = vec3(0.0, 0.5, 0.0) * (1.0 - (semiRandomFloat(ivec3(hit)) - 0.5) * 0.2);
+            c = vec3(0, 0.5, 0) * (1.0 - (semiRandomFloat(ivec3(hit)) - 0.5) * 0.2);
             break;
         case MAT_FLOWER:
             c = FLOWER_COLRS[int(floor(min(semiRandomFloat(ivec3(hit)) * 4, 3.5)))];
@@ -340,7 +135,7 @@ vec4 getColor(uint material, float d, vec3 hit)
     }
     if (material != MAT_AIR)
     {
-        c = mix(c, FOG_COLOR, clamp((d - 200.0) / 350.0, 0.0, 1.0));
+        c = mix(c, FOG_COLOR, clamp((d - 150.0) / 250.0, 0.0, 1.0));
     }
     return vec4(c, 1.0);
 }
@@ -358,10 +153,15 @@ vec4 march(vec3 rayOrigin, vec3 rayDir)
         size = 1;
     }
 
-    if (RayIntersectsCube(origin, size, rayOrigin, rayDir, tMin, tMax))
+    uint value = GetVoxel(ivec3(origin));
+    uint layer = ((value >> 5) & 7) ;
+    uint material = value & 31;
+
+    if (RayIntersectsCube((origin / uint(pow(2, layer))) * uint(pow(2, layer)), uint(pow(2, layer)), rayOrigin, rayDir, tMin, tMax))
     {
         vec3 hit = rayOrigin;
         float distanceToBox = tMin;
+        float rayDistance = distanceToBox;
 
         if (rayOrigin.x > 0 && rayOrigin.y > 0 && rayOrigin.z > 0)
         {
@@ -370,23 +170,28 @@ vec4 march(vec3 rayOrigin, vec3 rayDir)
         hit += rayDir * distanceToBox; //distanceToBox;
         hit += rayDir * 0.001;
 
-        uint value = uint(imageLoad(upperVoxelData, TransformIndex(ivec3(hit))));
-        uint layer = (value >> 5) & 7;
-        uint material = value & 31;
+        value = GetVoxel(ivec3(hit));
+        layer = ((value >> 5) & 7);
+        material = value & 31;
 
         if (material != MAT_AIR) return getColor(material, length(rayOrigin - hit), hit);
 
-        for (int i = 0; i < 450; i++)
+
+
+        for (int i = 0; i < 500; i++)
         {
-            RayIntersectsCube(ivec3(hit), 1, rayOrigin, rayDir, tMin, tMax);
+            RayIntersectsCube((ivec3(hit) / uint(pow(2, layer))) * uint(pow(2, layer)), uint(pow(2, layer)), rayOrigin, rayDir, tMin, tMax);
             distanceToBox = abs(tMin - tMax);
             hit += rayDir * distanceToBox;
+            rayDistance += distanceToBox;
 
-            uint value = uint(imageLoad(upperVoxelData, TransformIndex(ivec3(hit))));
-            uint layer = (value >> 5) & 7;
-            uint material = value & 31;
+            value = GetVoxel(ivec3(hit));
+            layer = ((value >> 5) & 7);
+            material = value & 31;
 
             if (material != MAT_AIR) return getColor(material, length(rayOrigin - hit), hit);
+
+            if (rayDistance > 400) break;
         }
     }
     return vec4(FOG_COLOR, 1.0);
@@ -394,6 +199,9 @@ vec4 march(vec3 rayOrigin, vec3 rayDir)
 
 void main()
 {
+
+
+
     ivec2 pixelCoord = ivec2(gl_LaunchIDEXT.xy);
     // vec2 ndc = (vec2(pixelCoord) / gl_LaunchSizeEXT.xy) * 2.0 - 1.0;
     vec3 rayOrigin = -transform.view[3].xyz;
