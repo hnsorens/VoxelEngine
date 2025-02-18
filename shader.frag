@@ -8,7 +8,28 @@ layout(location = 0) out vec4 outColor;
 layout(binding = 0) uniform sampler2D raytraceTexture;
 
 void main() {
-    outColor = vec4(fragColor, 1.0);
-    outColor = texture(raytraceTexture, fragTexCoord);
+    vec2 texelSize = 1.0 / textureSize(raytraceTexture, 0);
     
+    vec4 samples[9];
+    int index = 0;
+
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            vec2 offset = vec2(x, y) * texelSize;
+            samples[index++] = texture(raytraceTexture, fragTexCoord + offset);
+        }
+    }
+
+    // Sort the samples by brightness and pick the middle one
+    for (int i = 0; i < 9; i++) {
+        for (int j = i + 1; j < 9; j++) {
+            if (dot(samples[i].rgb, vec3(0.299, 0.587, 0.114)) > dot(samples[j].rgb, vec3(0.299, 0.587, 0.114))) {
+                vec4 temp = samples[i];
+                samples[i] = samples[j];
+                samples[j] = temp;
+            }
+        }
+    }
+
+    outColor = samples[4]; // Middle value
 }
