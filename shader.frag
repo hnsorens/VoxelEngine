@@ -31,5 +31,9 @@ void main() {
         }
     }
 
-    outColor = samples[4]; // Middle value
+    // outColor = samples[4]; // Middle value
+    outColor = texture(raytraceTexture, fragTexCoord);
+
+    // if (fragTexCoord.x > 0.4975 && fragTexCoord.x < 0.5025 && fragTexCoord.y > 0.495 && fragTexCoord.y < 0.505)
+    // outColor = vec4(0.8, 0.8, 0.8, 1.0);
 }
