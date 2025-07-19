@@ -1,3 +1,4 @@
+#include "SyncManager.hpp"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -45,7 +46,7 @@ struct TransformUBO
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
+
 
 //=================
 //  Materials
@@ -79,6 +80,7 @@ public:
 private:
     std::unique_ptr<WindowManager> windowManager;
     std::unique_ptr<VulkanContext> vulkanContext;
+    std::unique_ptr<SyncManager> syncManager;
 
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
@@ -89,9 +91,6 @@ private:
 
     std::vector<VkCommandBuffer> commandBufferPairs;
 
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
     uint8_t section = 0;
 
@@ -246,8 +245,10 @@ private:
         printf("Created raytracing storage image\n");
         createGraphicsPipeline();
         printf("Created framebuffers\n");
-        createSyncObjects();
-        printf("Created sync objects\n");
+        // createSyncObjects();
+        // printf("Created sync objects\n");
+
+        syncManager = std::make_unique<SyncManager>(vulkanContext);
 
         createVoxelResources();
         printf("Created voxel resources\n");
@@ -2012,35 +2013,14 @@ vkCmdPipelineBarrier(
         }
     }
 
-    void createSyncObjects() {
-        imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-
-        VkSemaphoreCreateInfo semaphoreInfo{};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-        VkFenceCreateInfo fenceInfo{};
-        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            if (vkCreateSemaphore(vulkanContext->getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(vulkanContext->getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(vulkanContext->getDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create synchronization objects for a frame!");
-            }
-        }
-    }
-
     void drawFrame() {
-        vkWaitForFences(vulkanContext->getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(vulkanContext->getDevice(), 1, &syncManager->getInFlightFences()[currentFrame], VK_TRUE, UINT64_MAX);
         UpdateUBO(currentFrame);
               memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(TransformUBO));
 
 
         uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(vulkanContext->getDevice(), vulkanContext->getSwapChain(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(vulkanContext->getDevice(), vulkanContext->getSwapChain(), UINT64_MAX, syncManager->getImageAvailableSemaphores()[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             recreateSwapChain();
@@ -2049,7 +2029,7 @@ vkCmdPipelineBarrier(
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        vkResetFences(vulkanContext->getDevice(), 1, &inFlightFences[currentFrame]);
+        vkResetFences(vulkanContext->getDevice(), 1, &syncManager->getInFlightFences()[currentFrame]);
 
         vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
         vkResetCommandBuffer(raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_IN_FLIGHT], 0);
@@ -2060,7 +2040,7 @@ vkCmdPipelineBarrier(
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
+        VkSemaphore waitSemaphores[] = { syncManager->getImageAvailableSemaphores()[currentFrame] };
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
@@ -2074,11 +2054,11 @@ vkCmdPipelineBarrier(
         submitInfo.commandBufferCount = 2;
         submitInfo.pCommandBuffers = commands.data();
 
-        VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+        VkSemaphore signalSemaphores[] = { syncManager->getRenderFinishedSemaphores()[currentFrame]};
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(vulkanContext->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+        if (vkQueueSubmit(vulkanContext->getGraphicsQueue(), 1, &submitInfo, syncManager->getInFlightFences()[currentFrame]) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
