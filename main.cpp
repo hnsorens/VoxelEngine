@@ -2581,26 +2581,6 @@ vkCmdPipelineBarrier(
         mouseY = (float)yPos;
     }
 
-    // Example of key press handler
-    bool isKeyPressed(int key) {
-        return glfwGetKey(windowManager->getWindow(), key) == GLFW_PRESS;
-    }
-
-    // Example of mouse button press handler
-    bool isMouseButtonPressed(int button) {
-        return glfwGetMouseButton(windowManager->getWindow(), button) == GLFW_PRESS;
-    }
-
-    // Function to hide the cursor
-    void hideCursor() {
-        glfwSetInputMode(windowManager->getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
-
-    // Function to show the cursor
-    void showCursor() {
-        glfwSetInputMode(windowManager->getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    }
-
     void updateVoxelChunkMap(int modValue, int offset) {
 
     switch (offset)
@@ -3132,24 +3112,24 @@ vkCmdPipelineBarrier(
             cameraVelocity.z -= 20 * 7 * windowManager->getDeltaTime();;
         }
 
-        if (isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+        if (windowManager->isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
             // Hide the cursor and capture mouse movement
 
             
-            hideCursor();
+            windowManager->hideCursor();
 
             float deltaTime = 0.1f;
 
-            movementSpeed = isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
+            movementSpeed = windowManager->isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
             bool reset = false;
-            if (isKeyPressed(GLFW_KEY_S)) { reset = true; cameraPosition += movementSpeed * deltaTime * glm::normalize(cameraTargetPoint - cameraPosition) * glm::vec3(1, 1, 0); }
-            if (isKeyPressed(GLFW_KEY_W)) { reset = true; cameraPosition -= movementSpeed * deltaTime * glm::normalize(cameraTargetPoint - cameraPosition) * glm::vec3(1, 1, 0); }
-            if (isKeyPressed(GLFW_KEY_D)) { reset = true; cameraPosition -= glm::normalize(glm::cross(cameraTargetPoint - cameraPosition, glm::vec3(0.0f, 0.0f, 1.0f))) * movementSpeed * deltaTime * glm::vec3(1, 1, 0); }
-            if (isKeyPressed(GLFW_KEY_A)) { reset = true; cameraPosition += glm::normalize(glm::cross(cameraTargetPoint - cameraPosition, glm::vec3(0.0f, 0.0f, 1.0f))) * movementSpeed * deltaTime * glm::vec3(1, 1, 0); }
+            if (windowManager->isKeyPressed(GLFW_KEY_S)) { reset = true; cameraPosition += movementSpeed * deltaTime * glm::normalize(cameraTargetPoint - cameraPosition) * glm::vec3(1, 1, 0); }
+            if (windowManager->isKeyPressed(GLFW_KEY_W)) { reset = true; cameraPosition -= movementSpeed * deltaTime * glm::normalize(cameraTargetPoint - cameraPosition) * glm::vec3(1, 1, 0); }
+            if (windowManager->isKeyPressed(GLFW_KEY_D)) { reset = true; cameraPosition -= glm::normalize(glm::cross(cameraTargetPoint - cameraPosition, glm::vec3(0.0f, 0.0f, 1.0f))) * movementSpeed * deltaTime * glm::vec3(1, 1, 0); }
+            if (windowManager->isKeyPressed(GLFW_KEY_A)) { reset = true; cameraPosition += glm::normalize(glm::cross(cameraTargetPoint - cameraPosition, glm::vec3(0.0f, 0.0f, 1.0f))) * movementSpeed * deltaTime * glm::vec3(1, 1, 0); }
 
             // Q and E for vertical movement
-            if (isKeyPressed(GLFW_KEY_Q)) { cameraPosition.z -= movementSpeed * 2 * deltaTime; }
-            if ((isKeyPressed(GLFW_KEY_SPACE) || isKeyPressed(GLFW_KEY_E)) && is_grounded)
+            if (windowManager->isKeyPressed(GLFW_KEY_Q)) { cameraPosition.z -= movementSpeed * 2 * deltaTime; }
+            if ((windowManager->isKeyPressed(GLFW_KEY_SPACE) || windowManager->isKeyPressed(GLFW_KEY_E)) && is_grounded)
             {
                 cameraVelocity.z += 600 * deltaTime;
             }
@@ -3205,7 +3185,7 @@ vkCmdPipelineBarrier(
             cameraTargetPoint = cameraPosition + direction;
         } else {
             // Release the cursor and reset first mouse flag
-            showCursor();
+            windowManager->showCursor();
             firstMouse = true;
         }
 
@@ -3234,7 +3214,7 @@ vkCmdPipelineBarrier(
 
 
         // Raycast and print distance
-        if (isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
+        if (windowManager->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
         {
             bool hit = false;
             glm::ivec3 hitPosition = rayCast(-cameraPosition, cameraTargetPoint - cameraPosition, hit, 25.0f);
