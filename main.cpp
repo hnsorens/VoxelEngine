@@ -1,6 +1,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "WindowManager.hpp"
+#include <memory>
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -38,6 +40,9 @@ struct TransformUBO
     glm::mat4 view;
     glm::mat4 proj;
 };
+
+#define RAYTRACE_HEIGHT 1080
+#define RAYTRACE_WIDTH 1920
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -119,7 +124,8 @@ public:
     }
 
 private:
-    GLFWwindow* window;
+    // GLFWwindow* window;
+    std::unique_ptr<WindowManager> windowManager;
 
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -255,8 +261,8 @@ private:
 
     FastNoiseLite noise;
 
-    double deltaTime = 0;
-    double lastTime = 0;
+    // double deltaTime = 0;
+    // double lastTime = 0;
 
     void initWindow() {
         frame.resize(MAX_FRAMES_IN_FLIGHT);
@@ -265,16 +271,8 @@ private:
             frame[i] = 0;
         }
         noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-        glfwInit();
 
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Voxels", nullptr, nullptr);
-        // const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        // glfwSetWindowPos(window, (mode->width - WIDTH) / 2, 32);
-
-        glfwSetWindowUserPointer(window, this);
-        glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+        windowManager = std::make_unique<WindowManager>(WIDTH, HEIGHT, "Voxel Engine");
     }
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
@@ -323,11 +321,8 @@ private:
     }
 
     void mainLoop() {
-        while (!glfwWindowShouldClose(window)) {
-            deltaTime = glfwGetTime() - lastTime;
-            lastTime = glfwGetTime();
-            glfwPollEvents();
-            
+        while (!windowManager->shouldClose()) {
+            windowManager->pollEvents();
             drawFrame();
         }
 
@@ -370,19 +365,10 @@ private:
 
         vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
-
-        glfwDestroyWindow(window);
-
-        glfwTerminate();
     }
 
     void recreateSwapChain() {
-        int width = 0, height = 0;
-        glfwGetFramebufferSize(window, &width, &height);
-        while (width == 0 || height == 0) {
-            glfwGetFramebufferSize(window, &width, &height);
-            glfwWaitEvents();
-        }
+        windowManager->recreateWindow();
 
         vkDeviceWaitIdle(device);
 
@@ -453,7 +439,7 @@ private:
     }
 
     void createSurface() {
-        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+        if (glfwCreateWindowSurface(instance, windowManager->getWindow(), nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
     }
@@ -777,8 +763,8 @@ private:
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = VK_FORMAT_R16G16B16A16_UNORM;
-                imageCreateInfo.extent.width = swapChainExtent.width;
-                imageCreateInfo.extent.height = swapChainExtent.height;
+                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
+                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
                 imageCreateInfo.extent.depth = 1;
                 imageCreateInfo.mipLevels = 1;
                 imageCreateInfo.arrayLayers = 1;
@@ -849,8 +835,8 @@ private:
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = VK_FORMAT_R32_UINT;
-                imageCreateInfo.extent.width = swapChainExtent.width;
-                imageCreateInfo.extent.height = swapChainExtent.height;
+                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
+                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
                 imageCreateInfo.extent.depth = 1;
                 imageCreateInfo.mipLevels = 1;
                 imageCreateInfo.arrayLayers = 1;
@@ -921,8 +907,8 @@ private:
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = VK_FORMAT_R32_UINT;
-                imageCreateInfo.extent.width = swapChainExtent.width;
-                imageCreateInfo.extent.height = swapChainExtent.height;
+                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
+                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
                 imageCreateInfo.extent.depth = 1;
                 imageCreateInfo.mipLevels = 1;
                 imageCreateInfo.arrayLayers = 1;
@@ -993,8 +979,8 @@ private:
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = VK_FORMAT_R32_UINT;
-                imageCreateInfo.extent.width = swapChainExtent.width;
-                imageCreateInfo.extent.height = swapChainExtent.height;
+                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
+                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
                 imageCreateInfo.extent.depth = 1;
                 imageCreateInfo.mipLevels = 1;
                 imageCreateInfo.arrayLayers = 1;
@@ -1065,8 +1051,8 @@ private:
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = VK_FORMAT_R32_UINT;
-                imageCreateInfo.extent.width = swapChainExtent.width;
-                imageCreateInfo.extent.height = swapChainExtent.height;
+                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
+                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
                 imageCreateInfo.extent.depth = 1;
                 imageCreateInfo.mipLevels = 1;
                 imageCreateInfo.arrayLayers = 1;
@@ -1137,8 +1123,8 @@ private:
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = VK_FORMAT_R32_UINT;
-                imageCreateInfo.extent.width = swapChainExtent.width;
-                imageCreateInfo.extent.height = swapChainExtent.height;
+                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
+                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
                 imageCreateInfo.extent.depth = 1;
                 imageCreateInfo.mipLevels = 1;
                 imageCreateInfo.arrayLayers = 1;
@@ -1586,8 +1572,8 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 
     void createRaytracingPipeline()
     {
-        auto raygenShaderCode = readFile("../rgen.spv");
-        auto missShaderCode = readFile("../rmiss.spv");
+        auto raygenShaderCode = readFile("rgen.spv");
+        auto missShaderCode = readFile("rmiss.spv");
 
         VkShaderModule raygenShaderModule = createShaderModule(raygenShaderCode);
         VkShaderModule missShaderModule = createShaderModule(missShaderCode);
@@ -1930,8 +1916,8 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     }
 
     void createGraphicsPipeline() {
-        auto vertShaderCode = readFile("../vert.spv");
-        auto fragShaderCode = readFile("../frag.spv");
+        auto vertShaderCode = readFile("vert.spv");
+        auto fragShaderCode = readFile("frag.spv");
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -2258,8 +2244,8 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             &missRegion,
             &hitRegion,
             &callableRegion,
-            swapChainExtent.width,
-            swapChainExtent.height,
+            RAYTRACE_WIDTH,
+            RAYTRACE_HEIGHT,
             1
         );
 
@@ -2295,8 +2281,8 @@ vkCmdPipelineBarrier(
             &missRegion,
             &hitRegion,
             &callableRegion,
-            swapChainExtent.width,
-            swapChainExtent.height,
+            RAYTRACE_WIDTH,
+            RAYTRACE_HEIGHT,
             1
         );
 vkCmdPipelineBarrier(
@@ -2325,8 +2311,8 @@ vkCmdPipelineBarrier(
             &missRegion,
             &hitRegion,
             &callableRegion,
-            swapChainExtent.width,
-            swapChainExtent.height,
+            RAYTRACE_WIDTH,
+            RAYTRACE_HEIGHT,
             1
         );
 
@@ -2597,22 +2583,22 @@ vkCmdPipelineBarrier(
 
     // Example of key press handler
     bool isKeyPressed(int key) {
-        return glfwGetKey(window, key) == GLFW_PRESS;
+        return glfwGetKey(windowManager->getWindow(), key) == GLFW_PRESS;
     }
 
     // Example of mouse button press handler
     bool isMouseButtonPressed(int button) {
-        return glfwGetMouseButton(window, button) == GLFW_PRESS;
+        return glfwGetMouseButton(windowManager->getWindow(), button) == GLFW_PRESS;
     }
 
     // Function to hide the cursor
     void hideCursor() {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(windowManager->getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
 
     // Function to show the cursor
     void showCursor() {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        glfwSetInputMode(windowManager->getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
     void updateVoxelChunkMap(int modValue, int offset) {
@@ -2752,54 +2738,7 @@ vkCmdPipelineBarrier(
                                 material = MAT_STONE3;
                             }
                         }
-                        else
-                        {
-                            float plantNoise = randomFromPosition(glm::ivec3(x, y, z));
-
-                            if (plantNoise < 0.004f && x > 3 && x < 125 && y > 3 && y < 125 && z > 0 && z < 120)
-                            {
-                                material = MAT_GRASS;
-                                voxChunk(chunkData, x, y, z-1) = base | material;
-                                voxChunk(chunkData, x, y, z-2) = base | material;
-                                voxChunk(chunkData, x, y, z-3) = base | material;
-                                voxChunk(chunkData, x, y, z-4) = base | material;
-                                voxChunk(chunkData, x, y, z-5) = base | material;
-                                voxChunk(chunkData, x, y, z-6) = base | material;
-
-                                voxChunk(chunkData, x-1, y-1, z-6) = base | material;
-                                voxChunk(chunkData, x-1, y,   z-6) = base | material;
-                                voxChunk(chunkData, x-1, y+1, z-6) = base | material;
-                                voxChunk(chunkData, x+1, y-1, z-6) = base | material;
-                                voxChunk(chunkData, x+1, y,   z-6) = base | material;
-                                voxChunk(chunkData, x+1, y+1, z-6) = base | material;
-                                voxChunk(chunkData, x, y+1,   z-6) = base | material;
-                                voxChunk(chunkData, x, y-1,   z-6) = base | material;
-
-                                voxChunk(chunkData, x-1, y-1, z-6) = base | material;
-                                voxChunk(chunkData, x-1, y,   z-6) = base | material;
-                                voxChunk(chunkData, x-1, y+1, z-6) = base | material;
-                                voxChunk(chunkData, x+1, y-1, z-6) = base | material;
-                                voxChunk(chunkData, x+1, y,   z-6) = base | material;
-                                voxChunk(chunkData, x+1, y+1, z-6) = base | material;
-                                voxChunk(chunkData, x, y+1,   z-6) = base | material;
-                                voxChunk(chunkData, x, y-1,   z-6) = base | material;
-
-
-                                for (int i = 7; i < 7 + 8; i++)
-                                {
-                                    voxChunk(chunkData, x-1, y-1, z-i) = base | MAT_PLANT_CORE;
-                                    voxChunk(chunkData, x-1, y,   z-i) = base | MAT_PLANT_CORE;
-                                    voxChunk(chunkData, x-1, y+1, z-i) = base | MAT_PLANT_CORE;
-                                    voxChunk(chunkData, x+1, y-1, z-i) = base | MAT_PLANT_CORE;
-                                    voxChunk(chunkData, x+1, y,   z-i) = base | MAT_PLANT_CORE;
-                                    voxChunk(chunkData, x+1, y+1, z-i) = base | MAT_PLANT_CORE;
-                                    voxChunk(chunkData, x, y+1,   z-i) = base | MAT_PLANT_CORE;
-                                    voxChunk(chunkData, x, y-1,   z-i) = base | MAT_PLANT_CORE;
-                                }
-                            }
-                            material = MAT_STONE;
-                            
-                        }
+                      
                     }
 
                     voxChunk(chunkData, x, y, z) = base | material;
@@ -3017,7 +2956,7 @@ vkCmdPipelineBarrier(
     std::vector<std::thread> workers;
     void startWorkers(int numThreads) {
         voxelData.resize(512);
-        chunkQueue.resize(512);
+        chunkQueue.resize(513);
         chunkQueue[0] = 0;
         chunkUpdateQueue.resize(513);
         chunkUpdateQueue[0] = 0;
@@ -3153,8 +3092,8 @@ vkCmdPipelineBarrier(
             {cameraPosition.z, -640, -340, 128, 512, 64}
         };
         
-        cameraPosition.z += cameraVelocity.z * deltaTime;
-        cameraTargetPoint.z += cameraVelocity.z * deltaTime;
+        cameraPosition.z += cameraVelocity.z * windowManager->getDeltaTime();
+        cameraTargetPoint.z += cameraVelocity.z * windowManager->getDeltaTime();;
 
         glm::ivec3 intCameraPosition = glm::ivec3(cameraPosition) * -1;
 
@@ -3190,7 +3129,7 @@ vkCmdPipelineBarrier(
         }
         else
         {
-            cameraVelocity.z -= 20 * 7 * deltaTime;
+            cameraVelocity.z -= 20 * 7 * windowManager->getDeltaTime();;
         }
 
         if (isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
@@ -3221,7 +3160,7 @@ vkCmdPipelineBarrier(
             }
 
             double currentMouseX, currentMouseY;
-            glfwGetCursorPos(window, &currentMouseX, &currentMouseY);
+            glfwGetCursorPos(windowManager->getWindow(), &currentMouseX, &currentMouseY);
 
             if (firstMouse) {
                 lastMouseX = static_cast<float>(currentMouseX);
@@ -3275,7 +3214,7 @@ vkCmdPipelineBarrier(
 
         ubo.view = glm::inverse(glm::lookAt(cameraPosition, cameraTargetPoint, glm::vec3(0.0f, 0.0f, 1.0f)));
 
-        printf("\rPOSITION: %i %i %i\tCHUNK: %i %i %i\tDELTA TIME: %f\to: %i", (int)cameraPosition.x, (int)cameraPosition.y, (int)cameraPosition.z, chunkPosition.x, chunkPosition.y, chunkPosition.z, deltaTime, is_ouch);
+        printf("\rPOSITION: %i %i %i\tCHUNK: %i %i %i\tDELTA TIME: %f\to: %i", (int)cameraPosition.x, (int)cameraPosition.y, (int)cameraPosition.z, chunkPosition.x, chunkPosition.y, chunkPosition.z, windowManager->getDeltaTime(), is_ouch);
 
 
         
@@ -3536,7 +3475,7 @@ vkCmdPipelineBarrier(
             return capabilities.currentExtent;
         } else {
             int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
+            glfwGetFramebufferSize(windowManager->getWindow(), &width, &height);
 
             VkExtent2D actualExtent = {
                 static_cast<uint32_t>(width),
