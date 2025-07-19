@@ -61,3 +61,23 @@ double WindowManager::getDeltaTime() const
 {
     return deltaTime;
 }
+
+bool WindowManager::isKeyPressed(int key)
+{
+    return glfwGetKey(window, key) == GLFW_PRESS;
+}
+
+bool WindowManager::isMouseButtonPressed(int button)
+{
+    return glfwGetMouseButton(window, button) == GLFW_PRESS;
+}
+
+void WindowManager::hideCursor()
+{
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+
+void WindowManager::showCursor()
+{
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+}

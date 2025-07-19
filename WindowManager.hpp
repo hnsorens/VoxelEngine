@@ -12,6 +12,10 @@ public:
     void recreateWindow();
     GLFWwindow* getWindow() const;
     double getDeltaTime() const;
+    bool isKeyPressed(int key);
+    bool isMouseButtonPressed(int button);
+    void hideCursor();
+    void showCursor();
 
     bool framebufferResized = false;
 
