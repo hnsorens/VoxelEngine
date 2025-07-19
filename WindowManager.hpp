@@ -16,6 +16,8 @@ public:
     bool isMouseButtonPressed(int button);
     void hideCursor();
     void showCursor();
+    void getCursorPos(double* currentMouseX, double* currentMouseY);
+    void getFramebufferSize(int* width, int* height);
 
     bool framebufferResized = false;
 

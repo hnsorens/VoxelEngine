@@ -3140,7 +3140,7 @@ vkCmdPipelineBarrier(
             }
 
             double currentMouseX, currentMouseY;
-            glfwGetCursorPos(windowManager->getWindow(), &currentMouseX, &currentMouseY);
+            windowManager->getCursorPos(&currentMouseX, &currentMouseY);
 
             if (firstMouse) {
                 lastMouseX = static_cast<float>(currentMouseX);
@@ -3455,7 +3455,7 @@ vkCmdPipelineBarrier(
             return capabilities.currentExtent;
         } else {
             int width, height;
-            glfwGetFramebufferSize(windowManager->getWindow(), &width, &height);
+            windowManager->getFramebufferSize(&width, &height);
 
             VkExtent2D actualExtent = {
                 static_cast<uint32_t>(width),

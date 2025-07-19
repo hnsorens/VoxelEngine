@@ -81,3 +81,13 @@ void WindowManager::showCursor()
 {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
+
+void WindowManager::getCursorPos(double* currentMouseX, double* currentMouseY)
+{
+    glfwGetCursorPos(window, currentMouseX, currentMouseY);
+}
+
+void WindowManager::getFramebufferSize(int* width, int* height)
+{
+    glfwGetFramebufferSize(window, width, height);
+}
