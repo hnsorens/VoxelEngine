@@ -1,7 +1,7 @@
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include "WindowManager.hpp"
+#include "VulkanContext.hpp"
 #include <memory>
 #include <iostream>
 #include <fstream>
@@ -46,54 +46,6 @@ struct TransformUBO
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-const std::vector<const char*> validationLayers = {
-    "VK_LAYER_KHRONOS_validation"
-};
-
-const std::vector<const char*> deviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-    VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-};
-
-#ifdef NDEBUG
-const bool enableValidationLayers = true;
-#else
-const bool enableValidationLayers = true;
-#endif
-
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    } else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
-
-struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool isComplete() {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
-
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
-
 //=================
 //  Materials
 //-----------------
@@ -124,18 +76,8 @@ public:
     }
 
 private:
-    // GLFWwindow* window;
     std::unique_ptr<WindowManager> windowManager;
-
-    VkInstance instance;
-    VkDebugUtilsMessengerEXT debugMessenger;
-    VkSurfaceKHR surface;
-
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device;
-
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
+    std::unique_ptr<VulkanContext> vulkanContext;
 
     VkSwapchainKHR swapChain;
     std::vector<VkImage> swapChainImages;
@@ -281,16 +223,18 @@ private:
     }
 
     void initVulkan() {
-        createInstance();
-        printf("Created instance\n");
-        setupDebugMessenger();
-        printf("Setup debug messenger\n");
-        createSurface();
-        printf("Created surface\n");
-        pickPhysicalDevice();
-        printf("Picked physical device\n");
-        createLogicalDevice();
-        printf("Created logical device\n");
+        vulkanContext = std::make_unique<VulkanContext>();
+        vulkanContext->init(windowManager);
+        // createInstance();
+        // printf("Created instance\n");
+        // setupDebugMessenger();
+        // printf("Setup debug messenger\n");
+        // createSurface();
+        // printf("Created surface\n");
+        // pickPhysicalDevice();
+        // printf("Picked physical device\n");
+        // createLogicalDevice();
+        // printf("Created logical device\n");
         createSwapChain();
         printf("Created swap chain\n");
         createTransformUBO();
@@ -326,51 +270,51 @@ private:
             drawFrame();
         }
 
-        vkDeviceWaitIdle(device);
+        vkDeviceWaitIdle(vulkanContext->getDevice());
     }
 
     void cleanupSwapChain() {
         for (auto framebuffer : swapChainFramebuffers) {
-            vkDestroyFramebuffer(device, framebuffer, nullptr);
+            vkDestroyFramebuffer(vulkanContext->getDevice(), framebuffer, nullptr);
         }
 
         for (auto imageView : swapChainImageViews) {
-            vkDestroyImageView(device, imageView, nullptr);
+            vkDestroyImageView(vulkanContext->getDevice(), imageView, nullptr);
         }
 
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
+        vkDestroySwapchainKHR(vulkanContext->getDevice(), swapChain, nullptr);
     }
 
     void cleanup() {
-        cleanupSwapChain();
+        // cleanupSwapChain();
 
-        vkDestroyPipeline(device, graphicsPipeline, nullptr);
-        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+        // vkDestroyPipeline(device, graphicsPipeline, nullptr);
+        // vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 
-        vkDestroyRenderPass(device, renderPass, nullptr);
+        // vkDestroyRenderPass(device, renderPass, nullptr);
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-            vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-            vkDestroyFence(device, inFlightFences[i], nullptr);
-        }
+        // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        //     vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+        //     vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+        //     vkDestroyFence(device, inFlightFences[i], nullptr);
+        // }
 
-        vkDestroyCommandPool(device, commandPool, nullptr);
+        // vkDestroyCommandPool(device, commandPool, nullptr);
 
-        vkDestroyDevice(device, nullptr);
+        // vkDestroyDevice(device, nullptr);
 
-        if (enableValidationLayers) {
-            DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-        }
+        // if (enableValidationLayers) {
+        //     DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+        // }
 
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-        vkDestroyInstance(instance, nullptr);
+        // vkDestroySurfaceKHR(instance, surface, nullptr);
+        // vkDestroyInstance(instance, nullptr);
     }
 
     void recreateSwapChain() {
         windowManager->recreateWindow();
 
-        vkDeviceWaitIdle(device);
+        vkDeviceWaitIdle(vulkanContext->getDevice());
 
         cleanupSwapChain();
 
@@ -378,45 +322,6 @@ private:
         createImageViews();
         createFramebuffers();
         createRaytracingStorageImage();
-    }
-
-    void createInstance() {
-        if (enableValidationLayers && !checkValidationLayerSupport()) {
-            throw std::runtime_error("validation layers requested, but not available!");
-        }
-
-        VkApplicationInfo appInfo{};
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = "Voxels";
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "No Engine";
-        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_3;
-
-        VkInstanceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.pApplicationInfo = &appInfo;
-
-        auto extensions = getRequiredExtensions();
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-        createInfo.ppEnabledExtensionNames = extensions.data();
-
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-        if (enableValidationLayers) {
-            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-            createInfo.ppEnabledLayerNames = validationLayers.data();
-
-            populateDebugMessengerCreateInfo(debugCreateInfo);
-            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
-        } else {
-            createInfo.enabledLayerCount = 0;
-
-            createInfo.pNext = nullptr;
-        }
-
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create instance!");
-        }
     }
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
@@ -427,124 +332,8 @@ private:
         createInfo.pfnUserCallback = debugCallback;
     }
 
-    void setupDebugMessenger() {
-        if (!enableValidationLayers) return;
-
-        VkDebugUtilsMessengerCreateInfoEXT createInfo;
-        populateDebugMessengerCreateInfo(createInfo);
-
-        if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-            throw std::runtime_error("failed to set up debug messenger!");
-        }
-    }
-
-    void createSurface() {
-        if (glfwCreateWindowSurface(instance, windowManager->getWindow(), nullptr, &surface) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create window surface!");
-        }
-    }
-
-    void pickPhysicalDevice() {
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-
-        if (deviceCount == 0) {
-            throw std::runtime_error("failed to find GPUs with Vulkan support!");
-        }
-
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-        for (const auto& device : devices) {
-            if (isDeviceSuitable(device)) {
-                physicalDevice = device;
-                break;
-            }
-        }
-
-        if (physicalDevice == VK_NULL_HANDLE) {
-            throw std::runtime_error("failed to find a suitable GPU!");
-        }
-    }
-
-    void createLogicalDevice() {
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-
-        float queuePriority = 1.0f;
-        for (uint32_t queueFamily : uniqueQueueFamilies) {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.push_back(queueCreateInfo);
-        }
-
-
-        // Enabling Raytracing Features
-
-        VkPhysicalDeviceBufferAddressFeaturesEXT bufferDeviceFeatures = {};
-        bufferDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_ADDRESS_FEATURES_EXT;
-        bufferDeviceFeatures.bufferDeviceAddress = VK_TRUE;
-        bufferDeviceFeatures.pNext = nullptr;
-
-        VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {};
-        descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
-        descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
-        descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
-        descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
-        descriptorIndexingFeatures.shaderStorageImageArrayNonUniformIndexing = VK_TRUE;
-        descriptorIndexingFeatures.pNext = &bufferDeviceFeatures;
-
-        VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingFeatures = {};
-        rayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-        rayTracingFeatures.rayTracingPipeline = VK_TRUE;
-        rayTracingFeatures.pNext = &descriptorIndexingFeatures;
-
-        VkPhysicalDeviceAccelerationStructureFeaturesKHR accelStructFeatures = {};
-        accelStructFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-        accelStructFeatures.accelerationStructure = VK_TRUE;
-        accelStructFeatures.pNext = &rayTracingFeatures;
-
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &accelStructFeatures;
-
-
-        VkPhysicalDeviceFeatures deviceFeatures{};
-
-        VkDeviceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
-        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-        createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
-        createInfo.pEnabledFeatures = nullptr;
-
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-        createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-        createInfo.pNext = &deviceFeatures2;
-
-        if (enableValidationLayers) {
-            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-            createInfo.ppEnabledLayerNames = validationLayers.data();
-        } else {
-            createInfo.enabledLayerCount = 0;
-        }
-
-        if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create logical device!");
-        }
-
-        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-    }
-
     void createSwapChain() {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(vulkanContext->getPhysicalDevice());
 
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -557,7 +346,7 @@ private:
 
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        createInfo.surface = surface;
+        createInfo.surface = vulkanContext->getSurface();
 
         createInfo.minImageCount = imageCount;
         createInfo.imageFormat = surfaceFormat.format;
@@ -566,7 +355,7 @@ private:
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+        QueueFamilyIndices indices = findQueueFamilies(vulkanContext->getPhysicalDevice());
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily) {
@@ -582,13 +371,13 @@ private:
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
 
-        if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+        if (vkCreateSwapchainKHR(vulkanContext->getDevice(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
             throw std::runtime_error("failed to create swap chain!");
         }
 
-        vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(vulkanContext->getDevice(), swapChain, &imageCount, nullptr);
         swapChainImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+        vkGetSwapchainImagesKHR(vulkanContext->getDevice(), swapChain, &imageCount, swapChainImages.data());
 
         swapChainImageFormat = surfaceFormat.format;
         swapChainExtent = extent;
@@ -613,7 +402,7 @@ private:
             createInfo.subresourceRange.baseArrayLayer = 0;
             createInfo.subresourceRange.layerCount = 1;
 
-            if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
+            if (vkCreateImageView(vulkanContext->getDevice(), &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create image views!");
             }
         }
@@ -656,7 +445,7 @@ private:
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+        if (vkCreateRenderPass(vulkanContext->getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
             throw std::runtime_error("failed to create render pass!");
         }
     }
@@ -698,31 +487,31 @@ private:
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR raytracingPipelineProperties = {};
         raytracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
         deviceProperties2.pNext = &raytracingPipelineProperties;
-        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+        vkGetPhysicalDeviceProperties2(vulkanContext->getPhysicalDevice(), &deviceProperties2);
 
         VkDeviceSize handleSize = raytracingPipelineProperties.shaderGroupHandleSize;
         VkDeviceSize handleSizeAligned = ALIGN_UP(handleSize, raytracingPipelineProperties.shaderGroupBaseAlignment);
         sbtSize = handleSizeAligned * 2;
 
-        createBuffer(device, physicalDevice, sbtSize, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        createBuffer(vulkanContext->getDevice(), vulkanContext->getPhysicalDevice(), sbtSize, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sbtBuffer, sbtMemory);
 
 
         std::vector<uint8_t> shaderHandleStorage(sbtSize);
 
-        PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(vkGetDeviceProcAddr(device, "vkGetRayTracingShaderGroupHandlesKHR"));
-        vkGetRayTracingShaderGroupHandlesKHR(device, raytracingPipeline, 0, 2, sbtSize, shaderHandleStorage.data());
+        PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(vkGetDeviceProcAddr(vulkanContext->getDevice(), "vkGetRayTracingShaderGroupHandlesKHR"));
+        vkGetRayTracingShaderGroupHandlesKHR(vulkanContext->getDevice(), raytracingPipeline, 0, 2, sbtSize, shaderHandleStorage.data());
 
         void* mappedData;
-        vkMapMemory(device, sbtMemory, 0, sbtSize, 0, &mappedData);
+        vkMapMemory(vulkanContext->getDevice(), sbtMemory, 0, sbtSize, 0, &mappedData);
         memcpy(mappedData, shaderHandleStorage.data(), sbtSize);
-        vkUnmapMemory(device, sbtMemory);
+        vkUnmapMemory(vulkanContext->getDevice(), sbtMemory);
 
 
         VkBufferDeviceAddressInfo bufferAddressInfo = {};
         bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
         bufferAddressInfo.buffer = sbtBuffer;
-        VkDeviceAddress sbtAddress = vkGetBufferDeviceAddress(device, &bufferAddressInfo);
+        VkDeviceAddress sbtAddress = vkGetBufferDeviceAddress(vulkanContext->getDevice(), &bufferAddressInfo);
 
         raygenRegion.deviceAddress = sbtAddress;
         raygenRegion.stride = handleSizeAligned;
@@ -776,21 +565,20 @@ private:
                 imageCreateInfo.pQueueFamilyIndices = nullptr;
                 imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-                if (vkCreateImage(device, &imageCreateInfo, nullptr, &raytracingStorageImage[i]) != VK_SUCCESS)
+                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingStorageImage[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to create raytracing storage image!");
                 }
 
                 VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(device, raytracingStorageImage[i], &memRequirements);
+                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingStorageImage[i], &memRequirements);
 
                 VkMemoryAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
                 allocInfo.allocationSize = memRequirements.size;
 
                 VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-
+                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
                 for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
                 {
                     if ((memRequirements.memoryTypeBits & (1 << i)) &&
@@ -802,12 +590,12 @@ private:
                 }
 
                 VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
                 {
                     throw std::runtime_error("Failed to allocate memory for image!");
                 }
 
-                vkBindImageMemory(device, raytracingStorageImage[i], imageMemory, 0);
+                vkBindImageMemory(vulkanContext->getDevice(), raytracingStorageImage[i], imageMemory, 0);
 
                 // Create Image View
 
@@ -823,11 +611,11 @@ private:
                 viewCreateInfo.subresourceRange.baseArrayLayer = 0;
                 viewCreateInfo.subresourceRange.layerCount = 1;
 
-                if (vkCreateImageView(device, &viewCreateInfo, nullptr, &raytracingStorageImageView[i]) != VK_SUCCESS)
+                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingStorageImageView[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to creaet raytracing image view!");
                 }
-
+                
                 transitionImageLayout(raytracingStorageImage[i], VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
             }
             {
@@ -848,20 +636,20 @@ private:
                 imageCreateInfo.pQueueFamilyIndices = nullptr;
                 imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-                if (vkCreateImage(device, &imageCreateInfo, nullptr, &raytracingPositionStorageImage[i]) != VK_SUCCESS)
+                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingPositionStorageImage[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to create raytracing storage image!");
                 }
 
                 VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(device, raytracingPositionStorageImage[i], &memRequirements);
+                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingPositionStorageImage[i], &memRequirements);
 
                 VkMemoryAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
                 allocInfo.allocationSize = memRequirements.size;
 
                 VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
 
                 for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
                 {
@@ -874,12 +662,12 @@ private:
                 }
 
                 VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
                 {
                     throw std::runtime_error("Failed to allocate memory for image!");
                 }
 
-                vkBindImageMemory(device, raytracingPositionStorageImage[i], imageMemory, 0);
+                vkBindImageMemory(vulkanContext->getDevice(), raytracingPositionStorageImage[i], imageMemory, 0);
 
                 // Create Image View
 
@@ -895,7 +683,7 @@ private:
                 viewCreateInfo.subresourceRange.baseArrayLayer = 0;
                 viewCreateInfo.subresourceRange.layerCount = 1;
 
-                if (vkCreateImageView(device, &viewCreateInfo, nullptr, &raytracingPositionStorageImageView[i]) != VK_SUCCESS)
+                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingPositionStorageImageView[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to creaet raytracing image view!");
                 }
@@ -920,20 +708,20 @@ private:
                 imageCreateInfo.pQueueFamilyIndices = nullptr;
                 imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-                if (vkCreateImage(device, &imageCreateInfo, nullptr, &raytracingLightStorageImageX[i]) != VK_SUCCESS)
+                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingLightStorageImageX[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to create raytracing storage image!");
                 }
 
                 VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(device, raytracingLightStorageImageX[i], &memRequirements);
+                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingLightStorageImageX[i], &memRequirements);
 
                 VkMemoryAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
                 allocInfo.allocationSize = memRequirements.size;
 
                 VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
 
                 for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
                 {
@@ -946,12 +734,12 @@ private:
                 }
 
                 VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
                 {
                     throw std::runtime_error("Failed to allocate memory for image!");
                 }
 
-                vkBindImageMemory(device, raytracingLightStorageImageX[i], imageMemory, 0);
+                vkBindImageMemory(vulkanContext->getDevice(), raytracingLightStorageImageX[i], imageMemory, 0);
 
                 // Create Image View
 
@@ -967,7 +755,7 @@ private:
                 viewCreateInfo.subresourceRange.baseArrayLayer = 0;
                 viewCreateInfo.subresourceRange.layerCount = 1;
 
-                if (vkCreateImageView(device, &viewCreateInfo, nullptr, &raytracingLightStorageImageViewX[i]) != VK_SUCCESS)
+                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingLightStorageImageViewX[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to creaet raytracing image view!");
                 }
@@ -992,20 +780,20 @@ private:
                 imageCreateInfo.pQueueFamilyIndices = nullptr;
                 imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-                if (vkCreateImage(device, &imageCreateInfo, nullptr, &raytracingLightStorageImageY[i]) != VK_SUCCESS)
+                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingLightStorageImageY[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to create raytracing storage image!");
                 }
 
                 VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(device, raytracingLightStorageImageY[i], &memRequirements);
+                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingLightStorageImageY[i], &memRequirements);
 
                 VkMemoryAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
                 allocInfo.allocationSize = memRequirements.size;
 
                 VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
 
                 for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
                 {
@@ -1018,12 +806,12 @@ private:
                 }
 
                 VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
                 {
                     throw std::runtime_error("Failed to allocate memory for image!");
                 }
 
-                vkBindImageMemory(device, raytracingLightStorageImageY[i], imageMemory, 0);
+                vkBindImageMemory(vulkanContext->getDevice(), raytracingLightStorageImageY[i], imageMemory, 0);
 
                 // Create Image View
 
@@ -1039,7 +827,7 @@ private:
                 viewCreateInfo.subresourceRange.baseArrayLayer = 0;
                 viewCreateInfo.subresourceRange.layerCount = 1;
 
-                if (vkCreateImageView(device, &viewCreateInfo, nullptr, &raytracingLightStorageImageViewY[i]) != VK_SUCCESS)
+                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingLightStorageImageViewY[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to creaet raytracing image view!");
                 }
@@ -1064,20 +852,20 @@ private:
                 imageCreateInfo.pQueueFamilyIndices = nullptr;
                 imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-                if (vkCreateImage(device, &imageCreateInfo, nullptr, &raytracingLightStorageImageZ[i]) != VK_SUCCESS)
+                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingLightStorageImageZ[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to create raytracing storage image!");
                 }
 
                 VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(device, raytracingLightStorageImageZ[i], &memRequirements);
+                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingLightStorageImageZ[i], &memRequirements);
 
                 VkMemoryAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
                 allocInfo.allocationSize = memRequirements.size;
 
                 VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
 
                 for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
                 {
@@ -1090,12 +878,12 @@ private:
                 }
 
                 VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
                 {
                     throw std::runtime_error("Failed to allocate memory for image!");
                 }
 
-                vkBindImageMemory(device, raytracingLightStorageImageZ[i], imageMemory, 0);
+                vkBindImageMemory(vulkanContext->getDevice(), raytracingLightStorageImageZ[i], imageMemory, 0);
 
                 // Create Image View
 
@@ -1111,7 +899,7 @@ private:
                 viewCreateInfo.subresourceRange.baseArrayLayer = 0;
                 viewCreateInfo.subresourceRange.layerCount = 1;
 
-                if (vkCreateImageView(device, &viewCreateInfo, nullptr, &raytracingLightStorageImageViewZ[i]) != VK_SUCCESS)
+                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingLightStorageImageViewZ[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to creaet raytracing image view!");
                 }
@@ -1136,20 +924,20 @@ private:
                 imageCreateInfo.pQueueFamilyIndices = nullptr;
                 imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-                if (vkCreateImage(device, &imageCreateInfo, nullptr, &raytracingLightStorageImageW[i]) != VK_SUCCESS)
+                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingLightStorageImageW[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to create raytracing storage image!");
                 }
 
                 VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(device, raytracingLightStorageImageW[i], &memRequirements);
+                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingLightStorageImageW[i], &memRequirements);
 
                 VkMemoryAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
                 allocInfo.allocationSize = memRequirements.size;
 
                 VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
 
                 for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
                 {
@@ -1162,12 +950,12 @@ private:
                 }
 
                 VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
                 {
                     throw std::runtime_error("Failed to allocate memory for image!");
                 }
 
-                vkBindImageMemory(device, raytracingLightStorageImageW[i], imageMemory, 0);
+                vkBindImageMemory(vulkanContext->getDevice(), raytracingLightStorageImageW[i], imageMemory, 0);
 
                 // Create Image View
 
@@ -1183,7 +971,7 @@ private:
                 viewCreateInfo.subresourceRange.baseArrayLayer = 0;
                 viewCreateInfo.subresourceRange.layerCount = 1;
 
-                if (vkCreateImageView(device, &viewCreateInfo, nullptr, &raytracingLightStorageImageViewW[i]) != VK_SUCCESS)
+                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingLightStorageImageViewW[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to creaet raytracing image view!");
                 }
@@ -1218,24 +1006,24 @@ private:
             imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 
-            if (vkCreateImage(device, &imageInfo, nullptr, &voxelTexture[i]) != VK_SUCCESS) {
+            if (vkCreateImage(vulkanContext->getDevice(), &imageInfo, nullptr, &voxelTexture[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create texture image!");
             }
 
             // Allocate memory for the image
             VkMemoryRequirements memRequirements;
-            vkGetImageMemoryRequirements(device, voxelTexture[i], &memRequirements);
+            vkGetImageMemoryRequirements(vulkanContext->getDevice(), voxelTexture[i], &memRequirements);
 
             VkMemoryAllocateInfo allocInfo = {};
             allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             allocInfo.allocationSize = memRequirements.size;
-            allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            allocInfo.memoryTypeIndex = findMemoryType(vulkanContext->getPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            if (vkAllocateMemory(device, &allocInfo, nullptr, &voxelTexturesMemory[i]) != VK_SUCCESS) {
+            if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &voxelTexturesMemory[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to allocate memory for texture image!");
             }
 
-            vkBindImageMemory(device, voxelTexture[i], voxelTexturesMemory[i], 0);
+            vkBindImageMemory(vulkanContext->getDevice(), voxelTexture[i], voxelTexturesMemory[i], 0);
 
             VkImageViewCreateInfo viewInfo = {};
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1252,7 +1040,7 @@ private:
             viewInfo.subresourceRange.baseArrayLayer = 0;
             viewInfo.subresourceRange.layerCount = 1;
 
-            if (vkCreateImageView(device, &viewInfo, nullptr, &voxelImageView[i]) != VK_SUCCESS) {
+            if (vkCreateImageView(vulkanContext->getDevice(), &viewInfo, nullptr, &voxelImageView[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create texture image view!");
             }
             transitionImageLayout(voxelTexture[i], VK_FORMAT_R8_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
@@ -1263,21 +1051,21 @@ private:
         bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(device, &bufferCreateInfo, nullptr, &voxelStagingBuffer[i]) != VK_SUCCESS)
+        if (vkCreateBuffer(vulkanContext->getDevice(), &bufferCreateInfo, nullptr, &voxelStagingBuffer[i]) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create voxel staging buffer");
         }
 
         VkMemoryRequirements stagingMemRequirements;
-        vkGetBufferMemoryRequirements(device, voxelStagingBuffer[i], &stagingMemRequirements);
+        vkGetBufferMemoryRequirements(vulkanContext->getDevice(), voxelStagingBuffer[i], &stagingMemRequirements);
 
         VkMemoryAllocateInfo stagingAllocInfo = {};
         stagingAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         stagingAllocInfo.allocationSize = stagingMemRequirements.size;
-        stagingAllocInfo.memoryTypeIndex = findMemoryType(physicalDevice, stagingMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        stagingAllocInfo.memoryTypeIndex = findMemoryType(vulkanContext->getPhysicalDevice(), stagingMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        vkAllocateMemory(device, &stagingAllocInfo, nullptr, &voxelStagingBufferMemory[i]);
-        vkBindBufferMemory(device, voxelStagingBuffer[i], voxelStagingBufferMemory[i], 0);
+        vkAllocateMemory(vulkanContext->getDevice(), &stagingAllocInfo, nullptr, &voxelStagingBufferMemory[i]);
+        vkBindBufferMemory(vulkanContext->getDevice(), voxelStagingBuffer[i], voxelStagingBufferMemory[i], 0);
         }
 
         VkSamplerCreateInfo samplerCreateInfo = {};
@@ -1291,7 +1079,7 @@ private:
         samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
         samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
 
-        vkCreateSampler(device, &samplerCreateInfo, nullptr, &voxelTextureSampler);
+        vkCreateSampler(vulkanContext->getDevice(), &samplerCreateInfo, nullptr, &voxelTextureSampler);
 
         startWorkers(10);
         for (int i = 0; i < 512; i++)
@@ -1337,24 +1125,24 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         voxelChunkMapImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         voxelChunkMapImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 
-        if (vkCreateImage(device, &voxelChunkMapImageInfo, nullptr, &voxelChunkMapTexture[i]) != VK_SUCCESS) {
+        if (vkCreateImage(vulkanContext->getDevice(), &voxelChunkMapImageInfo, nullptr, &voxelChunkMapTexture[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture image!");
         }
 
         // Allocate memory for the image
         VkMemoryRequirements voxelChunkMapMemRequirements;
-        vkGetImageMemoryRequirements(device, voxelChunkMapTexture[i], &voxelChunkMapMemRequirements);
+        vkGetImageMemoryRequirements(vulkanContext->getDevice(), voxelChunkMapTexture[i], &voxelChunkMapMemRequirements);
 
         VkMemoryAllocateInfo voxelChunkMapAllocInfo = {};
         voxelChunkMapAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         voxelChunkMapAllocInfo.allocationSize = voxelChunkMapMemRequirements.size;
-        voxelChunkMapAllocInfo.memoryTypeIndex = findMemoryType(physicalDevice, voxelChunkMapMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        voxelChunkMapAllocInfo.memoryTypeIndex = findMemoryType(vulkanContext->getPhysicalDevice(), voxelChunkMapMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        if (vkAllocateMemory(device, &voxelChunkMapAllocInfo, nullptr, &voxelChunkMapTexturesMemory[i]) != VK_SUCCESS) {
+        if (vkAllocateMemory(vulkanContext->getDevice(), &voxelChunkMapAllocInfo, nullptr, &voxelChunkMapTexturesMemory[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate memory for texture image!");
         }
 
-        vkBindImageMemory(device, voxelChunkMapTexture[i], voxelChunkMapTexturesMemory[i], 0);
+        vkBindImageMemory(vulkanContext->getDevice(), voxelChunkMapTexture[i], voxelChunkMapTexturesMemory[i], 0);
 
         VkImageViewCreateInfo voxelChunkMapViewInfo = {};
         voxelChunkMapViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1372,7 +1160,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         voxelChunkMapViewInfo.subresourceRange.layerCount = 1;
         voxelChunkMapViewInfo.pNext = nullptr;
 
-        if (vkCreateImageView(device, &voxelChunkMapViewInfo, nullptr, &voxelChunkMapImageView[i]) != VK_SUCCESS) {
+        if (vkCreateImageView(vulkanContext->getDevice(), &voxelChunkMapViewInfo, nullptr, &voxelChunkMapImageView[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture image view!");
         }
 
@@ -1384,21 +1172,21 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         voxelChunkMapBufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         voxelChunkMapBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(device, &voxelChunkMapBufferCreateInfo, nullptr, &voxelChunkMapStagingBuffer[i]) != VK_SUCCESS)
+        if (vkCreateBuffer(vulkanContext->getDevice(), &voxelChunkMapBufferCreateInfo, nullptr, &voxelChunkMapStagingBuffer[i]) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create voxel staging buffer");
         }
 
         VkMemoryRequirements voxelChunkMapStagingMemRequirements;
-        vkGetBufferMemoryRequirements(device, voxelChunkMapStagingBuffer[i], &voxelChunkMapStagingMemRequirements);
+        vkGetBufferMemoryRequirements(vulkanContext->getDevice(), voxelChunkMapStagingBuffer[i], &voxelChunkMapStagingMemRequirements);
 
         VkMemoryAllocateInfo voxelChunkMapStagingAllocInfo = {};
         voxelChunkMapStagingAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         voxelChunkMapStagingAllocInfo.allocationSize = voxelChunkMapStagingMemRequirements.size;
-        voxelChunkMapStagingAllocInfo.memoryTypeIndex = findMemoryType(physicalDevice, voxelChunkMapStagingMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        voxelChunkMapStagingAllocInfo.memoryTypeIndex = findMemoryType(vulkanContext->getPhysicalDevice(), voxelChunkMapStagingMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        vkAllocateMemory(device, &voxelChunkMapStagingAllocInfo, nullptr, &voxelChunkMapStagingBufferMemory[i]);
-        vkBindBufferMemory(device, voxelChunkMapStagingBuffer[i], voxelChunkMapStagingBufferMemory[i], 0);
+        vkAllocateMemory(vulkanContext->getDevice(), &voxelChunkMapStagingAllocInfo, nullptr, &voxelChunkMapStagingBufferMemory[i]);
+        vkBindBufferMemory(vulkanContext->getDevice(), voxelChunkMapStagingBuffer[i], voxelChunkMapStagingBufferMemory[i], 0);
         
         transitionImageLayout(voxelChunkMapTexture[i], VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
 }
@@ -1529,9 +1317,9 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             transitionImageLayout(commandBuffer, voxelTexture[ID], VK_FORMAT_R8_UINT, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1);
 
             void* mappedData;
-            vkMapMemory(device, voxelStagingBufferMemory[ID], 0, 128*128*128, 0, &mappedData);
+            vkMapMemory(vulkanContext->getDevice(), voxelStagingBufferMemory[ID], 0, 128*128*128, 0, &mappedData);
             memcpy(mappedData, (char*)voxelData[ID].data, 128*128*128);
-            vkUnmapMemory(device, voxelStagingBufferMemory[ID]);
+            vkUnmapMemory(vulkanContext->getDevice(), voxelStagingBufferMemory[ID]);
             VkBufferImageCopy region = {};
             region.bufferOffset = 0;
             region.bufferRowLength = 0;
@@ -1552,9 +1340,9 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 
 
         void* mappedVoxelChunkMapData;
-        vkMapMemory(device, voxelChunkMapStagingBufferMemory[currentImage], 0, 8*8*8*2, 0, &mappedVoxelChunkMapData);
+        vkMapMemory(vulkanContext->getDevice(), voxelChunkMapStagingBufferMemory[currentImage], 0, 8*8*8*2, 0, &mappedVoxelChunkMapData);
         memcpy(mappedVoxelChunkMapData, voxelChunkMapData, 8*8*8*2);
-        vkUnmapMemory(device, voxelChunkMapStagingBufferMemory[currentImage]);
+        vkUnmapMemory(vulkanContext->getDevice(), voxelChunkMapStagingBufferMemory[currentImage]);
 
         VkBufferImageCopy voxelChunkMapRegion = {};
         voxelChunkMapRegion.bufferOffset = 0;
@@ -1693,7 +1481,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 
         layoutCreateInfo.pNext = &extended_info;
 
-        if (vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr, &raytracingDescriptorSetLayout) != VK_SUCCESS)
+        if (vkCreateDescriptorSetLayout(vulkanContext->getDevice(), &layoutCreateInfo, nullptr, &raytracingDescriptorSetLayout) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create raytracing descriptor set layout!");
         }
@@ -1710,7 +1498,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
         pipelineLayoutCreateInfo.pSetLayouts = &raytracingDescriptorSetLayout;
 
-        if (vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &raytracingPipelineLayout) != VK_SUCCESS)
+        if (vkCreatePipelineLayout(vulkanContext->getDevice(), &pipelineLayoutCreateInfo, nullptr, &raytracingPipelineLayout) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create raytracing pipeline layout!");
         }
@@ -1726,14 +1514,14 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         pipelineCreateInfo.maxPipelineRayRecursionDepth = 1;
         pipelineCreateInfo.layout = raytracingPipelineLayout;
 
-        PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(device, "vkCreateRayTracingPipelinesKHR"));
-        if (vkCreateRayTracingPipelinesKHR(device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &raytracingPipeline) != VK_SUCCESS)
+        PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(vulkanContext->getDevice(), "vkCreateRayTracingPipelinesKHR"));
+        if (vkCreateRayTracingPipelinesKHR(vulkanContext->getDevice(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &raytracingPipeline) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create raytracing pipeline!");
         }
         printf("PIPELINE LAYOUT %i\n", 1);
-        vkDestroyShaderModule(device, raygenShaderModule, nullptr);
-        vkDestroyShaderModule(device, missShaderModule, nullptr);
+        vkDestroyShaderModule(vulkanContext->getDevice(), raygenShaderModule, nullptr);
+        vkDestroyShaderModule(vulkanContext->getDevice(), missShaderModule, nullptr);
 
 
         // Pool
@@ -1758,7 +1546,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         poolCreateInfo.pPoolSizes = poolSizes;
         poolCreateInfo.maxSets = 50;
 
-        if (vkCreateDescriptorPool(device, &poolCreateInfo, nullptr, &raytracingDescriptorPool) != VK_SUCCESS)
+        if (vkCreateDescriptorPool(vulkanContext->getDevice(), &poolCreateInfo, nullptr, &raytracingDescriptorPool) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create raytracing descriptor pool!");
         }
@@ -1775,7 +1563,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         allocInfo.pSetLayouts = setLayouts;
         
-        if (vkAllocateDescriptorSets(device, &allocInfo, raytracingDescriptorSets.data()))
+        if (vkAllocateDescriptorSets(vulkanContext->getDevice(), &allocInfo, raytracingDescriptorSets.data()))
         {
             throw std::runtime_error("Failed to create raytracing descriptor set!");
         }
@@ -1910,7 +1698,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 
             VkWriteDescriptorSet writeDescriptorSets[] = {writeStorageDescriptorSet, writeTransformDescriptorSet, voxelDescriptorSet, writeLightStorageDescriptorSetX, writeLightStorageDescriptorSetY, writeLightStorageDescriptorSetZ, writeLightStorageDescriptorSetW, writePositionStorageDescriptorSet, voxelChunkMapDescriptorSet};
 
-            vkUpdateDescriptorSets(device, 9, writeDescriptorSets, 0, nullptr);
+            vkUpdateDescriptorSets(vulkanContext->getDevice(), 9, writeDescriptorSets, 0, nullptr);
         }
 
     }
@@ -2005,7 +1793,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         layoutCreateInfo.pBindings = &binding;
         layoutCreateInfo.pNext = nullptr;
 
-        if (vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+        if (vkCreateDescriptorSetLayout(vulkanContext->getDevice(), &layoutCreateInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create raytracing descriptor set layout!");
         }
@@ -2018,7 +1806,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         pipelineLayoutInfo.pushConstantRangeCount = 0;
         pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
-        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(vulkanContext->getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
 
@@ -2038,12 +1826,12 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+        if (vkCreateGraphicsPipelines(vulkanContext->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
 
-        vkDestroyShaderModule(device, fragShaderModule, nullptr);
-        vkDestroyShaderModule(device, vertShaderModule, nullptr);
+        vkDestroyShaderModule(vulkanContext->getDevice(), fragShaderModule, nullptr);
+        vkDestroyShaderModule(vulkanContext->getDevice(), vertShaderModule, nullptr);
 
          VkDescriptorPoolSize poolSize = {};
         poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -2055,7 +1843,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         poolCreateInfo.pPoolSizes = &poolSize;
         poolCreateInfo.maxSets = 50;
 
-        if (vkCreateDescriptorPool(device, &poolCreateInfo, nullptr, &descriptorPool) != VK_SUCCESS)
+        if (vkCreateDescriptorPool(vulkanContext->getDevice(), &poolCreateInfo, nullptr, &descriptorPool) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create raytracing descriptor pool!");
         }
@@ -2075,7 +1863,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         allocInfo.pSetLayouts = setLayouts;
         
-        if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()))
+        if (vkAllocateDescriptorSets(vulkanContext->getDevice(), &allocInfo, descriptorSets.data()))
         {
             throw std::runtime_error("Failed to create raytracing descriptor set!");
         }
@@ -2104,7 +1892,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             samplerCreateInfo.maxLod = VK_LOD_CLAMP_NONE;
             samplerCreateInfo.mipLodBias = 0.0f;
 
-            if (vkCreateSampler(device, &samplerCreateInfo, nullptr, &imageSampler[i]) != VK_SUCCESS)
+            if (vkCreateSampler(vulkanContext->getDevice(), &samplerCreateInfo, nullptr, &imageSampler[i]) != VK_SUCCESS)
             {
                 throw std::runtime_error("failed to create sampler");
             }
@@ -2124,7 +1912,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             writeDescriptorSet.descriptorCount = 1;
             writeDescriptorSet.pImageInfo = &imageInfo;
 
-            vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
+            vkUpdateDescriptorSets(vulkanContext->getDevice(), 1, &writeDescriptorSet, 0, nullptr);
         }
 
     }
@@ -2146,21 +1934,21 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             framebufferInfo.height = swapChainExtent.height;
             framebufferInfo.layers = 1;
 
-            if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+            if (vkCreateFramebuffer(vulkanContext->getDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create framebuffer!");
             }
         }
     }
 
     void createCommandPool() {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(vulkanContext->getPhysicalDevice());
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-        if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+        if (vkCreateCommandPool(vulkanContext->getDevice(), &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
             throw std::runtime_error("failed to create command pool!");
         }
     }
@@ -2174,7 +1962,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
-        if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(vulkanContext->getDevice(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers!");
         }
 
@@ -2187,7 +1975,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         raytracingAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         raytracingAllocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
-        if (vkAllocateCommandBuffers(device, &raytracingAllocInfo, raytracingCommandBuffers.data()) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(vulkanContext->getDevice(), &raytracingAllocInfo, raytracingCommandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers!");
         }
     }
@@ -2225,7 +2013,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             nullptr
         );
 
-        PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(device, "vkCmdTraceRaysKHR"));
+        PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(vulkanContext->getDevice(), "vkCmdTraceRaysKHR"));
 
         PushConstant c;
         c.flag = 0;
@@ -2399,22 +2187,22 @@ vkCmdPipelineBarrier(
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+            if (vkCreateSemaphore(vulkanContext->getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(vulkanContext->getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(vulkanContext->getDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create synchronization objects for a frame!");
             }
         }
     }
 
     void drawFrame() {
-        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(vulkanContext->getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
         UpdateUBO(currentFrame);
               memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(TransformUBO));
 
 
         uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(vulkanContext->getDevice(), swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             recreateSwapChain();
@@ -2423,7 +2211,7 @@ vkCmdPipelineBarrier(
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        vkResetFences(device, 1, &inFlightFences[currentFrame]);
+        vkResetFences(vulkanContext->getDevice(), 1, &inFlightFences[currentFrame]);
 
         vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
         vkResetCommandBuffer(raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_IN_FLIGHT], 0);
@@ -2452,7 +2240,7 @@ vkCmdPipelineBarrier(
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+        if (vkQueueSubmit(vulkanContext->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -2468,7 +2256,7 @@ vkCmdPipelineBarrier(
 
         presentInfo.pImageIndices = &imageIndex;
 
-        result = vkQueuePresentKHR(presentQueue, &presentInfo);
+        result = vkQueuePresentKHR(vulkanContext->getPresentQueue(), &presentInfo);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
             framebufferResized = false;
@@ -2490,7 +2278,7 @@ vkCmdPipelineBarrier(
         allocInfo.commandBufferCount = 1;
 
         VkCommandBuffer commandBuffer;
-        vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+        vkAllocateCommandBuffers(vulkanContext->getDevice(), &allocInfo, &commandBuffer);
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -2509,10 +2297,10 @@ vkCmdPipelineBarrier(
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
-        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(graphicsQueue);
+        vkQueueSubmit(vulkanContext->getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(vulkanContext->getGraphicsQueue());
 
-        vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+        vkFreeCommandBuffers(vulkanContext->getDevice(), commandPool, 1, &commandBuffer);
     }
 
     uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
@@ -2544,28 +2332,28 @@ vkCmdPipelineBarrier(
             bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-            if (vkCreateBuffer(device, &bufferInfo, nullptr, &uniformBuffer[i]) != VK_SUCCESS)
+            if (vkCreateBuffer(vulkanContext->getDevice(), &bufferInfo, nullptr, &uniformBuffer[i]) != VK_SUCCESS)
             {
                 throw std::runtime_error("failed to create uniform buffer");
             }
 
             VkMemoryRequirements memRequirements;
-            vkGetBufferMemoryRequirements(device, uniformBuffer[i], &memRequirements);
+            vkGetBufferMemoryRequirements(vulkanContext->getDevice(), uniformBuffer[i], &memRequirements);
 
             VkMemoryAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             allocInfo.allocationSize = memRequirements.size;
-            allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            allocInfo.memoryTypeIndex = findMemoryType(vulkanContext->getPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-            if (vkAllocateMemory(device, &allocInfo, nullptr, &uniformBufferMemory[i]) != VK_SUCCESS)
+            if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &uniformBufferMemory[i]) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to allocate uniform buffer memory!");
             }
 
-            vkBindBufferMemory(device, uniformBuffer[i], uniformBufferMemory[i], 0);
+            vkBindBufferMemory(vulkanContext->getDevice(), uniformBuffer[i], uniformBufferMemory[i], 0);
 
     
-            vkMapMemory(device, uniformBufferMemory[i], 0, sizeof(TransformUBO), 0, &uniformBuffersMapped[i]);
+            vkMapMemory(vulkanContext->getDevice(), uniformBufferMemory[i], 0, sizeof(TransformUBO), 0, &uniformBuffersMapped[i]);
             memcpy(uniformBuffersMapped[i], &ubo, sizeof(TransformUBO));
 
             ubo.view = glm::mat4(1.0);
@@ -3318,7 +3106,7 @@ vkCmdPipelineBarrier(
         } else {
             throw std::invalid_argument("unsupported layout transition!");
         }
-
+        
         vkCmdPipelineBarrier(
             commandBuffer,
             sourceStage, destinationStage,
@@ -3327,7 +3115,7 @@ vkCmdPipelineBarrier(
             0, nullptr,
             1, &barrier
         );
-
+        
         endSingleTimeCommands(commandBuffer);
     }
 
@@ -3423,7 +3211,7 @@ vkCmdPipelineBarrier(
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
         VkShaderModule shaderModule;
-        if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+        if (vkCreateShaderModule(vulkanContext->getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
             throw std::runtime_error("failed to create shader module!");
         }
 
@@ -3472,55 +3260,25 @@ vkCmdPipelineBarrier(
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
         SwapChainSupportDetails details;
 
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vulkanContext->getSurface(), &details.capabilities);
 
         uint32_t formatCount;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, vulkanContext->getSurface(), &formatCount, nullptr);
 
         if (formatCount != 0) {
             details.formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, vulkanContext->getSurface(), &formatCount, details.formats.data());
         }
 
         uint32_t presentModeCount;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, vulkanContext->getSurface(), &presentModeCount, nullptr);
 
         if (presentModeCount != 0) {
             details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, vulkanContext->getSurface(), &presentModeCount, details.presentModes.data());
         }
 
         return details;
-    }
-
-    bool isDeviceSuitable(VkPhysicalDevice device) {
-        QueueFamilyIndices indices = findQueueFamilies(device);
-
-        bool extensionsSupported = checkDeviceExtensionSupport(device);
-
-        bool swapChainAdequate = false;
-        if (extensionsSupported) {
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-            swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-        }
-
-        return indices.isComplete() && extensionsSupported && swapChainAdequate;
-    }
-
-    bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
-        uint32_t extensionCount;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-
-        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-        std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-        for (const auto& extension : availableExtensions) {
-            requiredExtensions.erase(extension.extensionName);
-        }
-
-        return requiredExtensions.empty();
     }
 
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
@@ -3539,7 +3297,7 @@ vkCmdPipelineBarrier(
             }
 
             VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, vulkanContext->getSurface(), &presentSupport);
 
             if (presentSupport) {
                 indices.presentFamily = i;
@@ -3553,45 +3311,6 @@ vkCmdPipelineBarrier(
         }
 
         return indices;
-    }
-
-    std::vector<const char*> getRequiredExtensions() {
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-        if (enableValidationLayers) {
-            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
-
-        return extensions;
-    }
-
-    bool checkValidationLayerSupport() {
-        uint32_t layerCount;
-        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-        std::vector<VkLayerProperties> availableLayers(layerCount);
-        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-        for (const char* layerName : validationLayers) {
-            bool layerFound = false;
-
-            for (const auto& layerProperties : availableLayers) {
-                if (strcmp(layerName, layerProperties.layerName) == 0) {
-                    layerFound = true;
-                    break;
-                }
-            }
-
-            if (!layerFound) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     static std::vector<char> readFile(const std::string& filename) {
