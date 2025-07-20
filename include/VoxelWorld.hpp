@@ -1,4 +1,5 @@
 #pragma once
+#define FNL_IMPL
 #include "FastNoiseLite.hpp"
 #include <condition_variable>
 #include <cstdint>

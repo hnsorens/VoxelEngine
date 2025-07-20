@@ -10,28 +10,12 @@
 
 #include "VulkanContext.hpp"
 #include "WindowManager.hpp"
-#include <algorithm>
-#include <chrono>
-#include <condition_variable>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
 #include <iostream>
-#include <limits>
-#include <memory>
-#include <mutex>
-#include <optional>
-#include <queue>
-#include <random>
-#include <set>
 #include <stdexcept>
-#include <thread>
-#include <unordered_set>
 #include <vector>
-
-#define FNL_IMPL
-#include "FastNoiseLite.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONCe
