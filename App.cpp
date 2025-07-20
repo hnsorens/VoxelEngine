@@ -2,4 +2,4 @@
 
 App::App() {}
 App::~App() {}
-void App::run() {} 
+void App::run() {}

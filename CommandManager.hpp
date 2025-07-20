@@ -1,22 +1,25 @@
 #pragma once
 #include "VulkanContext.hpp"
-#include <vulkan/vulkan.h>
 #include <vector>
+#include <vulkan/vulkan.h>
 
 class CommandManager {
 public:
-    CommandManager(std::unique_ptr<VulkanContext>& vulkanContext);
-    ~CommandManager();
+  CommandManager(std::unique_ptr<VulkanContext> &vulkanContext);
+  ~CommandManager();
 
-    VkCommandBuffer beginSingleTimeCommands(std::unique_ptr<VulkanContext>& vulkanContext);
-    void endSingleTimeCommands(std::unique_ptr<VulkanContext>& vulkanContext, VkCommandBuffer commandBuffer);
-    VkCommandPool getCommandPool() const;
-    const std::vector<VkCommandBuffer>& getCommandBuffers() const;
+  VkCommandBuffer
+  beginSingleTimeCommands(std::unique_ptr<VulkanContext> &vulkanContext);
+  void endSingleTimeCommands(std::unique_ptr<VulkanContext> &vulkanContext,
+                             VkCommandBuffer commandBuffer);
+  VkCommandPool getCommandPool() const;
+  const std::vector<VkCommandBuffer> &getCommandBuffers() const;
 
 private:
-    void createCommandPool(VkDevice device, const QueueFamilyIndices& queueFamilyIndices);
-    void allocateCommandBuffers(VkDevice device);
+  void createCommandPool(VkDevice device,
+                         const QueueFamilyIndices &queueFamilyIndices);
+  void allocateCommandBuffers(VkDevice device);
 
-    VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
-}; 
+  VkCommandPool commandPool;
+  std::vector<VkCommandBuffer> commandBuffers;
+};

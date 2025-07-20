@@ -4,29 +4,25 @@
 
 class WindowManager {
 public:
-    WindowManager(int width, int height, const char* title);
-    ~WindowManager();
+  WindowManager(int width, int height, const char *title);
+  ~WindowManager();
 
-    void pollEvents();
-    bool shouldClose() const;
-    void setFramebufferResizeCallback(void (*callback)(GLFWwindow*, int, int));
-    void recreateWindow();
-    GLFWwindow* getWindow() const;
-    double getDeltaTime() const;
-    bool isKeyPressed(int key);
-    bool isMouseButtonPressed(int button);
-    void hideCursor();
-    void showCursor();
-    void getCursorPos(double* currentMouseX, double* currentMouseY);
-    void getFramebufferSize(int* width, int* height);
+  void pollEvents();
+  bool shouldClose() const;
+  void recreateWindow();
+  GLFWwindow *getWindow() const;
+  bool isKeyPressed(int key);
+  bool isMouseButtonPressed(int button);
+  void hideCursor();
+  double getDeltaTime() const;
+  void getCursorPos(double *currentMouseX, double *currentMouseY);
+  void showCursor();
+  void getFramebufferSize(int *width, int *height);
 
-    void checkFramebuffer(VkResult result);
-
-    bool framebufferResized = false;
+  bool framebufferResized = false;
 
 private:
-    GLFWwindow* window;
-
-    double deltaTime = 0;
-    double lastTime = 0;
-}; 
+  GLFWwindow *window;
+  double deltaTime = 0;
+  double lastTime = 0;
+};

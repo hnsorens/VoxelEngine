@@ -1,29 +1,29 @@
 #pragma once
-#include "WindowManager.hpp"
-#include "VulkanContext.hpp"
-#include "PipelineManager.hpp"
-#include "CommandManager.hpp"
-#include "SyncManager.hpp"
 #include "Camera.hpp"
-#include "VoxelWorld.hpp"
+#include "CommandManager.hpp"
+#include "PipelineManager.hpp"
 #include "Raytracer.hpp"
 #include "ResourceManager.hpp"
+#include "SyncManager.hpp"
+#include "VoxelWorld.hpp"
+#include "VulkanContext.hpp"
+#include "WindowManager.hpp"
 
 class App {
 public:
-    App();
-    ~App();
+  App();
+  ~App();
 
-    void run();
+  void run();
 
 private:
-    WindowManager* windowManager;
-    VulkanContext* vulkanContext;
-    PipelineManager* pipelineManager;
-    CommandManager* commandManager;
-    SyncManager* syncManager;
-    Camera* camera;
-    VoxelWorld* voxelWorld;
-    Raytracer* raytracer;
-    ResourceManager* resourceManager;
-}; 
+  WindowManager *windowManager;
+  VulkanContext *vulkanContext;
+  PipelineManager *pipelineManager;
+  CommandManager *commandManager;
+  SyncManager *syncManager;
+  Camera *camera;
+  VoxelWorld *voxelWorld;
+  Raytracer *raytracer;
+  ResourceManager *resourceManager;
+};
