@@ -1,4 +1,5 @@
 #pragma once
+#include "VoxelWorld.hpp"
 #include <memory>
 #include <vector>
 #define GLFW_INCLUDE_VULKAN
@@ -18,7 +19,7 @@ struct TransformUBO
 
 class Raytracer {
 public:
-    Raytracer(std::unique_ptr<class CommandManager>& commandManager, std::unique_ptr<class VulkanContext>& vulkanContext, std::vector<VkBuffer>& uniformBuffer, std::vector<VkImageView>& voxelImageView, VkSampler voxelTextureSampler, std::vector<VkImageView>& voxelChunkMapImageView);
+    Raytracer(std::unique_ptr<class CommandManager>& commandManager, std::unique_ptr<class VulkanContext>& vulkanContext, std::unique_ptr<VoxelWorld>& voxelWorld, std::vector<VkBuffer>& uniformBuffer);
     ~Raytracer();
 
     void createRaytracingPipeline(VkDevice device, std::vector<VkBuffer>& uniformBuffer, std::vector<VkImageView>& voxelImageView, VkSampler voxelTextureSampler, std::vector<VkImageView>& voxelChunkMapImageView);

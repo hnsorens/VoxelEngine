@@ -1,16 +1,18 @@
 #include "Raytracer.hpp"
 #include "CommandManager.hpp"
 #include "PipelineManager.hpp"
+#include "VoxelWorld.hpp"
 #include "VulkanContext.hpp"
 #include <memory>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 #include "ResourceManager.hpp"
 
-Raytracer::Raytracer(std::unique_ptr<CommandManager>& commandManager, std::unique_ptr<VulkanContext>& vulkanContext, std::vector<VkBuffer>& uniformBuffer, std::vector<VkImageView>& voxelImageView, VkSampler voxelTextureSampler, std::vector<VkImageView>& voxelChunkMapImageView) 
+Raytracer::Raytracer(std::unique_ptr<CommandManager>& commandManager, std::unique_ptr<VulkanContext>& vulkanContext, std::unique_ptr<VoxelWorld>& voxelWorld, std::vector<VkBuffer>& uniformBuffer) 
+
 {
     createRaytracingResources(commandManager, vulkanContext);
-    createRaytracingPipeline(vulkanContext->getDevice(), uniformBuffer, voxelImageView, voxelTextureSampler, voxelChunkMapImageView);
+    createRaytracingPipeline(vulkanContext->getDevice(), uniformBuffer, voxelWorld->voxelImageView, voxelWorld->voxelTextureSampler, voxelWorld->voxelChunkMapImageView);
 }
 
 Raytracer::~Raytracer() {}
