@@ -1,4 +1,7 @@
 #include "CommandManager.hpp"
+#include "PipelineManager.hpp"
+#include "Raytracer.hpp"
+#include "ResourceManager.hpp"
 #include "SyncManager.hpp"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -37,12 +40,6 @@ static float semiRandomFloat(float x, float y, float z);
 
 const uint32_t WIDTH = 1920*4;
 const uint32_t HEIGHT = 1280*4;
-
-struct TransformUBO
-{
-    glm::mat4 view;
-    glm::mat4 proj;
-};
 
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920
@@ -83,26 +80,17 @@ private:
     std::unique_ptr<VulkanContext> vulkanContext;
     std::unique_ptr<SyncManager> syncManager;
     std::unique_ptr<CommandManager> commandManager;
-
-    VkPipelineLayout pipelineLayout;
-    VkPipeline graphicsPipeline;
+    std::unique_ptr<PipelineManager> pipelineManager;
+    std::unique_ptr<Raytracer> raytracer;
 
     std::vector<VkCommandBuffer> raytracingCommandBuffers;
 
     uint32_t currentFrame = 0;
     uint8_t section = 0;
 
-    // Raytracing
-    VkPipeline raytracingPipeline;
-    VkPipelineLayout raytracingPipelineLayout;
-    VkDescriptorSetLayout raytracingDescriptorSetLayout;
-    VkDescriptorPool raytracingDescriptorPool;
+    // Raytracin
 
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorPool descriptorPool;
-
-    std::vector<VkDescriptorSet> raytracingDescriptorSets;
-    std::vector<VkDescriptorSet> descriptorSets;
+    
 
     VkStridedDeviceAddressRegionKHR raygenRegion{};
     VkStridedDeviceAddressRegionKHR missRegion{};
@@ -113,26 +101,6 @@ private:
     VkDeviceMemory sbtMemory;
 
     std::vector<int> frame;
-
-    std::vector<VkImage> raytracingStorageImage;
-    std::vector<VkImageView> raytracingStorageImageView;
-
-    std::vector<VkImage> raytracingPositionStorageImage;
-    std::vector<VkImageView> raytracingPositionStorageImageView;
-
-    std::vector<VkImage> raytracingLightStorageImageX;
-    std::vector<VkImageView> raytracingLightStorageImageViewX;
-
-    std::vector<VkImage> raytracingLightStorageImageY;
-    std::vector<VkImageView> raytracingLightStorageImageViewY;
-
-    std::vector<VkImage> raytracingLightStorageImageZ;
-    std::vector<VkImageView> raytracingLightStorageImageViewZ;
-
-    std::vector<VkImage> raytracingLightStorageImageW;
-    std::vector<VkImageView> raytracingLightStorageImageViewW;
-
-    std::vector<VkSampler> imageSampler;
 
     std::vector<VkBuffer> uniformBuffer;
     std::vector<VkDeviceMemory> uniformBufferMemory;
@@ -242,18 +210,24 @@ private:
         // printf("Created command pool\n");
         createCommandBuffers();
         printf("Created command buffers\n");
-        createRaytracingStorageImage();
-        printf("Created raytracing storage image\n");
-        createGraphicsPipeline();
-        printf("Created framebuffers\n");
+
+        createVoxelResources();
+        printf("Created voxel resources\n");
+
+        raytracer = std::make_unique<Raytracer>(commandManager, vulkanContext, uniformBuffer, voxelImageView, voxelTextureSampler, voxelChunkMapImageView);
+
+        
+
+        // createRaytracingStorageImage();
+        // printf("Created raytracing storage image\n");
+        // createGraphicsPipeline();
+        // printf("Created framebuffers\n");
+        pipelineManager = std::make_unique<PipelineManager>(vulkanContext, raytracer);
         // createSyncObjects();
         // printf("Created sync objects\n");
 
         syncManager = std::make_unique<SyncManager>(vulkanContext);
 
-        createVoxelResources();
-        printf("Created voxel resources\n");
-        createRaytracingPipeline();
         printf("Created raytracing pipeline\n");
         createRaytracingRegions();
         printf("Created raytracing regions\n");
@@ -300,8 +274,6 @@ private:
         vkDeviceWaitIdle(vulkanContext->getDevice());
 
         vulkanContext->recreateSwapchain(windowManager);
-
-        createRaytracingStorageImage();
     }
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
@@ -333,7 +305,7 @@ private:
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+        allocInfo.memoryTypeIndex = ResourceManager::findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
 
         if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate buffer memory!");
@@ -363,7 +335,7 @@ private:
         std::vector<uint8_t> shaderHandleStorage(sbtSize);
 
         PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(vkGetDeviceProcAddr(vulkanContext->getDevice(), "vkGetRayTracingShaderGroupHandlesKHR"));
-        vkGetRayTracingShaderGroupHandlesKHR(vulkanContext->getDevice(), raytracingPipeline, 0, 2, sbtSize, shaderHandleStorage.data());
+        vkGetRayTracingShaderGroupHandlesKHR(vulkanContext->getDevice(), raytracer->getPipeline(), 0, 2, sbtSize, shaderHandleStorage.data());
 
         void* mappedData;
         vkMapMemory(vulkanContext->getDevice(), sbtMemory, 0, sbtSize, 0, &mappedData);
@@ -386,463 +358,6 @@ private:
 
         hitRegion = {};
         callableRegion = {};   
-    }
-
-    void createRaytracingStorageImage()
-    {
-        raytracingStorageImage.resize(MAX_FRAMES_IN_FLIGHT);
-        raytracingStorageImageView.resize(MAX_FRAMES_IN_FLIGHT);
-
-        raytracingPositionStorageImage.resize(MAX_FRAMES_IN_FLIGHT);
-        raytracingPositionStorageImageView.resize(MAX_FRAMES_IN_FLIGHT);
-
-        raytracingLightStorageImageX.resize(MAX_FRAMES_IN_FLIGHT);
-        raytracingLightStorageImageViewX.resize(MAX_FRAMES_IN_FLIGHT);
-
-        raytracingLightStorageImageY.resize(MAX_FRAMES_IN_FLIGHT);
-        raytracingLightStorageImageViewY.resize(MAX_FRAMES_IN_FLIGHT);
-
-        raytracingLightStorageImageZ.resize(MAX_FRAMES_IN_FLIGHT);
-        raytracingLightStorageImageViewZ.resize(MAX_FRAMES_IN_FLIGHT);
-
-        raytracingLightStorageImageW.resize(MAX_FRAMES_IN_FLIGHT);
-        raytracingLightStorageImageViewW.resize(MAX_FRAMES_IN_FLIGHT);
-        
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        {
-            {
-                VkImageCreateInfo imageCreateInfo = {};
-                imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageCreateInfo.format = VK_FORMAT_R16G16B16A16_UNORM;
-                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
-                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
-                imageCreateInfo.extent.depth = 1;
-                imageCreateInfo.mipLevels = 1;
-                imageCreateInfo.arrayLayers = 1;
-                imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-                imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-                imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-                imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                imageCreateInfo.queueFamilyIndexCount = 0;
-                imageCreateInfo.pQueueFamilyIndices = nullptr;
-                imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingStorageImage[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to create raytracing storage image!");
-                }
-
-                VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingStorageImage[i], &memRequirements);
-
-                VkMemoryAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                allocInfo.allocationSize = memRequirements.size;
-
-                VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
-                for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-                {
-                    if ((memRequirements.memoryTypeBits & (1 << i)) &&
-                    (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
-                    {
-                        allocInfo.memoryTypeIndex = 1;
-                        break;
-                    }
-                }
-
-                VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("Failed to allocate memory for image!");
-                }
-
-                vkBindImageMemory(vulkanContext->getDevice(), raytracingStorageImage[i], imageMemory, 0);
-
-                // Create Image View
-
-
-                VkImageViewCreateInfo viewCreateInfo = {};
-                viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                viewCreateInfo.image = raytracingStorageImage[i];
-                viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                viewCreateInfo.format = VK_FORMAT_R16G16B16A16_UNORM;
-                viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                viewCreateInfo.subresourceRange.baseMipLevel = 0;
-                viewCreateInfo.subresourceRange.levelCount = 1;
-                viewCreateInfo.subresourceRange.baseArrayLayer = 0;
-                viewCreateInfo.subresourceRange.layerCount = 1;
-
-                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingStorageImageView[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to creaet raytracing image view!");
-                }
-                
-                transitionImageLayout(raytracingStorageImage[i], VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
-            }
-            {
-                VkImageCreateInfo imageCreateInfo = {};
-                imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageCreateInfo.format = VK_FORMAT_R32_UINT;
-                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
-                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
-                imageCreateInfo.extent.depth = 1;
-                imageCreateInfo.mipLevels = 1;
-                imageCreateInfo.arrayLayers = 1;
-                imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-                imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-                imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-                imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                imageCreateInfo.queueFamilyIndexCount = 0;
-                imageCreateInfo.pQueueFamilyIndices = nullptr;
-                imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingPositionStorageImage[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to create raytracing storage image!");
-                }
-
-                VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingPositionStorageImage[i], &memRequirements);
-
-                VkMemoryAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                allocInfo.allocationSize = memRequirements.size;
-
-                VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
-
-                for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-                {
-                    if ((memRequirements.memoryTypeBits & (1 << i)) &&
-                    (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
-                    {
-                        allocInfo.memoryTypeIndex = 1;
-                        break;
-                    }
-                }
-
-                VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("Failed to allocate memory for image!");
-                }
-
-                vkBindImageMemory(vulkanContext->getDevice(), raytracingPositionStorageImage[i], imageMemory, 0);
-
-                // Create Image View
-
-
-                VkImageViewCreateInfo viewCreateInfo = {};
-                viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                viewCreateInfo.image = raytracingPositionStorageImage[i];
-                viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                viewCreateInfo.format = VK_FORMAT_R32_UINT;
-                viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                viewCreateInfo.subresourceRange.baseMipLevel = 0;
-                viewCreateInfo.subresourceRange.levelCount = 1;
-                viewCreateInfo.subresourceRange.baseArrayLayer = 0;
-                viewCreateInfo.subresourceRange.layerCount = 1;
-
-                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingPositionStorageImageView[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to creaet raytracing image view!");
-                }
-
-                transitionImageLayout(raytracingPositionStorageImage[i], VK_FORMAT_R32_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
-            }
-            {
-                VkImageCreateInfo imageCreateInfo = {};
-                imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageCreateInfo.format = VK_FORMAT_R32_UINT;
-                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
-                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
-                imageCreateInfo.extent.depth = 1;
-                imageCreateInfo.mipLevels = 1;
-                imageCreateInfo.arrayLayers = 1;
-                imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-                imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-                imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-                imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                imageCreateInfo.queueFamilyIndexCount = 0;
-                imageCreateInfo.pQueueFamilyIndices = nullptr;
-                imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingLightStorageImageX[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to create raytracing storage image!");
-                }
-
-                VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingLightStorageImageX[i], &memRequirements);
-
-                VkMemoryAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                allocInfo.allocationSize = memRequirements.size;
-
-                VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
-
-                for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-                {
-                    if ((memRequirements.memoryTypeBits & (1 << i)) &&
-                    (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
-                    {
-                        allocInfo.memoryTypeIndex = 1;
-                        break;
-                    }
-                }
-
-                VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("Failed to allocate memory for image!");
-                }
-
-                vkBindImageMemory(vulkanContext->getDevice(), raytracingLightStorageImageX[i], imageMemory, 0);
-
-                // Create Image View
-
-
-                VkImageViewCreateInfo viewCreateInfo = {};
-                viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                viewCreateInfo.image = raytracingLightStorageImageX[i];
-                viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                viewCreateInfo.format = VK_FORMAT_R32_UINT;
-                viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                viewCreateInfo.subresourceRange.baseMipLevel = 0;
-                viewCreateInfo.subresourceRange.levelCount = 1;
-                viewCreateInfo.subresourceRange.baseArrayLayer = 0;
-                viewCreateInfo.subresourceRange.layerCount = 1;
-
-                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingLightStorageImageViewX[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to creaet raytracing image view!");
-                }
-
-                transitionImageLayout(raytracingLightStorageImageX[i], VK_FORMAT_R32_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
-            }
-            {
-                VkImageCreateInfo imageCreateInfo = {};
-                imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageCreateInfo.format = VK_FORMAT_R32_UINT;
-                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
-                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
-                imageCreateInfo.extent.depth = 1;
-                imageCreateInfo.mipLevels = 1;
-                imageCreateInfo.arrayLayers = 1;
-                imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-                imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-                imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-                imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                imageCreateInfo.queueFamilyIndexCount = 0;
-                imageCreateInfo.pQueueFamilyIndices = nullptr;
-                imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingLightStorageImageY[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to create raytracing storage image!");
-                }
-
-                VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingLightStorageImageY[i], &memRequirements);
-
-                VkMemoryAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                allocInfo.allocationSize = memRequirements.size;
-
-                VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
-
-                for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-                {
-                    if ((memRequirements.memoryTypeBits & (1 << i)) &&
-                    (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
-                    {
-                        allocInfo.memoryTypeIndex = 1;
-                        break;
-                    }
-                }
-
-                VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("Failed to allocate memory for image!");
-                }
-
-                vkBindImageMemory(vulkanContext->getDevice(), raytracingLightStorageImageY[i], imageMemory, 0);
-
-                // Create Image View
-
-
-                VkImageViewCreateInfo viewCreateInfo = {};
-                viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                viewCreateInfo.image = raytracingLightStorageImageY[i];
-                viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                viewCreateInfo.format = VK_FORMAT_R32_UINT;
-                viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                viewCreateInfo.subresourceRange.baseMipLevel = 0;
-                viewCreateInfo.subresourceRange.levelCount = 1;
-                viewCreateInfo.subresourceRange.baseArrayLayer = 0;
-                viewCreateInfo.subresourceRange.layerCount = 1;
-
-                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingLightStorageImageViewY[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to creaet raytracing image view!");
-                }
-
-                transitionImageLayout(raytracingLightStorageImageY[i], VK_FORMAT_R32_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
-            }
-            {
-                VkImageCreateInfo imageCreateInfo = {};
-                imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageCreateInfo.format = VK_FORMAT_R32_UINT;
-                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
-                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
-                imageCreateInfo.extent.depth = 1;
-                imageCreateInfo.mipLevels = 1;
-                imageCreateInfo.arrayLayers = 1;
-                imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-                imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-                imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-                imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                imageCreateInfo.queueFamilyIndexCount = 0;
-                imageCreateInfo.pQueueFamilyIndices = nullptr;
-                imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingLightStorageImageZ[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to create raytracing storage image!");
-                }
-
-                VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingLightStorageImageZ[i], &memRequirements);
-
-                VkMemoryAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                allocInfo.allocationSize = memRequirements.size;
-
-                VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
-
-                for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-                {
-                    if ((memRequirements.memoryTypeBits & (1 << i)) &&
-                    (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
-                    {
-                        allocInfo.memoryTypeIndex = 1;
-                        break;
-                    }
-                }
-
-                VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("Failed to allocate memory for image!");
-                }
-
-                vkBindImageMemory(vulkanContext->getDevice(), raytracingLightStorageImageZ[i], imageMemory, 0);
-
-                // Create Image View
-
-
-                VkImageViewCreateInfo viewCreateInfo = {};
-                viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                viewCreateInfo.image = raytracingLightStorageImageZ[i];
-                viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                viewCreateInfo.format = VK_FORMAT_R32_UINT;
-                viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                viewCreateInfo.subresourceRange.baseMipLevel = 0;
-                viewCreateInfo.subresourceRange.levelCount = 1;
-                viewCreateInfo.subresourceRange.baseArrayLayer = 0;
-                viewCreateInfo.subresourceRange.layerCount = 1;
-
-                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingLightStorageImageViewZ[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to creaet raytracing image view!");
-                }
-
-                transitionImageLayout(raytracingLightStorageImageZ[i], VK_FORMAT_R32_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
-            }
-            {
-                VkImageCreateInfo imageCreateInfo = {};
-                imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageCreateInfo.format = VK_FORMAT_R32_UINT;
-                imageCreateInfo.extent.width = RAYTRACE_WIDTH;
-                imageCreateInfo.extent.height = RAYTRACE_HEIGHT;
-                imageCreateInfo.extent.depth = 1;
-                imageCreateInfo.mipLevels = 1;
-                imageCreateInfo.arrayLayers = 1;
-                imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-                imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-                imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-                imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                imageCreateInfo.queueFamilyIndexCount = 0;
-                imageCreateInfo.pQueueFamilyIndices = nullptr;
-                imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-                if (vkCreateImage(vulkanContext->getDevice(), &imageCreateInfo, nullptr, &raytracingLightStorageImageW[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to create raytracing storage image!");
-                }
-
-                VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(vulkanContext->getDevice(), raytracingLightStorageImageW[i], &memRequirements);
-
-                VkMemoryAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                allocInfo.allocationSize = memRequirements.size;
-
-                VkPhysicalDeviceMemoryProperties memProperties;
-                vkGetPhysicalDeviceMemoryProperties(vulkanContext->getPhysicalDevice(), &memProperties);
-
-                for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-                {
-                    if ((memRequirements.memoryTypeBits & (1 << i)) &&
-                    (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
-                    {
-                        allocInfo.memoryTypeIndex = 1;
-                        break;
-                    }
-                }
-
-                VkDeviceMemory imageMemory;
-                if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("Failed to allocate memory for image!");
-                }
-
-                vkBindImageMemory(vulkanContext->getDevice(), raytracingLightStorageImageW[i], imageMemory, 0);
-
-                // Create Image View
-
-
-                VkImageViewCreateInfo viewCreateInfo = {};
-                viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                viewCreateInfo.image = raytracingLightStorageImageW[i];
-                viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                viewCreateInfo.format = VK_FORMAT_R32_UINT;
-                viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                viewCreateInfo.subresourceRange.baseMipLevel = 0;
-                viewCreateInfo.subresourceRange.levelCount = 1;
-                viewCreateInfo.subresourceRange.baseArrayLayer = 0;
-                viewCreateInfo.subresourceRange.layerCount = 1;
-
-                if (vkCreateImageView(vulkanContext->getDevice(), &viewCreateInfo, nullptr, &raytracingLightStorageImageViewW[i]) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to creaet raytracing image view!");
-                }
-
-                transitionImageLayout(raytracingLightStorageImageW[i], VK_FORMAT_R32_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
-            }
-        }
-        
     }
 
     void createVoxelResources()
@@ -880,7 +395,7 @@ private:
             VkMemoryAllocateInfo allocInfo = {};
             allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             allocInfo.allocationSize = memRequirements.size;
-            allocInfo.memoryTypeIndex = findMemoryType(vulkanContext->getPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            allocInfo.memoryTypeIndex = ResourceManager::findMemoryType(vulkanContext->getPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
             if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &voxelTexturesMemory[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to allocate memory for texture image!");
@@ -906,7 +421,7 @@ private:
             if (vkCreateImageView(vulkanContext->getDevice(), &viewInfo, nullptr, &voxelImageView[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create texture image view!");
             }
-            transitionImageLayout(voxelTexture[i], VK_FORMAT_R8_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
+            ResourceManager::transitionImageLayout(commandManager, vulkanContext, voxelTexture[i], VK_FORMAT_R8_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
 
             VkBufferCreateInfo bufferCreateInfo = {};
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -925,7 +440,7 @@ private:
         VkMemoryAllocateInfo stagingAllocInfo = {};
         stagingAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         stagingAllocInfo.allocationSize = stagingMemRequirements.size;
-        stagingAllocInfo.memoryTypeIndex = findMemoryType(vulkanContext->getPhysicalDevice(), stagingMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        stagingAllocInfo.memoryTypeIndex = ResourceManager::findMemoryType(vulkanContext->getPhysicalDevice(), stagingMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         vkAllocateMemory(vulkanContext->getDevice(), &stagingAllocInfo, nullptr, &voxelStagingBufferMemory[i]);
         vkBindBufferMemory(vulkanContext->getDevice(), voxelStagingBuffer[i], voxelStagingBufferMemory[i], 0);
@@ -999,7 +514,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         VkMemoryAllocateInfo voxelChunkMapAllocInfo = {};
         voxelChunkMapAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         voxelChunkMapAllocInfo.allocationSize = voxelChunkMapMemRequirements.size;
-        voxelChunkMapAllocInfo.memoryTypeIndex = findMemoryType(vulkanContext->getPhysicalDevice(), voxelChunkMapMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        voxelChunkMapAllocInfo.memoryTypeIndex = ResourceManager::findMemoryType(vulkanContext->getPhysicalDevice(), voxelChunkMapMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         if (vkAllocateMemory(vulkanContext->getDevice(), &voxelChunkMapAllocInfo, nullptr, &voxelChunkMapTexturesMemory[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate memory for texture image!");
@@ -1046,12 +561,12 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         VkMemoryAllocateInfo voxelChunkMapStagingAllocInfo = {};
         voxelChunkMapStagingAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         voxelChunkMapStagingAllocInfo.allocationSize = voxelChunkMapStagingMemRequirements.size;
-        voxelChunkMapStagingAllocInfo.memoryTypeIndex = findMemoryType(vulkanContext->getPhysicalDevice(), voxelChunkMapStagingMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        voxelChunkMapStagingAllocInfo.memoryTypeIndex = ResourceManager::findMemoryType(vulkanContext->getPhysicalDevice(), voxelChunkMapStagingMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         vkAllocateMemory(vulkanContext->getDevice(), &voxelChunkMapStagingAllocInfo, nullptr, &voxelChunkMapStagingBufferMemory[i]);
         vkBindBufferMemory(vulkanContext->getDevice(), voxelChunkMapStagingBuffer[i], voxelChunkMapStagingBufferMemory[i], 0);
         
-        transitionImageLayout(voxelChunkMapTexture[i], VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
+        ResourceManager::transitionImageLayout(commandManager, vulkanContext, voxelChunkMapTexture[i], VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
 }
         // Voxel Data
 
@@ -1177,7 +692,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             }
             
             uint16_t ID = chunkUpdateQueue[chunkUpdateQueue[0]--];
-            transitionImageLayout(commandBuffer, voxelTexture[ID], VK_FORMAT_R8_UINT, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1);
+            ResourceManager::transitionImageLayout(commandBuffer, voxelTexture[ID], VK_FORMAT_R8_UINT, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1);
 
             void* mappedData;
             vkMapMemory(vulkanContext->getDevice(), voxelStagingBufferMemory[ID], 0, 128*128*128, 0, &mappedData);
@@ -1194,7 +709,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             region.imageOffset = { 0, 0, 0 };
             region.imageExtent = { 128, 128, 128 };
             vkCmdCopyBufferToImage(commandBuffer, voxelStagingBuffer[ID], voxelTexture[ID], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-            transitionImageLayout(commandBuffer, voxelTexture[ID], VK_FORMAT_R8_UINT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
+            ResourceManager::transitionImageLayout(commandBuffer, voxelTexture[ID], VK_FORMAT_R8_UINT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
         }
 
 
@@ -1219,565 +734,6 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         voxelChunkMapRegion.imageExtent = { 8,8,8 };
 
         vkCmdCopyBufferToImage(commandBuffer, voxelChunkMapStagingBuffer[currentImage], voxelChunkMapTexture[currentImage], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &voxelChunkMapRegion);
-    }
-
-    void createRaytracingPipeline()
-    {
-        auto raygenShaderCode = readFile("rgen.spv");
-        auto missShaderCode = readFile("rmiss.spv");
-
-        VkShaderModule raygenShaderModule = createShaderModule(raygenShaderCode);
-        VkShaderModule missShaderModule = createShaderModule(missShaderCode);
-
-        VkPipelineShaderStageCreateInfo raygenShaderStageInfo{};
-        raygenShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        raygenShaderStageInfo.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        raygenShaderStageInfo.module = raygenShaderModule;
-        raygenShaderStageInfo.pName = "main";
-
-        VkPipelineShaderStageCreateInfo missShaderStageInfo{};
-        missShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        missShaderStageInfo.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
-        missShaderStageInfo.module = missShaderModule;
-        missShaderStageInfo.pName = "main";
-
-        VkPipelineShaderStageCreateInfo shaderStages[] = {raygenShaderStageInfo, missShaderStageInfo};
-
-        VkRayTracingShaderGroupCreateInfoKHR shaderGroups[2] = {};
-
-        shaderGroups[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-        shaderGroups[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        shaderGroups[0].generalShader = 0;
-        shaderGroups[0].closestHitShader = VK_SHADER_UNUSED_KHR;
-        shaderGroups[0].anyHitShader = VK_SHADER_UNUSED_KHR;
-        shaderGroups[0].intersectionShader = VK_SHADER_UNUSED_KHR;
-
-        shaderGroups[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-        shaderGroups[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        shaderGroups[1].generalShader = 1;
-        shaderGroups[1].closestHitShader = VK_SHADER_UNUSED_KHR;
-        shaderGroups[1].anyHitShader = VK_SHADER_UNUSED_KHR;
-        shaderGroups[1].intersectionShader = VK_SHADER_UNUSED_KHR;
-
-
-        VkDescriptorSetLayoutBinding storageImageBinding = {};
-        storageImageBinding.binding = 0;
-        storageImageBinding.descriptorCount = 1;
-        storageImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        storageImageBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        storageImageBinding.pImmutableSamplers = nullptr;
-
-        VkDescriptorSetLayoutBinding uniformBinding = {};
-        uniformBinding.binding = 1;
-        uniformBinding.descriptorCount = 1;
-        uniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uniformBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        uniformBinding.pImmutableSamplers = nullptr;
-
-        VkDescriptorSetLayoutBinding positionStorageImageBinding = {};
-        positionStorageImageBinding.binding = 2;
-        positionStorageImageBinding.descriptorCount = 1;
-        positionStorageImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        positionStorageImageBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        positionStorageImageBinding.pImmutableSamplers = nullptr;
-
-        VkDescriptorSetLayoutBinding voxelTexture = {};
-        voxelTexture.binding = 3;
-        voxelTexture.descriptorCount = 512;
-        voxelTexture.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        voxelTexture.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        voxelTexture.pImmutableSamplers = nullptr;
-
-        VkDescriptorSetLayoutBinding voxelChunkMapTexture = {};
-        voxelChunkMapTexture.binding = 4;
-        voxelChunkMapTexture.descriptorCount = 1;
-        voxelChunkMapTexture.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        voxelChunkMapTexture.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        voxelChunkMapTexture.pImmutableSamplers = nullptr;
-
-        VkDescriptorSetLayoutBinding lightStorageImageBindingX = {};
-        lightStorageImageBindingX.binding = 5;
-        lightStorageImageBindingX.descriptorCount = 1;
-        lightStorageImageBindingX.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        lightStorageImageBindingX.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        lightStorageImageBindingX.pImmutableSamplers = nullptr;
-
-        VkDescriptorSetLayoutBinding lightStorageImageBindingY = {};
-        lightStorageImageBindingY.binding = 6;
-        lightStorageImageBindingY.descriptorCount = 1;
-        lightStorageImageBindingY.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        lightStorageImageBindingY.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        lightStorageImageBindingY.pImmutableSamplers = nullptr;
-
-        VkDescriptorSetLayoutBinding lightStorageImageBindingZ = {};
-        lightStorageImageBindingZ.binding = 7;
-        lightStorageImageBindingZ.descriptorCount = 1;
-        lightStorageImageBindingZ.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        lightStorageImageBindingZ.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        lightStorageImageBindingZ.pImmutableSamplers = nullptr;
-
-        VkDescriptorSetLayoutBinding lightStorageImageBindingW = {};
-        lightStorageImageBindingW.binding = 8;
-        lightStorageImageBindingW.descriptorCount = 1;
-        lightStorageImageBindingW.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        lightStorageImageBindingW.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        lightStorageImageBindingW.pImmutableSamplers = nullptr;
-
-        VkDescriptorSetLayoutBinding bindings[] = {storageImageBinding, uniformBinding, voxelTexture, positionStorageImageBinding, voxelChunkMapTexture, lightStorageImageBindingX, lightStorageImageBindingY, lightStorageImageBindingZ, lightStorageImageBindingW};
-
-        VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-        layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutCreateInfo.bindingCount = 9;
-        layoutCreateInfo.pBindings = bindings;
-        layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-
-        VkDescriptorBindingFlags bindless_flags = 
-            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT |
-                VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
-                VkDescriptorBindingFlags flags[] = {0, 0, bindless_flags, 0, 0, 0, 0, 0, 0};
-
-        VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extended_info{
-            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
-            nullptr};
-        extended_info.bindingCount = 9;
-        extended_info.pBindingFlags = flags;
-
-        layoutCreateInfo.pNext = &extended_info;
-
-        if (vkCreateDescriptorSetLayout(vulkanContext->getDevice(), &layoutCreateInfo, nullptr, &raytracingDescriptorSetLayout) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create raytracing descriptor set layout!");
-        }
-
-                VkPushConstantRange pushConstantRange{};
-        pushConstantRange.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        pushConstantRange.offset = 0;
-        pushConstantRange.size = 8;
-
-        VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
-        pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutCreateInfo.setLayoutCount = 1;
-        pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-        pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-        pipelineLayoutCreateInfo.pSetLayouts = &raytracingDescriptorSetLayout;
-
-        if (vkCreatePipelineLayout(vulkanContext->getDevice(), &pipelineLayoutCreateInfo, nullptr, &raytracingPipelineLayout) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create raytracing pipeline layout!");
-        }
-
-        printf("PIPELINE LAYOUT %i\n", 1);
-
-        VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo{};
-        pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipelineCreateInfo.stageCount = 2;
-        pipelineCreateInfo.pStages = shaderStages;
-        pipelineCreateInfo.groupCount = 2;
-        pipelineCreateInfo.pGroups = shaderGroups;
-        pipelineCreateInfo.maxPipelineRayRecursionDepth = 1;
-        pipelineCreateInfo.layout = raytracingPipelineLayout;
-
-        PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(vulkanContext->getDevice(), "vkCreateRayTracingPipelinesKHR"));
-        if (vkCreateRayTracingPipelinesKHR(vulkanContext->getDevice(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &raytracingPipeline) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create raytracing pipeline!");
-        }
-        printf("PIPELINE LAYOUT %i\n", 1);
-        vkDestroyShaderModule(vulkanContext->getDevice(), raygenShaderModule, nullptr);
-        vkDestroyShaderModule(vulkanContext->getDevice(), missShaderModule, nullptr);
-
-
-        // Pool
-
-        VkDescriptorPoolSize storageImagePoolSize = {};
-        storageImagePoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        storageImagePoolSize.descriptorCount = 2;
-
-        VkDescriptorPoolSize uboPoolSize = {};
-        uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uboPoolSize.descriptorCount = 2;
-
-        VkDescriptorPoolSize upperVoxelPoolSize = {};
-        upperVoxelPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        upperVoxelPoolSize.descriptorCount = 600;
-
-        VkDescriptorPoolSize poolSizes[] = {storageImagePoolSize, uboPoolSize, upperVoxelPoolSize};
-
-        VkDescriptorPoolCreateInfo poolCreateInfo = {};
-        poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolCreateInfo.poolSizeCount = 3;
-        poolCreateInfo.pPoolSizes = poolSizes;
-        poolCreateInfo.maxSets = 50;
-
-        if (vkCreateDescriptorPool(vulkanContext->getDevice(), &poolCreateInfo, nullptr, &raytracingDescriptorPool) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create raytracing descriptor pool!");
-        }
-
-        // Updating Descriptor Set
-
-        raytracingDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-
-        VkDescriptorSetLayout setLayouts[] = {raytracingDescriptorSetLayout, raytracingDescriptorSetLayout};
-
-        VkDescriptorSetAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = raytracingDescriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        allocInfo.pSetLayouts = setLayouts;
-        
-        if (vkAllocateDescriptorSets(vulkanContext->getDevice(), &allocInfo, raytracingDescriptorSets.data()))
-        {
-            throw std::runtime_error("Failed to create raytracing descriptor set!");
-        }
-
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        {
-            VkDescriptorImageInfo positionImageInfo = {};
-            positionImageInfo.imageView = raytracingPositionStorageImageView[i];
-            positionImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-            VkWriteDescriptorSet writePositionStorageDescriptorSet = {};
-            writePositionStorageDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writePositionStorageDescriptorSet.dstSet = raytracingDescriptorSets[i];
-            writePositionStorageDescriptorSet.dstBinding = 2;
-            writePositionStorageDescriptorSet.dstArrayElement = 0;
-            writePositionStorageDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            writePositionStorageDescriptorSet.descriptorCount = 1;
-            writePositionStorageDescriptorSet.pImageInfo = &positionImageInfo;
-
-            VkDescriptorImageInfo lightImageInfoX = {};
-            lightImageInfoX.imageView = raytracingLightStorageImageViewX[i];
-            lightImageInfoX.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-            VkDescriptorImageInfo lightImageInfoY = {};
-            lightImageInfoY.imageView = raytracingLightStorageImageViewY[i];
-            lightImageInfoY.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-            VkDescriptorImageInfo lightImageInfoZ = {};
-            lightImageInfoZ.imageView = raytracingLightStorageImageViewZ[i];
-            lightImageInfoZ.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-            VkDescriptorImageInfo lightImageInfoW = {};
-            lightImageInfoW.imageView = raytracingLightStorageImageViewW[i];
-            lightImageInfoW.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-            VkWriteDescriptorSet writeLightStorageDescriptorSetX = {};
-            writeLightStorageDescriptorSetX.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writeLightStorageDescriptorSetX.dstSet = raytracingDescriptorSets[i];
-            writeLightStorageDescriptorSetX.dstBinding = 5;
-            writeLightStorageDescriptorSetX.dstArrayElement = 0;
-            writeLightStorageDescriptorSetX.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            writeLightStorageDescriptorSetX.descriptorCount = 1;
-            writeLightStorageDescriptorSetX.pImageInfo = &lightImageInfoX;
-
-            VkWriteDescriptorSet writeLightStorageDescriptorSetY = {};
-            writeLightStorageDescriptorSetY.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writeLightStorageDescriptorSetY.dstSet = raytracingDescriptorSets[i];
-            writeLightStorageDescriptorSetY.dstBinding = 6;
-            writeLightStorageDescriptorSetY.dstArrayElement = 0;
-            writeLightStorageDescriptorSetY.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            writeLightStorageDescriptorSetY.descriptorCount = 1;
-            writeLightStorageDescriptorSetY.pImageInfo = &lightImageInfoY;
-
-            VkWriteDescriptorSet writeLightStorageDescriptorSetZ = {};
-            writeLightStorageDescriptorSetZ.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writeLightStorageDescriptorSetZ.dstSet = raytracingDescriptorSets[i];
-            writeLightStorageDescriptorSetZ.dstBinding = 7;
-            writeLightStorageDescriptorSetZ.dstArrayElement = 0;
-            writeLightStorageDescriptorSetZ.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            writeLightStorageDescriptorSetZ.descriptorCount = 1;
-            writeLightStorageDescriptorSetZ.pImageInfo = &lightImageInfoZ;
-
-            VkWriteDescriptorSet writeLightStorageDescriptorSetW = {};
-            writeLightStorageDescriptorSetW.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writeLightStorageDescriptorSetW.dstSet = raytracingDescriptorSets[i];
-            writeLightStorageDescriptorSetW.dstBinding = 8;
-            writeLightStorageDescriptorSetW.dstArrayElement = 0;
-            writeLightStorageDescriptorSetW.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            writeLightStorageDescriptorSetW.descriptorCount = 1;
-            writeLightStorageDescriptorSetW.pImageInfo = &lightImageInfoW;
-
-            VkDescriptorImageInfo imageInfo = {};
-            imageInfo.imageView = raytracingStorageImageView[i];
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-            VkWriteDescriptorSet writeStorageDescriptorSet = {};
-            writeStorageDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writeStorageDescriptorSet.dstSet = raytracingDescriptorSets[i];
-            writeStorageDescriptorSet.dstBinding = 0;
-            writeStorageDescriptorSet.dstArrayElement = 0;
-            writeStorageDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            writeStorageDescriptorSet.descriptorCount = 1;
-            writeStorageDescriptorSet.pImageInfo = &imageInfo;
-
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = uniformBuffer[i];
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(TransformUBO);
-
-            VkWriteDescriptorSet writeTransformDescriptorSet = {};
-            writeTransformDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writeTransformDescriptorSet.dstSet = raytracingDescriptorSets[i];
-            writeTransformDescriptorSet.dstBinding = 1;
-            writeTransformDescriptorSet.dstArrayElement = 0;
-            writeTransformDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            writeTransformDescriptorSet.descriptorCount = 1;
-            writeTransformDescriptorSet.pBufferInfo = &bufferInfo;
-
-            std::vector<VkDescriptorImageInfo> voxelImageInfos(512);
-
-            for (int i = 0; i < 512; i++)
-            {
-                voxelImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                voxelImageInfos[i].imageView = voxelImageView[i];
-                voxelImageInfos[i].sampler = voxelTextureSampler;
-            }
-           
-
-            VkWriteDescriptorSet voxelDescriptorSet = {};
-            voxelDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            voxelDescriptorSet.dstSet = raytracingDescriptorSets[i];
-            voxelDescriptorSet.dstBinding = 3;
-            voxelDescriptorSet.dstArrayElement = 0;
-            voxelDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            voxelDescriptorSet.descriptorCount = 512;
-            voxelDescriptorSet.pImageInfo = voxelImageInfos.data();
-
-
-            VkDescriptorImageInfo voxelChunkMapImageInfo = {};
-            voxelChunkMapImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            voxelChunkMapImageInfo.imageView = voxelChunkMapImageView[i];
-            voxelChunkMapImageInfo.sampler = voxelTextureSampler;
-
-            VkWriteDescriptorSet voxelChunkMapDescriptorSet = {};
-            voxelChunkMapDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            voxelChunkMapDescriptorSet.dstSet = raytracingDescriptorSets[i];
-            voxelChunkMapDescriptorSet.dstBinding = 4;
-            voxelChunkMapDescriptorSet.dstArrayElement = 0;
-            voxelChunkMapDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            voxelChunkMapDescriptorSet.descriptorCount = 1;
-            voxelChunkMapDescriptorSet.pImageInfo = &voxelChunkMapImageInfo;
-
-            VkWriteDescriptorSet writeDescriptorSets[] = {writeStorageDescriptorSet, writeTransformDescriptorSet, voxelDescriptorSet, writeLightStorageDescriptorSetX, writeLightStorageDescriptorSetY, writeLightStorageDescriptorSetZ, writeLightStorageDescriptorSetW, writePositionStorageDescriptorSet, voxelChunkMapDescriptorSet};
-
-            vkUpdateDescriptorSets(vulkanContext->getDevice(), 9, writeDescriptorSets, 0, nullptr);
-        }
-
-    }
-
-    void createGraphicsPipeline() {
-        auto vertShaderCode = readFile("vert.spv");
-        auto fragShaderCode = readFile("frag.spv");
-
-        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
-
-        VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-        vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        vertShaderStageInfo.module = vertShaderModule;
-        vertShaderStageInfo.pName = "main";
-
-        VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-        fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragShaderStageInfo.module = fragShaderModule;
-        fragShaderStageInfo.pName = "main";
-
-        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
-
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-        vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
-
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-        inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-        VkPipelineViewportStateCreateInfo viewportState{};
-        viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        viewportState.viewportCount = 1;
-        viewportState.scissorCount = 1;
-
-        VkPipelineRasterizationStateCreateInfo rasterizer{};
-        rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rasterizer.depthClampEnable = VK_FALSE;
-        rasterizer.rasterizerDiscardEnable = VK_FALSE;
-        rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-        rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-        rasterizer.depthBiasEnable = VK_FALSE;
-
-        VkPipelineMultisampleStateCreateInfo multisampling{};
-        multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        multisampling.sampleShadingEnable = VK_FALSE;
-        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-        VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-        colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        colorBlendAttachment.blendEnable = VK_FALSE;
-
-        VkPipelineColorBlendStateCreateInfo colorBlending{};
-        colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.logicOpEnable = VK_FALSE;
-        colorBlending.logicOp = VK_LOGIC_OP_COPY;
-        colorBlending.attachmentCount = 1;
-        colorBlending.pAttachments = &colorBlendAttachment;
-        colorBlending.blendConstants[0] = 0.0f;
-        colorBlending.blendConstants[1] = 0.0f;
-        colorBlending.blendConstants[2] = 0.0f;
-        colorBlending.blendConstants[3] = 0.0f;
-
-        std::vector<VkDynamicState> dynamicStates = {
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR
-        };
-        VkPipelineDynamicStateCreateInfo dynamicState{};
-        dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-        dynamicState.pDynamicStates = dynamicStates.data();
-
-        // pipline binding
-
-        VkDescriptorSetLayoutBinding binding = {};
-        binding.binding = 0;
-        binding.descriptorCount = 1;
-        binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-        binding.pImmutableSamplers = nullptr;
-
-        VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-        layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutCreateInfo.bindingCount = 1;
-        layoutCreateInfo.pBindings = &binding;
-        layoutCreateInfo.pNext = nullptr;
-
-        if (vkCreateDescriptorSetLayout(vulkanContext->getDevice(), &layoutCreateInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create raytracing descriptor set layout!");
-        }
-
-
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
-        pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-
-        if (vkCreatePipelineLayout(vulkanContext->getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create pipeline layout!");
-        }
-
-        VkGraphicsPipelineCreateInfo pipelineInfo{};
-        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = 2;
-        pipelineInfo.pStages = shaderStages;
-        pipelineInfo.pVertexInputState = &vertexInputInfo;
-        pipelineInfo.pInputAssemblyState = &inputAssembly;
-        pipelineInfo.pViewportState = &viewportState;
-        pipelineInfo.pRasterizationState = &rasterizer;
-        pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pColorBlendState = &colorBlending;
-        pipelineInfo.pDynamicState = &dynamicState;
-        pipelineInfo.layout = pipelineLayout;
-        pipelineInfo.renderPass = vulkanContext->getRenderPass();
-        pipelineInfo.subpass = 0;
-        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
-        if (vkCreateGraphicsPipelines(vulkanContext->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create graphics pipeline!");
-        }
-
-        vkDestroyShaderModule(vulkanContext->getDevice(), fragShaderModule, nullptr);
-        vkDestroyShaderModule(vulkanContext->getDevice(), vertShaderModule, nullptr);
-
-         VkDescriptorPoolSize poolSize = {};
-        poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSize.descriptorCount = 2;
-
-        VkDescriptorPoolCreateInfo poolCreateInfo = {};
-        poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolCreateInfo.poolSizeCount = 1;
-        poolCreateInfo.pPoolSizes = &poolSize;
-        poolCreateInfo.maxSets = 50;
-
-        if (vkCreateDescriptorPool(vulkanContext->getDevice(), &poolCreateInfo, nullptr, &descriptorPool) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create raytracing descriptor pool!");
-        }
-
-        
-
-
-
-
-        descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-
-        VkDescriptorSetLayout setLayouts[] = {descriptorSetLayout, descriptorSetLayout};
-
-        VkDescriptorSetAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = descriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        allocInfo.pSetLayouts = setLayouts;
-        
-        if (vkAllocateDescriptorSets(vulkanContext->getDevice(), &allocInfo, descriptorSets.data()))
-        {
-            throw std::runtime_error("Failed to create raytracing descriptor set!");
-        }
-
-        imageSampler.resize(MAX_FRAMES_IN_FLIGHT);
-
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        {
-
-
-
-            VkSamplerCreateInfo samplerCreateInfo = {};
-            samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-            samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
-            samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
-            samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
-            samplerCreateInfo.anisotropyEnable = VK_FALSE;
-            samplerCreateInfo.maxAnisotropy = 1.0f;
-            samplerCreateInfo.compareEnable = VK_FALSE;
-            samplerCreateInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-            samplerCreateInfo.minLod = 0.0f;
-            samplerCreateInfo.maxLod = VK_LOD_CLAMP_NONE;
-            samplerCreateInfo.mipLodBias = 0.0f;
-
-            if (vkCreateSampler(vulkanContext->getDevice(), &samplerCreateInfo, nullptr, &imageSampler[i]) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to create sampler");
-            }
-            
-
-            VkDescriptorImageInfo imageInfo = {};
-            imageInfo.imageView = raytracingStorageImageView[i];
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-            imageInfo.sampler = imageSampler[i];
-
-            VkWriteDescriptorSet writeDescriptorSet = {};
-            writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writeDescriptorSet.dstSet = descriptorSets[i];
-            writeDescriptorSet.dstBinding = 0;
-            writeDescriptorSet.dstArrayElement = 0;
-            writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            writeDescriptorSet.descriptorCount = 1;
-            writeDescriptorSet.pImageInfo = &imageInfo;
-
-            vkUpdateDescriptorSets(vulkanContext->getDevice(), 1, &writeDescriptorSet, 0, nullptr);
-        }
-
     }
 
     void createCommandBuffers() {
@@ -1814,15 +770,15 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
                 
 
       
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracingPipeline);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracer->getPipeline());
 
         vkCmdBindDescriptorSets(
             commandBuffer,
             VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-            raytracingPipelineLayout,
+            raytracer->getPipelineLayout(),
             0,
             1,
-            &raytracingDescriptorSets[currentFrame],
+            &raytracer->getDescriptorSet(currentFrame),
             0,
             nullptr
         );
@@ -1834,7 +790,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         c.frame = frame[imageIndex];
         vkCmdPushConstants(
             commandBuffer,
-            raytracingPipelineLayout,
+            raytracer->getPipelineLayout(),
             VK_SHADER_STAGE_RAYGEN_BIT_KHR,
             0,
             8,
@@ -1870,7 +826,7 @@ vkCmdPipelineBarrier(
  c.flag = 1;
         vkCmdPushConstants(
             commandBuffer,
-            raytracingPipelineLayout,
+            raytracer->getPipelineLayout(),
             VK_SHADER_STAGE_RAYGEN_BIT_KHR,
             0,
             4,
@@ -1900,7 +856,7 @@ vkCmdPipelineBarrier(
  c.flag = 2;
         vkCmdPushConstants(
             commandBuffer,
-            raytracingPipelineLayout,
+            raytracer->getPipelineLayout(),
             VK_SHADER_STAGE_RAYGEN_BIT_KHR,
             0,
             4,
@@ -1919,9 +875,9 @@ vkCmdPipelineBarrier(
         );
 
 
-        transitionImageLayout(commandBuffer, voxelChunkMapTexture[imageIndex], VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1);
+        ResourceManager::transitionImageLayout(commandBuffer, voxelChunkMapTexture[imageIndex], VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1);
         UpdateVoxels(commandBuffer, imageIndex);
-        transitionImageLayout(commandBuffer, voxelChunkMapTexture[imageIndex], VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
+        ResourceManager::transitionImageLayout(commandBuffer, voxelChunkMapTexture[imageIndex], VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, 1);
         
         
 
@@ -1952,7 +908,7 @@ vkCmdPipelineBarrier(
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineManager->getGraphicsPipeline());
 
             VkViewport viewport{};
             viewport.x = 0.0f;
@@ -1971,10 +927,10 @@ vkCmdPipelineBarrier(
             vkCmdBindDescriptorSets(
                 commandBuffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-                pipelineLayout,
+                pipelineManager->getGraphicsPipelineLayout(),
                 0,
                 1,
-                &descriptorSets[currentFrame],
+                &pipelineManager->getDescriptorSet(currentFrame),
                 0,
                 nullptr
             );
@@ -2063,52 +1019,6 @@ vkCmdPipelineBarrier(
         section = (section + 1) % 16;
     }
 
-    VkCommandBuffer beginSingleTimeCommands() {
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = commandManager->getCommandPool();
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer commandBuffer;
-        vkAllocateCommandBuffers(vulkanContext->getDevice(), &allocInfo, &commandBuffer);
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-        return commandBuffer;
-    }
-
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer) {
-        vkEndCommandBuffer(commandBuffer);
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
-        vkQueueSubmit(vulkanContext->getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(vulkanContext->getGraphicsQueue());
-
-        vkFreeCommandBuffers(vulkanContext->getDevice(), commandManager->getCommandPool(), 1, &commandBuffer);
-    }
-
-    uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-
-        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-            if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-                return i;
-            }
-        }
-
-        throw std::runtime_error("failed to find suitable memory type!");
-    }
-
     void createTransformUBO()
     {
         uniformBuffer.resize(MAX_FRAMES_IN_FLIGHT);
@@ -2135,7 +1045,7 @@ vkCmdPipelineBarrier(
             VkMemoryAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             allocInfo.allocationSize = memRequirements.size;
-            allocInfo.memoryTypeIndex = findMemoryType(vulkanContext->getPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            allocInfo.memoryTypeIndex = ResourceManager::findMemoryType(vulkanContext->getPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
             if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr, &uniformBufferMemory[i]) != VK_SUCCESS)
             {
@@ -2824,191 +1734,6 @@ vkCmdPipelineBarrier(
 
 
     }
-    
-
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-
-        VkImageMemoryBarrier barrier{};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = oldLayout;
-        barrier.newLayout = newLayout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = image;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = mipLevels;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-
-        VkPipelineStageFlags sourceStage;
-        VkPipelineStageFlags destinationStage;
-
-        if (oldLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT; // The image is being read in shaders
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // The image will be written to during transfer
-
-            sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; // Wait for fragment shader (or compute shader) to finish
-            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT; // Transfer operation will be the next stage
-        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // The image was written to during the transfer operation
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // The image will be read by shaders (for sampling)
-
-            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT; // Wait for the transfer operation to finish
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; // Fragment shader (or compute shader) will use the image
-        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = 0; // No access is required from the old layout
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // The image will be read by shaders (for sampling)
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT; // No need to wait for previous stages since it's undefined
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; // The image will be used in a fragment shader
-        } else if (oldLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
-            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            destinationStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        } else {
-            throw std::invalid_argument("unsupported layout transition!");
-        }
-        
-        vkCmdPipelineBarrier(
-            commandBuffer,
-            sourceStage, destinationStage,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrier
-        );
-        
-        endSingleTimeCommands(commandBuffer);
-    }
-
-    void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
-
-        VkImageMemoryBarrier barrier{};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = oldLayout;
-        barrier.newLayout = newLayout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = image;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = mipLevels;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-
-        VkPipelineStageFlags sourceStage;
-        VkPipelineStageFlags destinationStage;
-        if (oldLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT; // The image is being read in shaders
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // The image will be written to during transfer
-
-            sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; // Wait for fragment shader (or compute shader) to finish
-            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT; // Transfer operation will be the next stage
-        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // The image was written to during the transfer operation
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // The image will be read by shaders (for sampling)
-
-            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT; // Wait for the transfer operation to finish
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; // Fragment shader (or compute shader) will use the image
-        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = 0; // No access is required from the old layout
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // The image will be read by shaders (for sampling)
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT; // No need to wait for previous stages since it's undefined
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; // The image will be used in a fragment shader
-        } else if (oldLayout == VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
-            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            destinationStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        } else {
-            throw std::invalid_argument("unsupported layout transition!");
-        }
-
-        vkCmdPipelineBarrier(
-            commandBuffer,
-            sourceStage, destinationStage,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrier
-        );
-    }
-
-    VkShaderModule createShaderModule(const std::vector<char>& code) {
-        VkShaderModuleCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
-        VkShaderModule shaderModule;
-        if (vkCreateShaderModule(vulkanContext->getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create shader module!");
-        }
-
-        return shaderModule;
-    }
-
-    
 
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
         SwapChainSupportDetails details;
@@ -3032,25 +1757,6 @@ vkCmdPipelineBarrier(
         }
 
         return details;
-    }
-
-    static std::vector<char> readFile(const std::string& filename) {
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-        if (!file.is_open()) {
-            std::cout << filename << std::endl;
-            throw std::runtime_error("failed to open file!");
-        }
-
-        size_t fileSize = (size_t) file.tellg();
-        std::vector<char> buffer(fileSize);
-
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
-
-        file.close();
-
-        return buffer;
     }
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
