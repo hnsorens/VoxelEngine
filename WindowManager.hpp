@@ -20,6 +20,8 @@ public:
     void getCursorPos(double* currentMouseX, double* currentMouseY);
     void getFramebufferSize(int* width, int* height);
 
+    void checkFramebuffer(VkResult result);
+
     bool framebufferResized = false;
 
 private:

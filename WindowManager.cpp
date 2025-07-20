@@ -1,5 +1,9 @@
 #include "WindowManager.hpp"
+#include "VulkanContext.hpp"
 #include <GLFW/glfw3.h>
+#include <algorithm>
+#include <memory>
+#include <vulkan/vulkan_core.h>
 
 
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {

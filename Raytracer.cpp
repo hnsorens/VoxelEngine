@@ -1,4 +1,5 @@
 #include "Raytracer.hpp"
+#include "Camera.hpp"
 #include "CommandManager.hpp"
 #include "PipelineManager.hpp"
 #include "VoxelWorld.hpp"
@@ -8,11 +9,11 @@
 #include <vulkan/vulkan_core.h>
 #include "ResourceManager.hpp"
 
-Raytracer::Raytracer(std::unique_ptr<CommandManager>& commandManager, std::unique_ptr<VulkanContext>& vulkanContext, std::unique_ptr<VoxelWorld>& voxelWorld, std::vector<VkBuffer>& uniformBuffer) 
+Raytracer::Raytracer(std::unique_ptr<CommandManager>& commandManager, std::unique_ptr<VulkanContext>& vulkanContext, std::unique_ptr<VoxelWorld>& voxelWorld, std::unique_ptr<Camera>& camera) 
 
 {
     createRaytracingResources(commandManager, vulkanContext);
-    createRaytracingPipeline(vulkanContext->getDevice(), uniformBuffer, voxelWorld->voxelImageView, voxelWorld->voxelTextureSampler, voxelWorld->voxelChunkMapImageView);
+    createRaytracingPipeline(vulkanContext->getDevice(), camera->uniformBuffer, voxelWorld->voxelImageView, voxelWorld->voxelTextureSampler, voxelWorld->voxelChunkMapImageView);
 }
 
 Raytracer::~Raytracer() {}

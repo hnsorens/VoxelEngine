@@ -8,18 +8,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-struct TransformUBO
-{
-    glm::mat4 view;
-    glm::mat4 proj;
-};
-
 #define RAYTRACE_WIDTH 1920
 #define RAYTRACE_HEIGHT 1080
 
 class Raytracer {
 public:
-    Raytracer(std::unique_ptr<class CommandManager>& commandManager, std::unique_ptr<class VulkanContext>& vulkanContext, std::unique_ptr<VoxelWorld>& voxelWorld, std::vector<VkBuffer>& uniformBuffer);
+    Raytracer(std::unique_ptr<class CommandManager>& commandManager, std::unique_ptr<class VulkanContext>& vulkanContext, std::unique_ptr<VoxelWorld>& voxelWorld, std::unique_ptr<class Camera>& camera);
     ~Raytracer();
 
     void createRaytracingPipeline(VkDevice device, std::vector<VkBuffer>& uniformBuffer, std::vector<VkImageView>& voxelImageView, VkSampler voxelTextureSampler, std::vector<VkImageView>& voxelChunkMapImageView);
