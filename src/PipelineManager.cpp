@@ -33,8 +33,8 @@ PipelineManager::createShaderModule(VkDevice device,
 void PipelineManager::createGraphicsPipeline(
     VkDevice device, VkRenderPass renderPass,
     std::unique_ptr<Raytracer> &raytracer) {
-  auto vertShaderCode = ResourceManager::readFile("vert.spv");
-  auto fragShaderCode = ResourceManager::readFile("frag.spv");
+  auto vertShaderCode = ResourceManager::readFile("bin/vert.spv");
+  auto fragShaderCode = ResourceManager::readFile("bin/frag.spv");
 
   VkShaderModule vertShaderModule = createShaderModule(device, vertShaderCode);
   VkShaderModule fragShaderModule = createShaderModule(device, fragShaderCode);

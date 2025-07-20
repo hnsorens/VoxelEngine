@@ -156,8 +156,8 @@ void Raytracer::createRaytracingPipeline(
     VkDevice device, std::vector<VkBuffer> &uniformBuffer,
     std::vector<VkImageView> &voxelImageView, VkSampler voxelTextureSampler,
     std::vector<VkImageView> &voxelChunkMapImageView) {
-  auto raygenShaderCode = ResourceManager::readFile("rgen.spv");
-  auto missShaderCode = ResourceManager::readFile("rmiss.spv");
+  auto raygenShaderCode = ResourceManager::readFile("bin/rgen.spv");
+  auto missShaderCode = ResourceManager::readFile("bin/rmiss.spv");
 
   VkShaderModule raygenShaderModule =
       PipelineManager::createShaderModule(device, raygenShaderCode);

@@ -93,7 +93,6 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
                                         // intCameraPosition.z + 30)));
     }
   }
-  printf("Got here %d\n", 2);
   // // ceiling
   bool is_ouch = false;
   // for (int x = -1; x < 2; x++)
