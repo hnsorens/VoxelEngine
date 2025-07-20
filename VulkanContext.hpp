@@ -41,8 +41,9 @@ public:
     VkQueue getGraphicsQueue() const;
     VkQueue getPresentQueue() const;
     VkSwapchainKHR getSwapChain() const;
-    VkExtent2D getSwapChainExtent() const;
-    VkFormat getSwapChainImageFormat() const;
+    const VkExtent2D& getSwapChainExtent() const;
+    const VkFormat& getSwapChainImageFormat() const;
+    const QueueFamilyIndices& getQueueFamilyIndices() const;
     VkRenderPass getRenderPass() const;
     const std::vector<VkImage>& getSwapChainImages() const;
     const std::vector<VkImageView>& getSwapChainImageViews() const;
@@ -91,4 +92,5 @@ private:
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
+    QueueFamilyIndices queueFamilyIndices;
 }; 

@@ -1,3 +1,4 @@
+#include "CommandManager.hpp"
 #include "SyncManager.hpp"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -81,15 +82,12 @@ private:
     std::unique_ptr<WindowManager> windowManager;
     std::unique_ptr<VulkanContext> vulkanContext;
     std::unique_ptr<SyncManager> syncManager;
+    std::unique_ptr<CommandManager> commandManager;
 
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
 
-    VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkCommandBuffer> raytracingCommandBuffers;
-
-    std::vector<VkCommandBuffer> commandBufferPairs;
 
     uint32_t currentFrame = 0;
     uint8_t section = 0;
@@ -236,9 +234,12 @@ private:
         // createRenderPass();
         // printf("Created graphics pipeline\n");
         // createFramebuffers();
-        printf("Created render pass\n");
-        createCommandPool();
-        printf("Created command pool\n");
+
+        commandManager = std::make_unique<CommandManager>(vulkanContext);
+
+        // printf("Created render pass\n");
+        // createCommandPool();
+        // printf("Created command pool\n");
         createCommandBuffers();
         printf("Created command buffers\n");
         createRaytracingStorageImage();
@@ -1730,7 +1731,7 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             throw std::runtime_error("Failed to create raytracing descriptor set!");
         }
 
-        imageSampler.resize(2);
+        imageSampler.resize(MAX_FRAMES_IN_FLIGHT);
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -1779,40 +1780,14 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 
     }
 
-    void createCommandPool() {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(vulkanContext->getPhysicalDevice());
-
-        VkCommandPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-
-        if (vkCreateCommandPool(vulkanContext->getDevice(), &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create command pool!");
-        }
-    }
-
     void createCommandBuffers() {
-        commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
-
-        if (vkAllocateCommandBuffers(vulkanContext->getDevice(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate command buffers!");
-        }
-
-
         raytracingCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
         VkCommandBufferAllocateInfo raytracingAllocInfo{};
         raytracingAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        raytracingAllocInfo.commandPool = commandPool;
+        raytracingAllocInfo.commandPool = commandManager->getCommandPool();
         raytracingAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        raytracingAllocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
+        raytracingAllocInfo.commandBufferCount = (uint32_t) commandManager->getCommandBuffers().size();
 
         if (vkAllocateCommandBuffers(vulkanContext->getDevice(), &raytracingAllocInfo, raytracingCommandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers!");
@@ -2031,10 +2006,10 @@ vkCmdPipelineBarrier(
 
         vkResetFences(vulkanContext->getDevice(), 1, &syncManager->getInFlightFences()[currentFrame]);
 
-        vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
+        vkResetCommandBuffer(commandManager->getCommandBuffers()[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
         vkResetCommandBuffer(raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_IN_FLIGHT], 0);
 
-        recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
+        recordCommandBuffer(commandManager->getCommandBuffers()[currentFrame], imageIndex);
         recordVoxelCommandBuffer(raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_IN_FLIGHT], (currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_IN_FLIGHT, section);
 
         VkSubmitInfo submitInfo{};
@@ -2049,7 +2024,7 @@ vkCmdPipelineBarrier(
 
         std::vector<VkCommandBuffer> commands;
         commands.push_back(raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_IN_FLIGHT]);
-        commands.push_back(commandBuffers[currentFrame]);
+        commands.push_back(commandManager->getCommandBuffers()[currentFrame]);
 
         submitInfo.commandBufferCount = 2;
         submitInfo.pCommandBuffers = commands.data();
@@ -2092,7 +2067,7 @@ vkCmdPipelineBarrier(
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = commandPool;
+        allocInfo.commandPool = commandManager->getCommandPool();
         allocInfo.commandBufferCount = 1;
 
         VkCommandBuffer commandBuffer;
@@ -2118,7 +2093,7 @@ vkCmdPipelineBarrier(
         vkQueueSubmit(vulkanContext->getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
         vkQueueWaitIdle(vulkanContext->getGraphicsQueue());
 
-        vkFreeCommandBuffers(vulkanContext->getDevice(), commandPool, 1, &commandBuffer);
+        vkFreeCommandBuffers(vulkanContext->getDevice(), commandManager->getCommandPool(), 1, &commandBuffer);
     }
 
     uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
@@ -3057,38 +3032,6 @@ vkCmdPipelineBarrier(
         }
 
         return details;
-    }
-
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
-        QueueFamilyIndices indices;
-
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-        int i = 0;
-        for (const auto& queueFamily : queueFamilies) {
-            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                indices.graphicsFamily = i;
-            }
-
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, vulkanContext->getSurface(), &presentSupport);
-
-            if (presentSupport) {
-                indices.presentFamily = i;
-            }
-
-            if (indices.isComplete()) {
-                break;
-            }
-
-            i++;
-        }
-
-        return indices;
     }
 
     static std::vector<char> readFile(const std::string& filename) {

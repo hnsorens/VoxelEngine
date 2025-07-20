@@ -9,7 +9,10 @@ SyncManager::SyncManager(std::unique_ptr<VulkanContext>& vulkanContext)
     createSyncObjects(vulkanContext->getDevice());
 }
 
-SyncManager::~SyncManager() {}
+SyncManager::~SyncManager() 
+{
+    
+}
 
 void SyncManager::createSyncObjects(VkDevice device) 
 {

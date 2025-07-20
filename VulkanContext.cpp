@@ -60,6 +60,8 @@ void VulkanContext::init(std::unique_ptr<WindowManager>& windowManager)
     printf("Create Render Pass %d\n", 1);
     createFramebuffers();
     printf("Create Framebuffers %d\n", 1);
+
+    queueFamilyIndices = findQueueFamilies(physicalDevice);
 }
 
 void VulkanContext::cleanup() {}
@@ -70,9 +72,10 @@ VkInstance VulkanContext::getInstance() const { return instance; }
 VkQueue VulkanContext::getGraphicsQueue() const { return graphicsQueue; }
 VkQueue VulkanContext::getPresentQueue() const { return presentQueue; }
 VkSwapchainKHR VulkanContext::getSwapChain() const { return swapChain; }
-VkExtent2D VulkanContext::getSwapChainExtent() const { return swapChainExtent; }
-VkFormat VulkanContext::getSwapChainImageFormat() const { return swapChainImageFormat; }
-VkRenderPass VulkanContext::getRenderPass() const { return renderPass; };
+const VkExtent2D& VulkanContext::getSwapChainExtent() const { return swapChainExtent; }
+const VkFormat& VulkanContext::getSwapChainImageFormat() const { return swapChainImageFormat; }
+const QueueFamilyIndices& VulkanContext::getQueueFamilyIndices() const { return queueFamilyIndices; }
+VkRenderPass VulkanContext::getRenderPass() const { return renderPass; }
 const std::vector<VkImage>& VulkanContext::getSwapChainImages() const { return swapChainImages; }
 const std::vector<VkImageView>& VulkanContext::getSwapChainImageViews() const { return swapChainImageViews; }
 const std::vector<VkFramebuffer>& VulkanContext::getSwapChainFramebuffers() const { return swapChainFramebuffers; } 
