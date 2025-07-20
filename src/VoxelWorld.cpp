@@ -281,22 +281,13 @@ void VoxelWorld::generateTerrain() {
 #define TERRAIN_SCALE 2
 #define TERRAIN_AREA (1024)
 
-  // printf("hwc: %i", std::thread::hardware_concurrency());
-  printf("Generating\n");
   const int WORKERS = 20;
   const int SLICE_THICKNESS = TERRAIN_AREA / WORKERS;
 
   std::thread *threads[WORKERS]{};
 
   for (int i = 0; i < WORKERS; i++) {
-    // threads[i] = new std::thread{&TerrainWork, voxelData, &noise, i *
-    // SLICE_THICKNESS, SLICE_THICKNESS};
-  }
-
-  puts("");
-  for (int i = 0; i < WORKERS; i++) {
     threads[i]->join();
-    printf("\rProgress: %.1f", (float)i / WORKERS * 100);
   }
 
   auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(

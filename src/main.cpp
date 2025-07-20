@@ -53,7 +53,6 @@ public:
     initWindow();
     initVulkan();
     mainLoop();
-    cleanup();
   }
 
 private:
@@ -96,57 +95,21 @@ private:
   void initVulkan() {
     vulkanContext = std::make_unique<VulkanContext>();
     vulkanContext->init(windowManager);
-    // createInstance();
-    // printf("Created instance\n");
-    // setupDebugMessenger();
-    // printf("Setup debug messenger\n");
-    // createSurface();
-    // printf("Created surface\n");
-    // pickPhysicalDevice();
-    // printf("Picked physical device\n");
-    // createLogicalDevice();
-    // printf("Created logical device\n");
-    // createSwapChain();
-    // printf("Created swap chain\n");
-    // createTransformUBO();
-    // printf("Created transform UBO\n");
     camera = std::make_unique<Camera>(vulkanContext);
-    // createImageViews();
-    // printf("Created image views\n");
-    // createRenderPass();
-    // printf("Created graphics pipeline\n");
-    // createFramebuffers();
-
     commandManager = std::make_unique<CommandManager>(vulkanContext);
 
-    // printf("Created render pass\n");
-    // createCommandPool();
-    // printf("Created command pool\n");
     createCommandBuffers();
-    printf("Created command buffers\n");
-
-    // createVoxelResources();
-    // printf("Created voxel resources\n");
 
     voxelWorld = std::make_unique<VoxelWorld>(vulkanContext, commandManager);
 
     raytracer = std::make_unique<Raytracer>(commandManager, vulkanContext,
                                             voxelWorld, camera);
-
-    // createRaytracingStorageImage();
-    // printf("Created raytracing storage image\n");
-    // createGraphicsPipeline();
-    // printf("Created framebuffers\n");
     pipelineManager =
         std::make_unique<PipelineManager>(vulkanContext, raytracer);
-    // createSyncObjects();
-    // printf("Created sync objects\n");
 
     syncManager = std::make_unique<SyncManager>(vulkanContext);
 
-    printf("Created raytracing pipeline\n");
     createRaytracingRegions();
-    printf("Created raytracing regions\n");
   }
 
   void mainLoop() {
@@ -156,32 +119,6 @@ private:
     }
 
     vkDeviceWaitIdle(vulkanContext->getDevice());
-  }
-
-  void cleanup() {
-    // cleanupSwapChain();
-
-    // vkDestroyPipeline(device, graphicsPipeline, nullptr);
-    // vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-
-    // vkDestroyRenderPass(device, renderPass, nullptr);
-
-    // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    //     vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-    //     vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-    //     vkDestroyFence(device, inFlightFences[i], nullptr);
-    // }
-
-    // vkDestroyCommandPool(device, commandPool, nullptr);
-
-    // vkDestroyDevice(device, nullptr);
-
-    // if (enableValidationLayers) {
-    //     DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-    // }
-
-    // vkDestroySurfaceKHR(instance, surface, nullptr);
-    // vkDestroyInstance(instance, nullptr);
   }
 
 #define ALIGN_UP(value, alignment)                                             \

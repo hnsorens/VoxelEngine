@@ -318,8 +318,6 @@ void Raytracer::createRaytracingPipeline(
     throw std::runtime_error("failed to create raytracing pipeline layout!");
   }
 
-  printf("PIPELINE LAYOUT %i\n", 1);
-
   VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo{};
   pipelineCreateInfo.sType =
       VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
@@ -338,7 +336,6 @@ void Raytracer::createRaytracingPipeline(
                                      &raytracingPipeline) != VK_SUCCESS) {
     throw std::runtime_error("Failed to create raytracing pipeline!");
   }
-  printf("PIPELINE LAYOUT %i\n", 1);
   vkDestroyShaderModule(device, raygenShaderModule, nullptr);
   vkDestroyShaderModule(device, missShaderModule, nullptr);
 

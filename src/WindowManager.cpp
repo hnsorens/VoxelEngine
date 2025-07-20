@@ -32,8 +32,6 @@ WindowManager::~WindowManager() {
 }
 
 void WindowManager::pollEvents() {
-  static double deltaTime = 0;
-  static double lastTime = 0;
   deltaTime = glfwGetTime() - lastTime;
   lastTime = glfwGetTime();
   glfwPollEvents();

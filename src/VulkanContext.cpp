@@ -34,23 +34,14 @@ VulkanContext::~VulkanContext() {}
 
 void VulkanContext::init(std::unique_ptr<WindowManager> &windowManager) {
   createInstance();
-  printf("Create Instance %d\n", 1);
   setupDebugMessenger();
-  printf("Create Debug Manager %d\n", 1);
   createSurface(windowManager->getWindow());
-  printf("Create Surface %d\n", 1);
   pickPhysicalDevice();
-  printf("Create Physical Device %d\n", 1);
   createLogicalDevice();
-  printf("Create Logical Device %d\n", 1);
   createSwapChain(windowManager);
-  printf("Create Swap Chain %d\n", 1);
   createImageViews();
-  printf("Create Image Views %d\n", 1);
   createRenderPass();
-  printf("Create Render Pass %d\n", 1);
   createFramebuffers();
-  printf("Create Framebuffers %d\n", 1);
 
   queueFamilyIndices = findQueueFamilies(physicalDevice);
 }

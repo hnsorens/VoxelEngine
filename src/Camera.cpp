@@ -95,14 +95,6 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
   }
   // // ceiling
   bool is_ouch = false;
-  // for (int x = -1; x < 2; x++)
-  // {
-  //     for (int y = -1; y < 2; y++)
-  //     {
-  //         is_ouch |= MAT_HAS_COLLISION(voxel_mat(vox(intCameraPosition.x + x,
-  //         intCameraPosition.y + y, intCameraPosition.z - 6)));
-  //     }
-  // }
 
   if (is_grounded) {
     cameraVelocity.z = 0;
@@ -241,8 +233,6 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
         rayCast(voxelWorld, -cameraPosition, cameraTargetPoint - cameraPosition,
                 hit, 25.0f);
     if (hit) {
-      printf("HIT: %i, %i %i %i\n", hit, hitPosition.x, hitPosition.y,
-             hitPosition.z);
       voxelWorld->getChunk(hitPosition)[((int)hitPosition.z % 128) * 128 * 128 +
                                         ((int)hitPosition.y % 128) * 128 +
                                         ((int)hitPosition.x % 128)] = 0;
@@ -329,7 +319,6 @@ glm::ivec3 Camera::rayCast(std::unique_ptr<VoxelWorld> &voxelWorld,
     material = value & 31;
 
     if (material != MAT_AIR) {
-      printf("HIT: %i\n", material);
       something_hit = true;
       return hit;
     }
@@ -349,7 +338,6 @@ glm::ivec3 Camera::rayCast(std::unique_ptr<VoxelWorld> &voxelWorld,
       material = value & 31;
 
       if (material != MAT_AIR) {
-        printf("HIT: %i\n", material);
         something_hit = true;
         return hit;
       }
