@@ -393,6 +393,8 @@ void VulkanContext::createLogicalDevice() {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
   descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
   descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+  descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+  descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind = VK_TRUE;
   descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
   descriptorIndexingFeatures.shaderStorageImageArrayNonUniformIndexing =
       VK_TRUE;
@@ -409,6 +411,8 @@ void VulkanContext::createLogicalDevice() {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
   accelStructFeatures.accelerationStructure = VK_TRUE;
   accelStructFeatures.pNext = &rayTracingFeatures;
+
+
 
   VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
   deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -656,6 +660,7 @@ void VulkanContext::createFramebuffers() {
 }
 
 void VulkanContext::cleanupSwapChain() {
+  vkDeviceWaitIdle(device);
   for (auto framebuffer : swapChainFramebuffers) {
     vkDestroyFramebuffer(device, framebuffer, nullptr);
   }

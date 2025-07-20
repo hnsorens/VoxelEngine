@@ -81,7 +81,7 @@ VoxelWorld::VoxelWorld(std::unique_ptr<VulkanContext> &vulkanContext,
     }
     ResourceManager::transitionImageLayout(
         commandManager, vulkanContext, voxelTexture[i], VK_FORMAT_R8_UINT,
-        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
 
     VkBufferCreateInfo bufferCreateInfo = {};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -249,7 +249,7 @@ VoxelWorld::VoxelWorld(std::unique_ptr<VulkanContext> &vulkanContext,
     ResourceManager::transitionImageLayout(
         commandManager, vulkanContext, voxelChunkMapTexture[i],
         VK_FORMAT_R16_UINT, VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+        VK_IMAGE_LAYOUT_GENERAL, 1);
   }
   // Voxel Data
 
@@ -429,7 +429,7 @@ void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,
                               int currentImage) {
   ResourceManager::transitionImageLayout(
       commandBuffer, voxelChunkMapTexture[currentImage], VK_FORMAT_R16_UINT,
-      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+      VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
       1);
   for (int i = 0; i < 16; i++) {
     if (chunkUpdateQueue[0] == 0) {
@@ -439,7 +439,7 @@ void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,
     uint16_t ID = chunkUpdateQueue[chunkUpdateQueue[0]--];
     ResourceManager::transitionImageLayout(
         commandBuffer, voxelTexture[ID], VK_FORMAT_R8_UINT,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1);
 
     void *mappedData;
@@ -462,7 +462,7 @@ void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     ResourceManager::transitionImageLayout(
         commandBuffer, voxelTexture[ID], VK_FORMAT_R8_UINT,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
         1);
   }
 
@@ -491,7 +491,7 @@ void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,
       1, &voxelChunkMapRegion);
   ResourceManager::transitionImageLayout(
       commandBuffer, voxelChunkMapTexture[currentImage], VK_FORMAT_R16_UINT,
-      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
       1);
 }
 void VoxelWorld::chunkWorker() {

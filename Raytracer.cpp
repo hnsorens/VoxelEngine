@@ -223,7 +223,7 @@ void Raytracer::createRaytracingPipeline(
   VkDescriptorSetLayoutBinding voxelTexture = {};
   voxelTexture.binding = 3;
   voxelTexture.descriptorCount = 512;
-  voxelTexture.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  voxelTexture.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
   voxelTexture.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
   voxelTexture.pImmutableSamplers = nullptr;
 
@@ -231,7 +231,7 @@ void Raytracer::createRaytracingPipeline(
   voxelChunkMapTexture.binding = 4;
   voxelChunkMapTexture.descriptorCount = 1;
   voxelChunkMapTexture.descriptorType =
-      VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
   voxelChunkMapTexture.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
   voxelChunkMapTexture.pImmutableSamplers = nullptr;
 
@@ -346,11 +346,11 @@ void Raytracer::createRaytracingPipeline(
 
   VkDescriptorPoolSize storageImagePoolSize = {};
   storageImagePoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-  storageImagePoolSize.descriptorCount = 2;
+  storageImagePoolSize.descriptorCount = 1500;
 
   VkDescriptorPoolSize uboPoolSize = {};
   uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  uboPoolSize.descriptorCount = 2;
+  uboPoolSize.descriptorCount = 100;
 
   VkDescriptorPoolSize upperVoxelPoolSize = {};
   upperVoxelPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -364,6 +364,7 @@ void Raytracer::createRaytracingPipeline(
   poolCreateInfo.poolSizeCount = 3;
   poolCreateInfo.pPoolSizes = poolSizes;
   poolCreateInfo.maxSets = 50;
+  poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 
   if (vkCreateDescriptorPool(device, &poolCreateInfo, nullptr,
                              &raytracingDescriptorPool) != VK_SUCCESS) {
@@ -495,7 +496,7 @@ void Raytracer::createRaytracingPipeline(
     std::vector<VkDescriptorImageInfo> voxelImageInfos(512);
 
     for (int i = 0; i < 512; i++) {
-      voxelImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      voxelImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
       voxelImageInfos[i].imageView = voxelImageView[i];
       voxelImageInfos[i].sampler = voxelTextureSampler;
     }
@@ -506,13 +507,13 @@ void Raytracer::createRaytracingPipeline(
     voxelDescriptorSet.dstBinding = 3;
     voxelDescriptorSet.dstArrayElement = 0;
     voxelDescriptorSet.descriptorType =
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     voxelDescriptorSet.descriptorCount = 512;
     voxelDescriptorSet.pImageInfo = voxelImageInfos.data();
 
     VkDescriptorImageInfo voxelChunkMapImageInfo = {};
     voxelChunkMapImageInfo.imageLayout =
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        VK_IMAGE_LAYOUT_GENERAL;
     voxelChunkMapImageInfo.imageView = voxelChunkMapImageView[i];
     voxelChunkMapImageInfo.sampler = voxelTextureSampler;
 
@@ -522,7 +523,7 @@ void Raytracer::createRaytracingPipeline(
     voxelChunkMapDescriptorSet.dstBinding = 4;
     voxelChunkMapDescriptorSet.dstArrayElement = 0;
     voxelChunkMapDescriptorSet.descriptorType =
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     voxelChunkMapDescriptorSet.descriptorCount = 1;
     voxelChunkMapDescriptorSet.pImageInfo = &voxelChunkMapImageInfo;
 

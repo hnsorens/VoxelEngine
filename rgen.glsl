@@ -11,7 +11,7 @@ layout(push_constant) uniform PushConstants {
 }
 pushConstants;
 
-layout(rgba16f, set = 0, binding = 0) uniform image2D imageOutput;
+layout(rgba16f, set = 0, binding = 0, rgba16) uniform image2D imageOutput;
 
 layout(r32ui, set = 0, binding = 2) uniform uimage2D positionImage;
 
