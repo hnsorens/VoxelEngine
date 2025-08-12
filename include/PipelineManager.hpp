@@ -1,4 +1,5 @@
 #pragma once
+#include "pipeline.hpp"
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -19,10 +20,7 @@ public:
                                            const std::vector<char> &code);
 
 private:
-  VkPipeline graphicsPipeline;
-  VkPipelineLayout graphicsPipelineLayout;
-  VkDescriptorSetLayout descriptorSetLayout;
-  VkDescriptorPool descriptorPool;
-  std::vector<VkDescriptorSet> descriptorSets;
+  Pipeline* pipeline;
+  DescriptorSet* descriptorSet;
   std::vector<VkSampler> imageSampler;
 };
