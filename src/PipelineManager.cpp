@@ -13,7 +13,7 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
   DescriptorSetBuilder descriptorSetBuilder{};
 
   descriptorSetBuilder.addDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-  descriptorSet = descriptorSetBuilder.build(vulkanContext, MAX_FRAMES_IN_FLIGHT);
+  descriptorSet = descriptorSetBuilder.build({ vulkanContext, MAX_FRAMES_IN_FLIGHT });
                                 
   PipelineBuilder pipelineBuilder;
 
@@ -28,7 +28,7 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
                             | PipelineBuilder::COLOR_BLEND_STATE
                             | PipelineBuilder::DYNAMIC_STATE);
 
-  pipeline = pipelineBuilder.build(vulkanContext, vulkanContext->getRenderPass(), descriptorSet);
+  pipeline = pipelineBuilder.build({ vulkanContext, vulkanContext->getRenderPass(), descriptorSet });
 
   imageSampler.resize(MAX_FRAMES_IN_FLIGHT);
   

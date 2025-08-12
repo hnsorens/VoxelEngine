@@ -2,6 +2,7 @@
 
 #include "ResourceManager.hpp"
 #include "VulkanContext.hpp"
+#include "builder.hpp"
 #include <GLFW/glfw3.h>
 
 #include <memory>
@@ -34,12 +35,17 @@ private:
   friend class PipelineBuilder;
 };
 
-class DescriptorSetBuilder
+struct DescriptorSetInfo {
+  std::unique_ptr<VulkanContext>& ctx;
+  int framesInFlight;
+};
+
+class DescriptorSetBuilder : Builder<DescriptorSet, DescriptorSetInfo>
 {
 public:
   DescriptorSetBuilder() = default;
   void addDescriptor(int binding, int descriptorCount, VkDescriptorType descriptorType, VkShaderStageFlagBits stageFlags);
-  DescriptorSet* build(std::unique_ptr<VulkanContext>& ctx, int framesInFlight);
+  DescriptorSet* build(const DescriptorSetInfo& info) override;
 
 private:
   std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
@@ -100,7 +106,14 @@ private:
     std::vector<VkSampler> imageSampler;
 };
 
-class PipelineBuilder
+struct PipelineBuildInfo
+{
+  std::unique_ptr<VulkanContext>& ctx;
+  VkRenderPass renderPass;
+  DescriptorSet* descriptorSet;
+};
+
+class PipelineBuilder : Builder<Pipeline, PipelineBuildInfo>
 {
 public:
     void addShader(Shader* shader);
@@ -117,7 +130,7 @@ public:
     };
     void addComponent(int components);
     
-    Pipeline* build(std::unique_ptr<VulkanContext>& ctx, VkRenderPass renderPass, DescriptorSet* descriptorSet);
+    Pipeline* build(const PipelineBuildInfo& info) override;
     
   private:
     

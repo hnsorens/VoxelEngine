@@ -9,8 +9,7 @@ VkWriteDescriptorSet DescriptorSet::createDescriptorWrite(int binding, int eleme
   writeDescriptorSet.dstSet = descriptorSets[frame];
   writeDescriptorSet.dstBinding = binding;
   writeDescriptorSet.dstArrayElement = element;
-  writeDescriptorSet.descriptorType =
-      VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  writeDescriptorSet.descriptorType = type;
   writeDescriptorSet.descriptorCount = 1;
   writeDescriptorSet.pNext = nullptr;
   return writeDescriptorSet;
@@ -36,19 +35,19 @@ void DescriptorSetBuilder::addDescriptor(int binding, int descriptorCount, VkDes
   descriptorBindings.push_back(bindInfo);
 }
 
-DescriptorSet* DescriptorSetBuilder::build(std::unique_ptr<VulkanContext>& ctx, int framesInFlight)
+DescriptorSet* DescriptorSetBuilder::build(const DescriptorSetInfo& info)
 {
 
   DescriptorSet* descriptorSet = new DescriptorSet;
 
-  descriptorSet->descriptorSets.resize(framesInFlight);
+  descriptorSet->descriptorSets.resize(info.framesInFlight);
 
   descriptorSet->layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
   descriptorSet->layoutCreateInfo.bindingCount = descriptorBindings.size();
   descriptorSet->layoutCreateInfo.pBindings = descriptorBindings.data();
   descriptorSet->layoutCreateInfo.pNext = 0;
 
-  if (vkCreateDescriptorSetLayout(ctx->getDevice(), &descriptorSet->layoutCreateInfo, nullptr,
+  if (vkCreateDescriptorSetLayout(info.ctx->getDevice(), &descriptorSet->layoutCreateInfo, nullptr,
                                   &descriptorSet->descriptorSetLayout) != VK_SUCCESS) {
     throw std::runtime_error(
         "failed to create raytracing descriptor set layout!");
@@ -64,15 +63,14 @@ DescriptorSet* DescriptorSetBuilder::build(std::unique_ptr<VulkanContext>& ctx, 
   poolCreateInfo.pPoolSizes = &poolSize;
   poolCreateInfo.maxSets = 50;
 
-  if (vkCreateDescriptorPool(ctx->getDevice(), &poolCreateInfo, nullptr,
+  if (vkCreateDescriptorPool(info.ctx->getDevice(), &poolCreateInfo, nullptr,
                              &descriptorSet->descriptorPool) != VK_SUCCESS) {
     throw std::runtime_error("failed to create raytracing descriptor pool!");
   }
   
-  descriptorSet->setLayouts.resize(framesInFlight);
-  for (int i = 0; i < framesInFlight; i++)
+  descriptorSet->setLayouts.resize(info.framesInFlight);
+  for (int i = 0; i < info.framesInFlight; i++)
   {
-    printf("descriptor %d\n", descriptorSet->descriptorSetLayout);
     descriptorSet->setLayouts[i] = descriptorSet->descriptorSetLayout;
   }
 
@@ -82,10 +80,10 @@ DescriptorSet* DescriptorSetBuilder::build(std::unique_ptr<VulkanContext>& ctx, 
   allocInfo.descriptorSetCount = static_cast<uint32_t>(descriptorSet->setLayouts.size());
   allocInfo.pSetLayouts = descriptorSet->setLayouts.data();
 
-  if (vkAllocateDescriptorSets(ctx->getDevice(), &allocInfo, descriptorSet->descriptorSets.data())) {
+  if (vkAllocateDescriptorSets(info.ctx->getDevice(), &allocInfo, descriptorSet->descriptorSets.data())) {
     throw std::runtime_error("Failed to create raytracing descriptor set!");
   }
-  printf("ASDKJHASDKJHASD %d\n", descriptorSet->descriptorSetLayout);
+  
   return descriptorSet;
 }
 
@@ -168,7 +166,7 @@ void PipelineBuilder::addComponent(int components)
   }
 }
 
-Pipeline* PipelineBuilder::build(std::unique_ptr<VulkanContext>& ctx, VkRenderPass renderPass, DescriptorSet* descriptorSet)
+Pipeline* PipelineBuilder::build(const PipelineBuildInfo& info)
 {
   Pipeline* pipeline = new Pipeline;
 
@@ -177,9 +175,9 @@ Pipeline* PipelineBuilder::build(std::unique_ptr<VulkanContext>& ctx, VkRenderPa
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   pipelineLayoutInfo.setLayoutCount = 1;
   pipelineLayoutInfo.pushConstantRangeCount = 0;
-  pipelineLayoutInfo.pSetLayouts = &descriptorSet->descriptorSetLayout;
+  pipelineLayoutInfo.pSetLayouts = &info.descriptorSet->descriptorSetLayout;
 
-  if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,
+  if (vkCreatePipelineLayout(info.ctx->getDevice(), &pipelineLayoutInfo, nullptr,
                              &pipeline->layout) != VK_SUCCESS) {
     throw std::runtime_error("failed to create pipeline layout!");
   }
@@ -189,12 +187,12 @@ Pipeline* PipelineBuilder::build(std::unique_ptr<VulkanContext>& ctx, VkRenderPa
   pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   pipelineInfo.stageCount = shaders.size();
   pipelineInfo.pStages = shaders.data();
-  pipelineInfo.renderPass = renderPass;
+  pipelineInfo.renderPass = info.renderPass;
   pipelineInfo.subpass = 0;
   pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
   pipelineInfo.layout = pipeline->layout;
 
-  if (vkCreateGraphicsPipelines(ctx->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
+  if (vkCreateGraphicsPipelines(info.ctx->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
   nullptr, &pipeline->pipeline) != VK_SUCCESS) {
     throw std::runtime_error("failed to create graphics pipeline!");
     }
