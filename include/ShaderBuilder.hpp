@@ -1,18 +1,16 @@
 #include "ResourceManager.hpp"
 #include "VulkanContext.hpp"
+#include "image.hpp"
 #include <algorithm>
+#include <cstring>
 #include <memory>
 #include <tuple>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <type_traits>
 #include <string>
 #include <vulkan/vulkan_core.h>
-
-enum BindingType {
-    BINDING_IMAGE,
-    BINDING_BUFFER,
-};
 
 enum ShaderType
 {
@@ -21,64 +19,91 @@ enum ShaderType
     SHADER_GEOMETRY = VK_SHADER_STAGE_GEOMETRY_BIT,
 };
 
-class Binding {
-    virtual BindingType bindingType() = 0;
-    virtual int binding() = 0;
-};
 
-template <BindingType ResourceType, int b, int Count>
-struct BindingBase : Binding
+template <typename Resource, VkDescriptorType ResourceType, int BindingCount, int Count>
+struct Binding
 {
-    static constexpr BindingType type() { return ResourceType; }
-    static constexpr int get_binding() { return b; }
-    static constexpr int get_descriptor_count() {return Count; }
+    using infoType = Resource;
+    static constexpr VkDescriptorType type() { return ResourceType; }
+    static constexpr int get_binding() { return BindingCount; }
+    static constexpr int get_descriptor_count() { return Count; }
 
-    BindingType bindingType() override { return type(); }
-    int binding() override { return get_binding(); }
+    VkDescriptorType bindingType() { return type(); }
+    int binding() { return get_binding(); }
     // using type = Info;
+
+    Binding(VkDevice device, std::vector<VkDescriptorSet>& descriptors, Resource info[BindingCount])
+    {
+        std::memcpy(resources, info, BindingCount * sizeof(Resource));
+        for (int i = 0; i < BindingCount; i++)
+        {
+            for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+            {
+                write(device, descriptors[frame], i, frame);
+            }
+        }
+    }
+
+    void write(VkDevice device, VkDescriptorSet& descriptorSet, int element, int frame)
+    {
+        VkWriteDescriptorSet descriptorWrite;
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = descriptorSet;
+        descriptorWrite.dstBinding = binding();
+        descriptorWrite.dstArrayElement = element;
+        descriptorWrite.descriptorType = type();
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pNext = nullptr;
+        writeResource(descriptorWrite, frame);
+
+        vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+    }
+
+    virtual void writeResource(VkWriteDescriptorSet& descriptorWrite, int frame) = 0;
+
+    Resource resources[BindingCount];
 };
 
 template <typename T>
 inline constexpr bool is_binding_v =
-    std::is_base_of_v<BindingBase<T::type(), T::get_binding(), T::get_descriptor_count()>, T>;
+    std::is_base_of_v<Binding<typename T::infoType, T::type(), T::get_binding(), T::get_descriptor_count()>, T>;
 
-struct ImageBindingInfo
+struct StorageImageResource
+{
+    Image image;
+
+    StorageImageResource(Image image) : image{image} {}
+};
+
+template <int binding, int bindingCount>
+struct StorageImageBinding : Binding<StorageImageResource, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, binding, bindingCount>
+{
+    StorageImageBinding(VkDevice device, std::vector<VkDescriptorSet>& descriptors, StorageImageResource info[bindingCount]) 
+    : Binding<StorageImageResource, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, binding, bindingCount>(device, descriptors, info)
+    {}
+
+    void writeResource(VkWriteDescriptorSet& descriptorWrite, int frame) override
+    {
+        
+    }
+};
+
+struct BufferBindingResource
 {
 
 };
 
 template <int binding, int bindingCount>
-struct ImageBinding : BindingBase<BINDING_IMAGE, binding, bindingCount>
+struct BufferBinding : Binding<BufferBindingResource, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, binding, bindingCount>
 {
-    using infoType = ImageBindingInfo;
-    ImageBinding() = default;
-    ImageBinding( ImageBindingInfo info[bindingCount], int stageFlags)
+    BufferBinding(VkDevice device, std::vector<VkDescriptorSet>& descriptors, BufferBindingResource info[bindingCount]) 
+    : Binding<BufferBindingResource, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, binding, bindingCount>(device, descriptors, info)
+    {}
+
+    void writeResource(VkWriteDescriptorSet& descriptorWrite, int frame) override
     {
-        // VkDescriptorSetLayoutBinding bindInfo = {};
-        // bindInfo.binding = binding;
-        // bindInfo.descriptorCount = bindingCount;
-        // bindInfo.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        // bindInfo.stageFlags = stageFlags;
-        // bindInfo.pImmutableSamplers = nullptr;
-        printf("Created ImageBinding Binding: %d, BindingCount: %d, ShaderStages: %d\n", binding, bindingCount, stageFlags);
+
     }
-};
-
-struct BufferBindingInfo
-{
-
-};
-
-template <int binding, int bindingCount>
-struct BufferBinding : BindingBase<BINDING_BUFFER, binding, bindingCount>
-{
-    using infoType = BufferBindingInfo;
-    BufferBinding() = default;
-    BufferBinding( BufferBindingInfo info[bindingCount], int stageFlags)
-    {
-        printf("Created BufferBinding Binding: %d, BindingCount: %d, ShaderStages: %d\n", binding, bindingCount, stageFlags);
-    }
-    
 };
 
 template <int Binding, int DescriptorCount>
@@ -107,7 +132,7 @@ template <typename type, int binding>
 struct Bind {
     static_assert(is_binding_v<type>);
     using infoType = typename type::infoType;
-    static constexpr BindingType get_type() { return type::type(); }
+    static constexpr VkDescriptorType get_type() { return type::type(); }
     static constexpr int get_binding() { return binding; }
 };
 
@@ -163,7 +188,9 @@ struct all_shader_types_unique {
 // Combine bindings from multiple shaders
 template <typename... Shaders>
 struct CombinedBindings {
-    using AllBindings = decltype(std::tuple_cat(typename Shaders::BindingsList{}...));
+    using AllBindings = decltype(std::tuple_cat(
+        std::declval<typename Shaders::BindingsList>()...
+    ));
     
     template <typename Tuple, typename Result = std::tuple<>>
     struct filter_duplicates;
@@ -388,36 +415,114 @@ public:
     using SortedBindings = typename SortBindings<UniqueBindings>::type;
     using UniqueBindingResources = typename BindingResources<SortedBindings>::type;
     
-    ShaderPipeline(UniqueBindingResources resources, Shaders&... shaders) : m_shaders(shaders...),
-    bindings([&]() {
-        
-        
-    std::unordered_map<int, int> bindingStages;
+    ShaderPipeline(std::unique_ptr<VulkanContext>& ctx, UniqueBindingResources resources, Shaders&... shaders) : m_shaders(shaders...),
+    descriptorSetLayout([&]() {
+        std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
+        std::unordered_map<int, int> bindingStages;
 
-    // Helper to accumulate stage flags for each binding
-    auto accumulate_stages = [&](auto& shader) {
-        using TypeShader = std::decay_t<decltype(shader)>;
-        const ShaderType stage = TypeShader::get_type();
+        // Helper to accumulate stage flags for each binding
+        auto accumulate_stages = [&](auto& shader) {
+            using TypeShader = std::decay_t<decltype(shader)>;
+            const ShaderType stage = TypeShader::get_type();
+            
+            [&]<typename... Bs>(std::tuple<Bs...>*) {  // Pointer-to-tuple avoids construction
+                ([&] {
+                    constexpr int binding = Bs::get_binding();  // Access static method
+                    bindingStages[binding] |= static_cast<int>(stage);
+                }(), ...);
+            }(static_cast<typename TypeShader::BindingsList*>(nullptr));
+        };
         
-        [&]<typename... Bs>(std::tuple<Bs...>) {
-            ([&] {
-                constexpr int binding = Bs::get_binding();
-                bindingStages[binding] |= (int)stage;
-            }(), ...);
-        }(typename TypeShader::BindingsList{});
-    };
-    
-    // Process all shaders
-    (accumulate_stages(shaders), ...);
+        // Process all shaders
+        (accumulate_stages(shaders), ...);
+        
+        std::apply([&](auto&&... bindings) {
+            // Fold expression to process each binding
+            ([&](auto&& binding) {
+                VkDescriptorSetLayoutBinding bindInfo{};
+                bindInfo.binding = binding.get_binding();
+                bindInfo.descriptorCount = binding.get_descriptor_count();
+                bindInfo.descriptorType = binding.type();
+                bindInfo.stageFlags = bindingStages.at(binding.get_binding());
+                bindInfo.pImmutableSamplers = nullptr;
+                descriptorBindings.push_back(bindInfo);
+            }(bindings), ...);
+        }, bindings);
+
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
+        descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        descriptorSetLayoutInfo.bindingCount = descriptorBindings.size();
+        descriptorSetLayoutInfo.pBindings = descriptorBindings.data();
+        descriptorSetLayoutInfo.pNext = nullptr;
+
+        VkDescriptorSetLayout layout;
+        if (vkCreateDescriptorSetLayout(ctx->getDevice(), &descriptorSetLayoutInfo, nullptr, &layout) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create raytracing descriptor set layout!");
+        }
+
+        return layout;
+    }()),
+    descriptorPool([&](){
+        std::unordered_map<VkDescriptorType, int> descriptorCounts;
+
+        std::apply([&](auto&&... bindings) {
+            // Fold expression to process each binding
+            ([&](auto&& binding) {
+                descriptorCounts[binding.type()] += binding.get_descriptor_count();
+            }(bindings), ...);
+        }, bindings);
+
+        std::vector<VkDescriptorPoolSize> poolSizes;
+        poolSizes.reserve(descriptorCounts.size());
+        for (auto&& [descriptorType, descriptorCount] : descriptorCounts)
+        {
+            VkDescriptorPoolSize poolSize;
+            poolSize.type = descriptorType;
+            poolSize.descriptorCount = descriptorCount;
+            poolSizes.push_back(poolSize);
+        }
+
+        VkDescriptorPoolCreateInfo createInfo;
+        createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        createInfo.poolSizeCount = poolSizes.size();
+        createInfo.pPoolSizes = poolSizes.data();
+        createInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
+        
+        VkDescriptorPool pool;
+        if (vkCreateDescriptorPool(ctx->getDevice(), &createInfo, nullptr, &pool) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create raytracing descriptor pool!");
+        }
+
+        return pool;
+    }()),
+    setLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout),
+    descriptorSets([&](){
+        VkDescriptorSetAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = descriptorPool;
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(setLayouts.size());
+        allocInfo.pSetLayouts = setLayouts.data();
+
+        std::vector<VkDescriptorSet> descriptorSets(MAX_FRAMES_IN_FLIGHT);
+        if (vkAllocateDescriptorSets(ctx->getDevice(), &allocInfo, descriptorSets.data())) {
+            throw std::runtime_error("Failed to create raytracing descriptor set!");
+        }
+
+        return std::move(descriptorSets);
+    }()),
+    bindings([&]() {
+
     return std::apply([&](auto&&... resources) {
 
-        return [&bindingStages, &resources...]<std::size_t... Is>(std::index_sequence<Is...>) {
+        return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
             using ResultTuple = SortedBindings;
             return ResultTuple{
                 // Ensure we're using the correct construction method
                 [&]<size_t I>(auto&& resource) {
                     using BindingType = std::tuple_element_t<I, ResultTuple>;
-                    return BindingType{resource.info, bindingStages.at(BindingType::get_binding())};
+                    return BindingType{ctx->getDevice(), descriptorSets, resource.info};
                 }.template operator()<Is>(resources)...
             };
         }(std::make_index_sequence<sizeof...(resources)>{});
@@ -428,7 +533,13 @@ public:
     }
     
 private:
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSetLayout> setLayouts;
+    std::vector<VkDescriptorSet> descriptorSets;
+
     SortedBindings bindings;
+    VkDescriptorSetLayoutCreateInfo layoutCreateInfo;
     std::tuple<Shaders&...> m_shaders;
 };
 

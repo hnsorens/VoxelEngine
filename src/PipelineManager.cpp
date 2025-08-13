@@ -17,9 +17,12 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
     auto& vert_shader = VoxelEngine::get_shader<"main_vert">();
     auto& frag_shader = VoxelEngine::get_shader<"main_frag">();
 
+    Image image{};
+
     ShaderPipeline shaderPipeline{
+      vulkanContext,
       {
-        BindingSlot<1, 1>::Bind{ImageBindingInfo{}}
+        BindingSlot<1, 1>::Bind{StorageImageResource{image}}
       },
       vert_shader, frag_shader
     };

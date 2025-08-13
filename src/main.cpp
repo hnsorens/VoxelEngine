@@ -1,10 +1,8 @@
 #include "Engine.hpp"
 
 int main() {
-  VoxelEngine app;
-
   try {
-    app.run();
+    VoxelEngine::run();
   } catch (const std::exception &e) {
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;

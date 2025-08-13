@@ -13,6 +13,6 @@ using GlobalShaderTypes = ShaderTypes<
     "main_frag",
     "bin/frag.spv",
     SHADER_FRAGMENT,
-    ImageBinding<1, 1>
+    StorageImageBinding<1, 1>
   >
 >;

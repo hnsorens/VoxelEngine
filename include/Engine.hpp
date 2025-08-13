@@ -34,8 +34,7 @@ const uint32_t HEIGHT = 1280 * 4;
 
 class VoxelEngine {
 public:
-  void run() {
-
+  static void run() {
     initWindow();
     initVulkan();
     mainLoop();
@@ -48,31 +47,30 @@ public:
   }
 
 private:
-  std::unique_ptr<WindowManager> windowManager;
-  std::unique_ptr<VulkanContext> vulkanContext;
-  std::unique_ptr<SyncManager> syncManager;
-  std::unique_ptr<CommandManager> commandManager;
-  std::unique_ptr<PipelineManager> pipelineManager;
-  std::unique_ptr<Raytracer> raytracer;
-  std::unique_ptr<VoxelWorld> voxelWorld;
-  std::unique_ptr<Camera> camera;
+  static std::unique_ptr<WindowManager> windowManager;
+  static std::unique_ptr<VulkanContext> vulkanContext;
+  static std::unique_ptr<SyncManager> syncManager;
+  static std::unique_ptr<CommandManager> commandManager;
+  static std::unique_ptr<PipelineManager> pipelineManager;
+  static std::unique_ptr<Raytracer> raytracer;
+  static std::unique_ptr<VoxelWorld> voxelWorld;
+  static std::unique_ptr<Camera> camera;
 
   static std::unique_ptr<GlobalShaderTypes> shaders;
 
-  std::vector<VkCommandBuffer> raytracingCommandBuffers;
+  static std::vector<VkCommandBuffer> raytracingCommandBuffers;
 
-  uint32_t currentFrame = 0;
-  uint8_t section = 0;
+  static uint32_t currentFrame;
+  static uint8_t section;
 
-  // Raytracin
-
-  VkStridedDeviceAddressRegionKHR raygenRegion{};
-  VkStridedDeviceAddressRegionKHR missRegion{};
-  VkStridedDeviceAddressRegionKHR hitRegion{};
-  VkStridedDeviceAddressRegionKHR callableRegion{};
-  VkDeviceSize sbtSize;
-  VkBuffer sbtBuffer;
-  VkDeviceMemory sbtMemory;
+  // Raytracing
+  static VkStridedDeviceAddressRegionKHR raygenRegion;
+  static VkStridedDeviceAddressRegionKHR missRegion;
+  static VkStridedDeviceAddressRegionKHR hitRegion;
+  static VkStridedDeviceAddressRegionKHR callableRegion;
+  static VkDeviceSize sbtSize;
+  static VkBuffer sbtBuffer;
+  static VkDeviceMemory sbtMemory;
 
   // Camera
 
@@ -81,12 +79,12 @@ private:
   // double deltaTime = 0;
   // double lastTime = 0;
 
-  void initWindow() {
+  static void initWindow() {
     windowManager =
         std::make_unique<WindowManager>(WIDTH, HEIGHT, "Voxel Engine");
   }
 
-  void initVulkan() {
+  static void initVulkan() {
     vulkanContext = std::make_unique<VulkanContext>();
     vulkanContext->init(windowManager);
 
@@ -109,7 +107,7 @@ private:
     createRaytracingRegions();
   }
 
-  void mainLoop() {
+  static void mainLoop() {
     while (!windowManager->shouldClose()) {
       windowManager->pollEvents();
       drawFrame();
@@ -121,7 +119,7 @@ private:
 #define ALIGN_UP(value, alignment)                                             \
   (((value) + (alignment) - 1) & ~((alignment) - 1))
 
-  void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
+  static void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
                     VkDeviceSize size, VkBufferUsageFlags usage,
                     VkMemoryPropertyFlags properties, VkBuffer &buffer,
                     VkDeviceMemory &bufferMemory) {
@@ -152,7 +150,7 @@ private:
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
   }
 
-  void createRaytracingRegions() {
+  static void createRaytracingRegions() {
     VkPhysicalDeviceProperties2 deviceProperties2 = {};
     deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR
@@ -212,7 +210,7 @@ private:
     callableRegion = {};
   }
 
-  void createCommandBuffers() {
+  static void createCommandBuffers() {
     raytracingCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
     VkCommandBufferAllocateInfo raytracingAllocInfo{};
@@ -234,7 +232,7 @@ private:
     uint32_t frame;
   };
 
-  void recordVoxelCommandBuffer(VkCommandBuffer commandBuffer,
+  static void recordVoxelCommandBuffer(VkCommandBuffer commandBuffer,
                                 uint32_t imageIndex, uint8_t section) {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -309,7 +307,7 @@ private:
     }
   }
 
-  void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+  static void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -363,7 +361,7 @@ private:
     }
   }
 
-  void drawFrame() {
+  static void drawFrame() {
     vkWaitForFences(vulkanContext->getDevice(), 1,
                     &syncManager->getInFlightFences()[currentFrame], VK_TRUE,
                     UINT64_MAX);
@@ -458,7 +456,7 @@ private:
       section = (section + 1) % 16;
   }
 
-  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
+  static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
     SwapChainSupportDetails details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
