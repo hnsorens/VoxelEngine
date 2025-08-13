@@ -3,6 +3,7 @@
 #include "ResourceManager.hpp"
 #include "VulkanContext.hpp"
 #include "builder.hpp"
+#include "shaders.hpp"
 #include <GLFW/glfw3.h>
 
 #include <memory>
@@ -54,45 +55,45 @@ private:
 };
 
 
-struct Shader
-{
-  Shader(std::unique_ptr<VulkanContext>& ctx, std::string path, VkShaderStageFlagBits shaderStages)
-  {
-    auto shaderCode = ResourceManager::readFile(path);
+// struct Shader
+// {
+//   Shader(std::unique_ptr<VulkanContext>& ctx, std::string path, VkShaderStageFlagBits shaderStages)
+//   {
+//     auto shaderCode = ResourceManager::readFile(path);
 
-    shaderModule = createShaderModule(ctx->getDevice(), shaderCode);
+//     shaderModule = createShaderModule(ctx->getDevice(), shaderCode);
 
-    shaderInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    shaderInfo.stage = shaderStages;
-    shaderInfo.module = shaderModule;
-    shaderInfo.pName = "main";
-    shaderInfo.flags = 0;
-  }
+//     shaderInfo.sType =
+//         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+//     shaderInfo.stage = shaderStages;
+//     shaderInfo.module = shaderModule;
+//     shaderInfo.pName = "main";
+//     shaderInfo.flags = 0;
+//   }
 
-private:
+// private:
 
-  VkShaderModule createShaderModule(VkDevice device,
-                                      const std::vector<char> &code) {
-    VkShaderModuleCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+//   VkShaderModule createShaderModule(VkDevice device,
+//                                       const std::vector<char> &code) {
+//     VkShaderModuleCreateInfo createInfo{};
+//     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+//     createInfo.codeSize = code.size();
+//     createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
-    VkShaderModule shaderModule;
-    if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) !=
-        VK_SUCCESS) {
-      throw std::runtime_error("failed to create shader module!");
-    }
+//     VkShaderModule shaderModule;
+//     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) !=
+//         VK_SUCCESS) {
+//       throw std::runtime_error("failed to create shader module!");
+//     }
 
-    return shaderModule;
-  }
+//     return shaderModule;
+//   }
 
-  VkShaderModule shaderModule;
-  VkPipelineShaderStageCreateInfo shaderInfo {};
+//   VkShaderModule shaderModule;
+//   VkPipelineShaderStageCreateInfo shaderInfo {};
 
-  friend class PipelineBuilder;
-};
+//   friend class PipelineBuilder;
+// };
 
 struct Pipeline
 {
@@ -116,7 +117,6 @@ struct PipelineBuildInfo
 class PipelineBuilder : Builder<Pipeline, PipelineBuildInfo>
 {
 public:
-    void addShader(Shader* shader);
 
     enum PipelineComponents
     {

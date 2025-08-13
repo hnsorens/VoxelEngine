@@ -1,3 +1,5 @@
+#include "shaders.hpp"
+#include "Engine.hpp"
 #include <PipelineManager.hpp>
 #include <Raytracer.hpp>
 #include <ResourceManager.hpp>
@@ -9,7 +11,24 @@
 #include <vulkan/vulkan_core.h>
 
 PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
-                                 std::unique_ptr<Raytracer> &raytracer) {
+                                 std::unique_ptr<Raytracer> &raytracer) 
+  {
+
+    auto& vert_shader = VoxelEngine::get_shader<"main_vert">();
+    auto& frag_shader = VoxelEngine::get_shader<"main_frag">();
+
+    ShaderPipeline shaderPipeline{
+      {
+        BindingSlot<1, 1>::Bind{ImageBindingInfo{}}
+      },
+      vert_shader, frag_shader
+    };
+
+  
+
+
+
+
   DescriptorSetBuilder descriptorSetBuilder{};
 
   descriptorSetBuilder.addDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -17,8 +36,8 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
                                 
   PipelineBuilder pipelineBuilder;
 
-  pipelineBuilder.addShader(new Shader{vulkanContext, "bin/vert.spv", VK_SHADER_STAGE_VERTEX_BIT});
-  pipelineBuilder.addShader(new Shader{vulkanContext, "bin/frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT});
+  // pipelineBuilder.addShader(new Shader{vulkanContext, "bin/vert.spv", VK_SHADER_STAGE_VERTEX_BIT});
+  // pipelineBuilder.addShader(new Shader{vulkanContext, "bin/frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT});
 
   pipelineBuilder.addComponent(PipelineBuilder::VERTEX_INPUT_STATE
                             | PipelineBuilder::INPUT_ASSEMBLY_STATE

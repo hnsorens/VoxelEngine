@@ -87,10 +87,10 @@ DescriptorSet* DescriptorSetBuilder::build(const DescriptorSetInfo& info)
   return descriptorSet;
 }
 
-void PipelineBuilder::addShader(Shader* shader)
-{
-  shaders.push_back(shader->shaderInfo);
-}
+// void PipelineBuilder::addShader(Shader* shader)
+// {
+//   shaders.push_back(shader->shaderInfo);
+// }
 
 void PipelineBuilder::addComponent(int components)
 {
