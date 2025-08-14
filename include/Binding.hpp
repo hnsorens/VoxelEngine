@@ -1,14 +1,19 @@
 #pragma once
 
+#include "BindResource.hpp"
 #include "VulkanContext.hpp"
 #include <cstring>
+#include <type_traits>
 #include <vector>
 
 
 template <typename Resource, VkDescriptorType ResourceType, int BindingCount, int Count>
 struct Binding
 {
-    using infoType = Resource;
+    static_assert(std::is_base_of_v<BindResource, Resource>,
+                  "Resource must be derived from BindResource");
+
+    using infoType = Resource*;
     static constexpr VkDescriptorType type() { return ResourceType; }
     static constexpr int get_binding() { return BindingCount; }
     static constexpr int get_descriptor_count() { return Count; }
@@ -17,16 +22,9 @@ struct Binding
     int binding() { return get_binding(); }
     // using type = Info;
 
-    Binding(VkDevice device, std::vector<VkDescriptorSet>& descriptors, Resource info[BindingCount])
+    Binding(VkDevice device, std::vector<VkDescriptorSet>& descriptors, Resource* info[BindingCount])
     {
-        std::memcpy(resources, info, BindingCount * sizeof(Resource));
-        for (int i = 0; i < BindingCount; i++)
-        {
-            for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
-            {
-                write(device, descriptors[frame], i, frame);
-            }
-        }
+        std::memcpy(resources, info, BindingCount * sizeof(Resource*));
     }
 
     void write(VkDevice device, VkDescriptorSet& descriptorSet, int element, int frame)
@@ -39,14 +37,12 @@ struct Binding
         descriptorWrite.descriptorType = type();
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pNext = nullptr;
-        writeResource(descriptorWrite, frame);
+        resources[element]->write(descriptorWrite, element);
 
         vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
     }
 
-    virtual void writeResource(VkWriteDescriptorSet& descriptorWrite, int frame) = 0;
-
-    Resource resources[BindingCount];
+    Resource* resources[BindingCount];
 };
 
 template <typename T>
@@ -140,35 +136,10 @@ struct CombinedBindings {
     using type = typename filter_duplicates<AllBindings>::type;
 };
 
-typedef class Image* StorageImageResource;
-
-template <int binding, int bindingCount>
-struct StorageImageBinding : Binding<StorageImageResource, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, binding, bindingCount>
-{
-    StorageImageBinding(VkDevice device, std::vector<VkDescriptorSet>& descriptors, StorageImageResource info[bindingCount]) 
-    : Binding<StorageImageResource, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, binding, bindingCount>(device, descriptors, info)
-    {}
-
-    void writeResource(VkWriteDescriptorSet& descriptorWrite, int frame) override
-    {
-        
-    }
-};
-
-struct BufferBindingResource
-{
-
-};
-
-template <int binding, int bindingCount>
-struct BufferBinding : Binding<BufferBindingResource, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, binding, bindingCount>
-{
-    BufferBinding(VkDevice device, std::vector<VkDescriptorSet>& descriptors, BufferBindingResource info[bindingCount]) 
-    : Binding<BufferBindingResource, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, binding, bindingCount>(device, descriptors, info)
-    {}
-
-    void writeResource(VkWriteDescriptorSet& descriptorWrite, int frame) override
-    {
-
-    }
-};
+// template <int binding, int bindingCount>
+// struct StorageImageBinding : Binding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, binding, bindingCount>
+// {
+//     StorageImageBinding(VkDevice device, std::vector<VkDescriptorSet>& descriptors, class Image* info[bindingCount]) 
+//     : Binding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, binding, bindingCount>(device, descriptors, info)
+//     {}
+// };

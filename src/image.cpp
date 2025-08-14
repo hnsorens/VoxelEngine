@@ -6,7 +6,7 @@ Image::Image(uint32_t width, uint32_t height,
         VkFormat format, VkImageTiling tiling,
         VkImageUsageFlags usage,
         VkMemoryPropertyFlags properties,
-        VkImageLayout initialLayout)
+        VkImageLayout initialLayout) : imageLayout(initialLayout)
 {
     std::unique_ptr<VulkanContext>& ctx = VoxelEngine::vulkanContext;
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)

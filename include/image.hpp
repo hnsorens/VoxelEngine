@@ -1,9 +1,11 @@
 #pragma once
 
 #include "VulkanContext.hpp"
+#include "BindResource.hpp"
+#include <cstdio>
 #include <vulkan/vulkan_core.h>
 
-class Image
+class Image : BindResource
 {
 public:
     Image(uint32_t width, uint32_t height,
@@ -12,7 +14,17 @@ public:
             VkMemoryPropertyFlags properties,
             VkImageLayout initialLayout);
 
+    virtual void write(VkWriteDescriptorSet& descriptorWrite, int frame) override
+    {
+        imageInfos[frame].imageLayout = imageLayout;
+        imageInfos[frame].imageView = imageViews[frame];
+        descriptorWrite.pImageInfo = &imageInfos[frame];
+    }
+
+    VkDescriptorImageInfo imageInfos[MAX_FRAMES_IN_FLIGHT];
+
     VkImage images[MAX_FRAMES_IN_FLIGHT];
     VkImageView imageViews[MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory deviceMemories[MAX_FRAMES_IN_FLIGHT];
+    VkImageLayout imageLayout;
 };

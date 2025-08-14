@@ -271,7 +271,7 @@ public:
         std::apply([&](auto&&... bindings) {
             // Fold expression to process each binding
             ([&](auto&& binding) {
-                VkDescriptorSetLayoutBinding bindInfo{};
+                VkDescriptorSetLayoutBinding bindInfo = {};
                 bindInfo.binding = binding.get_binding();
                 bindInfo.descriptorCount = binding.get_descriptor_count();
                 bindInfo.descriptorType = binding.type();
@@ -281,7 +281,7 @@ public:
             }(bindings), ...);
         }, bindings);
 
-        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo = {};
         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         descriptorSetLayoutInfo.bindingCount = descriptorBindings.size();
         descriptorSetLayoutInfo.pBindings = descriptorBindings.data();
@@ -310,17 +310,17 @@ public:
         std::vector<VkDescriptorPoolSize> poolSizes;
         for (auto& [descriptorType, descriptorCount] : descriptorCounts)
         {
-            VkDescriptorPoolSize poolSize;
+            VkDescriptorPoolSize poolSize = {};
             poolSize.type = descriptorType;
-            poolSize.descriptorCount = descriptorCount;
-            poolSizes.push_back(std::move(poolSize));
+            poolSize.descriptorCount = descriptorCount * MAX_FRAMES_IN_FLIGHT;
+            poolSizes.push_back(poolSize);
         }
 
-        VkDescriptorPoolCreateInfo createInfo;
+        VkDescriptorPoolCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         createInfo.poolSizeCount = poolSizes.size();
         createInfo.pPoolSizes = poolSizes.data();
-        createInfo.maxSets = 50;
+        createInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
         
         VkDescriptorPool pool;
         if (vkCreateDescriptorPool(ctx->getDevice(), &createInfo, nullptr, &pool) != VK_SUCCESS)
