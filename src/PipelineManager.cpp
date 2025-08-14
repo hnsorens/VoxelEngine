@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <vector>
 #include <vulkan/vulkan_core.h>
+#include "image.hpp"
 
 PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
                                  std::unique_ptr<Raytracer> &raytracer) 
@@ -17,19 +18,22 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
     auto& vert_shader = VoxelEngine::get_shader<"main_vert">();
     auto& frag_shader = VoxelEngine::get_shader<"main_frag">();
 
-    Image image{};
+    Image* image = new Image{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+        VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL};
 
     ShaderPipeline shaderPipeline{
       vulkanContext,
       {
-        BindingSlot<1, 1>::Bind{StorageImageResource{image}}
+        BindingSlot<1, 1>::Bind{image}
       },
       vert_shader, frag_shader
     };
 
   
 
-
+while(1);
 
 
   DescriptorSetBuilder descriptorSetBuilder{};
