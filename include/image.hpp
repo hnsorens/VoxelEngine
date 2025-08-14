@@ -2,7 +2,6 @@
 
 #include "VulkanContext.hpp"
 #include "BindResource.hpp"
-#include <cstdio>
 #include <vulkan/vulkan_core.h>
 
 class Image : BindResource

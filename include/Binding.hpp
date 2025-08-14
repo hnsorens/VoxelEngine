@@ -1,7 +1,6 @@
 #pragma once
 
 #include "BindResource.hpp"
-#include "VulkanContext.hpp"
 #include <cstring>
 #include <type_traits>
 #include <vector>
@@ -135,11 +134,3 @@ struct CombinedBindings {
     
     using type = typename filter_duplicates<AllBindings>::type;
 };
-
-// template <int binding, int bindingCount>
-// struct StorageImageBinding : Binding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, binding, bindingCount>
-// {
-//     StorageImageBinding(VkDevice device, std::vector<VkDescriptorSet>& descriptors, class Image* info[bindingCount]) 
-//     : Binding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, binding, bindingCount>(device, descriptors, info)
-//     {}
-// };

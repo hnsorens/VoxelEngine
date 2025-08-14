@@ -233,8 +233,11 @@ private:
     VkPipelineShaderStageCreateInfo shaderInfo {};
 };
 
+template <typename ShaderResource>
+class ShaderResources;
+
 template <typename... Shaders>
-class ShaderPipeline {
+class ShaderResourceLayout {
     static_assert(all_shader_types_unique<Shaders...>::value,
                  "Shader types conflict - multiple shaders with the same shader type");
     static_assert(validate_shader_bindings<Shaders...>::value,
@@ -245,7 +248,7 @@ public:
     using SortedBindings = typename SortBindings<UniqueBindings>::type;
     using UniqueBindingResources = typename BindingResources<SortedBindings>::type;
     
-    ShaderPipeline(std::unique_ptr<VulkanContext>& ctx, UniqueBindingResources resources, Shaders&... shaders) : m_shaders(shaders...),
+    ShaderResourceLayout(std::unique_ptr<VulkanContext>& ctx, Shaders&... shaders) : m_shaders(shaders...),
     descriptorSetLayout([&]() {
         printf("Creating descriptor set layout\n");
         fflush(stdout);
@@ -268,18 +271,21 @@ public:
         // Process all shaders
         (accumulate_stages(shaders), ...);
         
-        std::apply([&](auto&&... bindings) {
-            // Fold expression to process each binding
-            ([&](auto&& binding) {
-                VkDescriptorSetLayoutBinding bindInfo = {};
-                bindInfo.binding = binding.get_binding();
-                bindInfo.descriptorCount = binding.get_descriptor_count();
-                bindInfo.descriptorType = binding.type();
-                bindInfo.stageFlags = bindingStages.at(binding.get_binding());
+        std::make_index_sequence<std::tuple_size_v<SortedBindings>> seq;
+
+        [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+            // Fold over the indices
+            ([&] {
+                using BindingType = std::tuple_element_t<Is, SortedBindings>;
+                VkDescriptorSetLayoutBinding bindInfo{};
+                bindInfo.binding = BindingType::get_binding();
+                bindInfo.descriptorCount = BindingType::get_descriptor_count();
+                bindInfo.descriptorType = BindingType::type();
+                bindInfo.stageFlags = bindingStages.at(BindingType::get_binding());
                 bindInfo.pImmutableSamplers = nullptr;
                 descriptorBindings.push_back(bindInfo);
-            }(bindings), ...);
-        }, bindings);
+            }(), ...);
+        }(std::make_index_sequence<std::tuple_size_v<SortedBindings>>{});
 
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo = {};
         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -300,12 +306,12 @@ public:
         fflush(stdout);
         std::unordered_map<VkDescriptorType, int> descriptorCounts;
 
-        std::apply([&](auto&&... bindings) {
-            // Fold expression to process each binding
-            ([&](auto&& binding) {
-                descriptorCounts[binding.type()] += binding.get_descriptor_count();
-            }(bindings), ...);
-        }, bindings);
+        [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+            ([&] {
+                using BindingType = std::tuple_element_t<Is, SortedBindings>;
+                descriptorCounts[BindingType::type()] += BindingType::get_descriptor_count();
+            }(), ...);
+        }(std::make_index_sequence<std::tuple_size_v<SortedBindings>>{});
 
         std::vector<VkDescriptorPoolSize> poolSizes;
         for (auto& [descriptorType, descriptorCount] : descriptorCounts)
@@ -330,13 +336,31 @@ public:
 
         return pool;
     }()),
-    setLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout),
+    setLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout)
+    {}
+    
+private:
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSetLayout> setLayouts;
+    
+    VkDescriptorSetLayoutCreateInfo layoutCreateInfo;
+    std::tuple<Shaders&...> m_shaders;
+
+    friend ShaderResources<ShaderResourceLayout<Shaders...>>;
+};
+
+template <typename ShaderResource>
+class ShaderResources
+{
+public:
+    ShaderResources(std::unique_ptr<VulkanContext>& ctx, ShaderResource& shaderResourceLayout, ShaderResource::UniqueBindingResources resources) :
     descriptorSets([&](){
         VkDescriptorSetAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = descriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(setLayouts.size());
-        allocInfo.pSetLayouts = setLayouts.data();
+        allocInfo.descriptorPool = shaderResourceLayout.descriptorPool;
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(shaderResourceLayout.setLayouts.size());
+        allocInfo.pSetLayouts = shaderResourceLayout.setLayouts.data();
 
         std::vector<VkDescriptorSet> descriptorSets(MAX_FRAMES_IN_FLIGHT);
         if (vkAllocateDescriptorSets(ctx->getDevice(), &allocInfo, descriptorSets.data())) {
@@ -348,7 +372,7 @@ public:
     bindings([&]() {
         return std::apply([&](auto&&... resources) {
             return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
-                using ResultTuple = SortedBindings;
+                using ResultTuple = ShaderResource::SortedBindings;
                 return ResultTuple{
                     // Ensure we're using the correct construction method
                     [&]<size_t I>(auto&& resource) {
@@ -368,18 +392,11 @@ public:
                     binding.write(ctx->getDevice(), descriptorSets[i], i, frame);
                 }
             }(bindings), ...);
-        }, std::forward<SortedBindings>(bindings));
+        }, std::forward<ShaderResource::SortedBindings>(bindings));
     }
-    
-private:
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorPool descriptorPool;
-    std::vector<VkDescriptorSetLayout> setLayouts;
-    std::vector<VkDescriptorSet> descriptorSets;
 
-    SortedBindings bindings;
-    VkDescriptorSetLayoutCreateInfo layoutCreateInfo;
-    std::tuple<Shaders&...> m_shaders;
+    std::vector<VkDescriptorSet> descriptorSets;
+    ShaderResource::SortedBindings bindings;
 };
 
 // Shader index finder
