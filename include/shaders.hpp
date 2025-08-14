@@ -7,13 +7,12 @@ using GlobalShaderTypes = ShaderTypes<
   Shader<
     "main_vert",
     "bin/vert.spv",
-    SHADER_VERTEX,
-    Binding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, 1>
+    SHADER_VERTEX
   >,
   Shader<
     "main_frag",
     "bin/frag.spv",
     SHADER_FRAGMENT,
-    Binding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, 1>
+    ShaderBinding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 1, 1>
   >
 >;

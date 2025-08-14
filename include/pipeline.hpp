@@ -148,3 +148,4 @@ public:
 
     std::vector<VkDynamicState> dynamicStates;
 };
+

@@ -23,20 +23,21 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL};
 
-    ShaderResourceLayout shaderResourceLayout{
-      vulkanContext,
+    ShaderGroup group(
       vert_shader, frag_shader
+    );
+
+
+    ShaderResourceSet set{vulkanContext,
+      ResourceBinding<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, 1, Image>{image}
     };
 
-    ShaderResources shaderResources{
-      vulkanContext,
-      shaderResourceLayout,
-      {
-        BindingSlot<1, 1>::Bind{image}
-      }
+    GraphicsPipeline<decltype(group), decltype(set)> pipeline{
+      group, 
+      set
     };
 
-  
+
 
 while(1);
 

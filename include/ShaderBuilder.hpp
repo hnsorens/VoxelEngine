@@ -23,6 +23,12 @@ enum ShaderType
     SHADER_GEOMETRY = VK_SHADER_STAGE_GEOMETRY_BIT,
 };
 
+
+
+
+
+
+
 template <typename... Shaders>
 struct has_duplicate_shader_types;
 
@@ -44,30 +50,88 @@ struct all_shader_types_unique {
     static constexpr bool value = !has_duplicate_shader_types<Shaders...>::value;
 };
 
-// Validate that matching bindings have the same type
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename... Shaders>
 struct validate_shader_bindings {
-    template <typename Tuple>
-    struct check_conflicts;
+private:
+    // Helper to combine all bindings from all shaders
+    template<typename... Ts>
+    static constexpr auto combine_bindings() {
+        return std::tuple_cat(typename Ts::BindingsList{}...);
+    }
     
+    using Combined = decltype(combine_bindings<Shaders...>());
+
+    // Helper to check if a binding exists with given set and binding numbers
+    template <int Set, int Binding, typename... Bindings>
+    struct has_binding : std::false_type {};
+    
+    template <int Set, int Binding, typename First, typename... Rest>
+    struct has_binding<Set, Binding, First, Rest...> : 
+        std::conditional_t<(First::get_binding_set() == Set && First::get_binding() == Binding),
+                          std::true_type,
+                          has_binding<Set, Binding, Rest...>> {};
+    
+    // Helper to get the type of a binding
+    template <int Set, int Binding, typename... Bindings>
+    struct get_binding_type;
+    
+    template <int Set, int Binding, typename First, typename... Rest>
+    struct get_binding_type<Set, Binding, First, Rest...> {
+        using type = std::conditional_t<
+            (First::get_binding_set() == Set && First::get_binding() == Binding),
+            First,
+            typename get_binding_type<Set, Binding, Rest...>::type>;
+    };
+    
+    // Helper to get the count of a binding
+    template <int Set, int Binding, typename... Bindings>
+    struct get_binding_count;
+    
+    template <int Set, int Binding, typename First, typename... Rest>
+    struct get_binding_count<Set, Binding, First, Rest...> {
+        static constexpr int value = 
+            (First::get_binding_set() == Set && First::get_binding() == Binding)
+                ? First::get_binding_count()
+                : get_binding_count<Set, Binding, Rest...>::value;
+    };
+
+    // Main validation logic
     template <typename... Bindings>
-    struct check_conflicts<std::tuple<Bindings...>> {
+    struct check_conflicts {
         template <typename Binding>
         struct check_binding {
             static constexpr bool value = []{
+                constexpr int set = Binding::get_binding_set();
                 constexpr int binding = Binding::get_binding();
+                constexpr int count = Binding::get_binding_count();
                 using CurrentType = Binding;
                 
                 bool valid = true;
-                using ShaderList = std::tuple<Shaders...>;
                 
-                // Check each shader for this binding
+                // Check against each shader
                 [&]<size_t... Is>(std::index_sequence<Is...>) {
                     ([&] {
-                        using Shader = std::tuple_element_t<Is, ShaderList>;
-                        if constexpr (has_binding<binding, typename Shader::BindingsList>::value) {
-                            using ShaderBindingType = get_binding_type<binding, typename Shader::BindingsList>;
-                            valid = valid && std::is_same_v<CurrentType, ShaderBindingType>;
+                        using Shader = std::tuple_element_t<Is, std::tuple<Shaders...>>;
+                        if constexpr (has_binding<set, binding, typename Shader::BindingsList>::value) {
+                            using ShaderBindingType = typename get_binding_type<set, binding, typename Shader::BindingsList>::type;
+                            constexpr int shader_count = get_binding_count<set, binding, typename Shader::BindingsList>::value;
+                            
+                            valid = valid && 
+                                   std::is_same_v<CurrentType, ShaderBindingType> && 
+                                   (count == shader_count);
                         }
                     }(), ...);
                 }(std::make_index_sequence<sizeof...(Shaders)>{});
@@ -78,23 +142,31 @@ struct validate_shader_bindings {
         
         static constexpr bool value = (check_binding<Bindings>::value && ...);
     };
-    
-    static constexpr bool value = 
-        check_conflicts<typename CombinedBindings<Shaders...>::type>::value;
+
+public:
+    static constexpr bool value = check_conflicts<typename Combined::type>::value;
 };
 
-template <typename Tuple>
-struct BindingResources;
 
-template <typename... Bindings>
-struct BindingResources<std::tuple<Bindings...>> {
-    template <typename B>
-    struct BindingToSlot {
-        using type = typename BindingSlot<B::get_binding(), B::get_descriptor_count()>::template Bind<typename B::infoType>;
-    };
 
-    using type = typename std::tuple<typename BindingToSlot<Bindings>::type...>;
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 template<typename A, typename B>
 struct BindingLess {
@@ -169,6 +241,20 @@ struct SortBindings<std::tuple<Pivot, Others...>> {
     ));
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template<size_t N>
 struct FixedString {
     char value[N] = {};
@@ -190,8 +276,28 @@ struct FixedString {
 
 template <FixedString ShaderName, FixedString Path, ShaderType Type, typename... Bindings>
 class Shader {
+private:
+
+    template <typename... Shaders>
+    struct has_duplicate_shader_bindings;
+
+    template <>
+    struct has_duplicate_shader_bindings<> {
+        static constexpr bool value = false;
+    };
+
+    template <typename First, typename... Rest>
+    struct has_duplicate_shader_bindings<First, Rest...>
+    {
+        static constexpr bool value = 
+            ((First::get_binding_set() == Rest::get_binding_set() || First::get_binding() == Rest::get_binding() || First::get_binding_count() == Rest::get_binding_count()) || ...) ||
+            has_duplicate_shader_bindings<Rest...>::value;
+    };
+
+    static_assert(!has_duplicate_shader_bindings<Bindings...>::value, "Shader cannot have duplicate bindings");
+
 public:
-static constexpr FixedString name = ShaderName.value;
+    static constexpr FixedString name = ShaderName.value;
     static constexpr FixedString path = Path.value;
 
     using BindingsList = std::tuple<Bindings...>;
@@ -234,135 +340,320 @@ private:
     VkPipelineShaderStageCreateInfo shaderInfo {};
 };
 
-template <typename ShaderResource>
-class ShaderResources;
+
+
+
+
+
+
+
+
+
+
 
 template <typename... Shaders>
-class ShaderResourceLayout {
-    static_assert(all_shader_types_unique<Shaders...>::value,
-                 "Shader types conflict - multiple shaders with the same shader type");
-    static_assert(validate_shader_bindings<Shaders...>::value,
-                 "Shader bindings conflict - same binding number with different resource type");
-    
+class ShaderGroup
+{
+    // static_assert(all_shader_types_unique<Shaders...>::value,
+    //              "Shader types conflict - multiple shaders with the same shader type!");
+    // static_assert(validate_shader_bindings<Shaders...>::value,
+    //              "Shader bindings conflict - same binding number with different resource type or different binding counts!");
 public:
-    using UniqueBindings = typename CombinedBindings<Shaders...>::type;
-    using SortedBindings = typename SortBindings<UniqueBindings>::type;
-    using UniqueBindingResources = typename BindingResources<SortedBindings>::type;
+
     
-    ShaderResourceLayout(std::unique_ptr<VulkanContext>& ctx, Shaders&... shaders) : m_shaders(shaders...),
-    descriptorSetLayout([&]() {
-        printf("Creating descriptor set layout\n");
-        fflush(stdout);
-        std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
-        std::unordered_map<int, int> bindingStages;
-
-        // Helper to accumulate stage flags for each binding
-        auto accumulate_stages = [&](auto& shader) {
-            using TypeShader = std::decay_t<decltype(shader)>;
-            const ShaderType stage = TypeShader::get_type();
-            
-            [&]<typename... Bs>(std::tuple<Bs...>*) {  // Pointer-to-tuple avoids construction
-                ([&] {
-                    constexpr int binding = Bs::get_binding();  // Access static method
-                    bindingStages[binding] |= static_cast<int>(stage);
-                }(), ...);
-            }(static_cast<typename TypeShader::BindingsList*>(nullptr));
-        };
-        
-        // Process all shaders
-        (accumulate_stages(shaders), ...);
-        
-        std::make_index_sequence<std::tuple_size_v<SortedBindings>> seq;
-
-        [&]<std::size_t... Is>(std::index_sequence<Is...>) {
-            // Fold over the indices
-            ([&] {
-                using BindingType = std::tuple_element_t<Is, SortedBindings>;
-                VkDescriptorSetLayoutBinding bindInfo{};
-                bindInfo.binding = BindingType::get_binding();
-                bindInfo.descriptorCount = BindingType::get_descriptor_count();
-                bindInfo.descriptorType = BindingType::type();
-                bindInfo.stageFlags = bindingStages.at(BindingType::get_binding());
-                bindInfo.pImmutableSamplers = nullptr;
-                descriptorBindings.push_back(bindInfo);
-            }(), ...);
-        }(std::make_index_sequence<std::tuple_size_v<SortedBindings>>{});
-
-        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo = {};
-        descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        descriptorSetLayoutInfo.bindingCount = descriptorBindings.size();
-        descriptorSetLayoutInfo.pBindings = descriptorBindings.data();
-        descriptorSetLayoutInfo.pNext = nullptr;
-
-        VkDescriptorSetLayout layout;
-        if (vkCreateDescriptorSetLayout(ctx->getDevice(), &descriptorSetLayoutInfo, nullptr, &layout) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create raytracing descriptor set layout!");
-        }
-
-        return layout;
-    }()),
-    setLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout)
-    {}
+    using shaders = std::tuple<Shaders...>;
     
-private:
-    VkDescriptorSetLayout descriptorSetLayout;
-    std::vector<VkDescriptorSetLayout> setLayouts;
-    
-    VkDescriptorSetLayoutCreateInfo layoutCreateInfo;
+    // Original constructor
+    ShaderGroup(Shaders&... shaders) : m_shaders(shaders...) {}
+
     std::tuple<Shaders&...> m_shaders;
-
-    friend ShaderResources<ShaderResourceLayout<Shaders...>>;
 };
 
-template <typename ShaderResource>
-class ShaderResources
+
+
+
+
+
+
+
+
+
+template <typename... Bindings>
+class ShaderResourceSet
 {
-public:
-    ShaderResources(std::unique_ptr<VulkanContext>& ctx, ShaderResource& shaderResourceLayout, ShaderResource::UniqueBindingResources resources) :
-    descriptorSets([&](){
-        VkDescriptorSetAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = DescriptorPool::instance().get();
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(shaderResourceLayout.setLayouts.size());
-        allocInfo.pSetLayouts = shaderResourceLayout.setLayouts.data();
 
-        std::vector<VkDescriptorSet> descriptorSets(MAX_FRAMES_IN_FLIGHT);
-        if (vkAllocateDescriptorSets(ctx->getDevice(), &allocInfo, descriptorSets.data())) {
-            throw std::runtime_error("Failed to create raytracing descriptor set!");
-        }
+    template <typename... Shaders>
+    struct has_duplicate_bindings;
 
-        return std::move(descriptorSets);
-    }()),
-    bindings([&]() {
-        return std::apply([&](auto&&... resources) {
-            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
-                using ResultTuple = ShaderResource::SortedBindings;
-                return ResultTuple{
-                    // Ensure we're using the correct construction method
-                    [&]<size_t I>(auto&& resource) {
-                        using BindingType = std::tuple_element_t<I, ResultTuple>;
-                        return BindingType{ctx->getDevice(), descriptorSets, resource.info};
-                    }.template operator()<Is>(resources)...
-                };
-            }(std::make_index_sequence<sizeof...(resources)>{});
-        }, std::move(resources));
-    }())
+    template <>
+    struct has_duplicate_bindings<> {
+        static constexpr bool value = false;
+    };
+
+    template <typename First, typename... Rest>
+    struct has_duplicate_bindings<First, Rest...>
     {
-        std::apply([&](auto&&... bindings){
-            ([&](auto&& binding){
-                for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
-                {
-                    for (int i = 0; i < binding.get_descriptor_count(); i++)
-                    binding.write(ctx->getDevice(), descriptorSets[i], i, frame);
-                }
-            }(bindings), ...);
-        }, std::forward<typename ShaderResource::SortedBindings>(bindings));
+        static constexpr bool value = 
+            ((std::is_same_v<typename First::resourceType, typename Rest::resourceType> || First::get_type() == Rest::get_type() || First::get_binding() == Rest::get_binding() || First::get_descriptor_count() == Rest::get_descriptor_count()) || ...) ||
+            has_duplicate_bindings<Rest...>::value;
+    };
+
+    template <typename ResourceBindings>
+    struct gather_bindings;
+
+    static_assert(!has_duplicate_bindings<Bindings...>::value, "Shader Resource Set cannot have duplicate bindings!");
+
+public:
+
+    using BindingResources = gather_bindings<Bindings...>;
+
+    ShaderResourceSet(std::unique_ptr<VulkanContext>& ctx, Bindings... bindings)
+    {
+        
     }
 
+private:
+
+    VkDescriptorSetLayout descriptorSetLayout;
     std::vector<VkDescriptorSet> descriptorSets;
-    ShaderResource::SortedBindings bindings;
+    std::tuple<Bindings...> bindings;
 };
+
+
+
+
+
+
+template <typename ShaderGroup, typename... ShaderResourcesBindings>
+class GraphicsPipeline
+{
+
+    template <typename Shaders>
+    struct get_shaders
+    {
+        using type = Shaders::shaders;
+    };
+
+    template <typename>
+    struct ExtractAllShaderBindingsFromTuple;
+
+    // Specialization for std::tuple
+    template <typename... Shaders>
+    struct ExtractAllShaderBindingsFromTuple<std::tuple<Shaders...>> {
+        // Helper to get BindingsList from a single shader
+        template <typename Shader>
+        struct GetBindingsList {
+            using type = typename Shader::BindingsList;
+        };
+
+        // Combine all BindingsLists
+        using type = decltype(std::tuple_cat(
+            std::declval<typename GetBindingsList<Shaders>::type>()...
+        ));
+    };
+
+    // Helper alias for direct usage with ShaderGroup
+    using AllShaderBindings = typename ExtractAllShaderBindingsFromTuple<typename ShaderGroup::shaders>::type;
+
+    template <typename>
+    struct ExtractAllBindingsFromTuple;
+
+    // Specialization for std::tuple
+    template <typename... Bindings>
+    struct ExtractAllBindingsFromTuple<std::tuple<Bindings...>> {
+        // Helper to get BindingsList from a single shader
+        template <typename BindingSet>
+        struct GetBindingsList {
+            using type = typename BindingSet::BindingResources;
+        };
+
+        // Combine all BindingsLists
+        using type = decltype(std::tuple_cat(
+            std::declval<typename GetBindingsList<Bindings>::type>()...
+        ));
+    };
+
+    using AllResourceBindings = typename ExtractAllBindingsFromTuple<ShaderResourcesBindings...>::type;
+
+    // Validator to check if all shader bindings have matching resource bindings
+    template <typename ShaderBindingTuple, typename ResourceBindingTuple>
+    struct validate_bindings_match;
+
+    template <>
+    struct validate_bindings_match<std::tuple<>, std::tuple<>> {
+        static constexpr bool value = true;
+    };
+
+    template <typename ShaderBinding, typename... ShaderBindings, 
+              typename ResourceBinding, typename... ResourceBindings>
+    struct validate_bindings_match<std::tuple<ShaderBinding, ShaderBindings...>, 
+                                  std::tuple<ResourceBinding, ResourceBindings...>> {
+        static constexpr bool check_one() {
+            return ShaderBinding::get_binding_set() == ResourceBinding::get_binding_set() &&
+                   ShaderBinding::get_binding() == ResourceBinding::get_binding() &&
+                   ShaderBinding::get_binding_count() == ResourceBinding::get_binding_count() &&
+                   std::is_same_v<typename ShaderBinding::resourceType, 
+                                 typename ResourceBinding::resourceType>;
+        }
+
+        static constexpr bool value = check_one() && 
+            validate_bindings_match<std::tuple<ShaderBindings...>, 
+                                  std::tuple<ResourceBindings...>>::value;
+    };
+
+    // Check if all shader bindings are covered by resource bindings
+    static constexpr bool bindings_valid = 
+        validate_bindings_match<
+            AllShaderBindings,
+            AllResourceBindings
+        >::value;
+
+    // static_assert(bindings_valid, 
+    //     "Shader bindings don't match provided resource bindings! "
+    //     "Check that all sets/bindings in shaders have matching resources with the same type and count.");
+
+
+public:
+    GraphicsPipeline(AllShaderBindings bindings)
+    {
+
+    }
+};
+
+
+
+
+
+
+// template <typename ShaderResource>
+// class ShaderResources;
+
+// template <typename... Shaders>
+// class ShaderResourceLayout {
+//     static_assert(all_shader_types_unique<Shaders...>::value,
+//                  "Shader types conflict - multiple shaders with the same shader type");
+//     static_assert(validate_shader_bindings<Shaders...>::value,
+//                  "Shader bindings conflict - same binding number with different resource type");
+    
+// public:
+//     using UniqueBindings = typename CombinedBindings<Shaders...>::type;
+//     using SortedBindings = typename SortBindings<UniqueBindings>::type;
+//     using UniqueBindingResources = typename BindingResources<SortedBindings>::type;
+    
+//     ShaderResourceLayout(std::unique_ptr<VulkanContext>& ctx, Shaders&... shaders) : m_shaders(shaders...),
+//     descriptorSetLayout([&]() {
+//         printf("Creating descriptor set layout\n");
+//         fflush(stdout);
+//         std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
+//         std::unordered_map<int, int> bindingStages;
+
+//         // Helper to accumulate stage flags for each binding
+//         auto accumulate_stages = [&](auto& shader) {
+//             using TypeShader = std::decay_t<decltype(shader)>;
+//             const ShaderType stage = TypeShader::get_type();
+            
+//             [&]<typename... Bs>(std::tuple<Bs...>*) {  // Pointer-to-tuple avoids construction
+//                 ([&] {
+//                     constexpr int binding = Bs::get_binding();  // Access static method
+//                     bindingStages[binding] |= static_cast<int>(stage);
+//                 }(), ...);
+//             }(static_cast<typename TypeShader::BindingsList*>(nullptr));
+//         };
+        
+//         // Process all shaders
+//         (accumulate_stages(shaders), ...);
+        
+//         std::make_index_sequence<std::tuple_size_v<SortedBindings>> seq;
+
+//         [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+//             // Fold over the indices
+//             ([&] {
+//                 using BindingType = std::tuple_element_t<Is, SortedBindings>;
+//                 VkDescriptorSetLayoutBinding bindInfo{};
+//                 bindInfo.binding = BindingType::get_binding();
+//                 bindInfo.descriptorCount = BindingType::get_descriptor_count();
+//                 bindInfo.descriptorType = BindingType::type();
+//                 bindInfo.stageFlags = bindingStages.at(BindingType::get_binding());
+//                 bindInfo.pImmutableSamplers = nullptr;
+//                 descriptorBindings.push_back(bindInfo);
+//             }(), ...);
+//         }(std::make_index_sequence<std::tuple_size_v<SortedBindings>>{});
+
+//         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo = {};
+//         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+//         descriptorSetLayoutInfo.bindingCount = descriptorBindings.size();
+//         descriptorSetLayoutInfo.pBindings = descriptorBindings.data();
+//         descriptorSetLayoutInfo.pNext = nullptr;
+
+//         VkDescriptorSetLayout layout;
+//         if (vkCreateDescriptorSetLayout(ctx->getDevice(), &descriptorSetLayoutInfo, nullptr, &layout) != VK_SUCCESS)
+//         {
+//             throw std::runtime_error("failed to create raytracing descriptor set layout!");
+//         }
+
+//         return layout;
+//     }()),
+//     setLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout)
+//     {}
+    
+// private:
+//     VkDescriptorSetLayout descriptorSetLayout;
+//     std::vector<VkDescriptorSetLayout> setLayouts;
+    
+//     VkDescriptorSetLayoutCreateInfo layoutCreateInfo;
+//     std::tuple<Shaders&...> m_shaders;
+
+//     friend ShaderResources<ShaderResourceLayout<Shaders...>>;
+// };
+
+// template <typename ShaderResource>
+// class ShaderResources
+// {
+// public:
+//     ShaderResources(std::unique_ptr<VulkanContext>& ctx, ShaderResource& shaderResourceLayout, ShaderResource::UniqueBindingResources resources) :
+//     descriptorSets([&](){
+//         VkDescriptorSetAllocateInfo allocInfo = {};
+//         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+//         allocInfo.descriptorPool = DescriptorPool::instance().get();
+//         allocInfo.descriptorSetCount = static_cast<uint32_t>(shaderResourceLayout.setLayouts.size());
+//         allocInfo.pSetLayouts = shaderResourceLayout.setLayouts.data();
+
+//         std::vector<VkDescriptorSet> descriptorSets(MAX_FRAMES_IN_FLIGHT);
+//         if (vkAllocateDescriptorSets(ctx->getDevice(), &allocInfo, descriptorSets.data())) {
+//             throw std::runtime_error("Failed to create raytracing descriptor set!");
+//         }
+
+//         return std::move(descriptorSets);
+//     }()),
+//     bindings([&]() {
+//         return std::apply([&](auto&&... resources) {
+//             return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+//                 using ResultTuple = ShaderResource::SortedBindings;
+//                 return ResultTuple{
+//                     // Ensure we're using the correct construction method
+//                     [&]<size_t I>(auto&& resource) {
+//                         using BindingType = std::tuple_element_t<I, ResultTuple>;
+//                         return BindingType{ctx->getDevice(), descriptorSets, resource.info};
+//                     }.template operator()<Is>(resources)...
+//                 };
+//             }(std::make_index_sequence<sizeof...(resources)>{});
+//         }, std::move(resources));
+//     }())
+//     {
+//         std::apply([&](auto&&... bindings){
+//             ([&](auto&& binding){
+//                 for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+//                 {
+//                     for (int i = 0; i < binding.get_descriptor_count(); i++)
+//                     binding.write(ctx->getDevice(), descriptorSets[i], i, frame);
+//                 }
+//             }(bindings), ...);
+//         }, std::forward<typename ShaderResource::SortedBindings>(bindings));
+//     }
+
+//     std::vector<VkDescriptorSet> descriptorSets;
+//     ShaderResource::SortedBindings bindings;
+// };
 
 // Shader index finder
 template <FixedString Name, typename... Shaders>
@@ -405,10 +696,3 @@ public:
         return std::get<index>(shaders);
     }
 };
-
-template<int Binding, int N, typename T>
-auto make_binding_array(const T& d) {
-    T arr[N];
-    std::fill(std::begin(arr), std::end(arr), d);
-    return typename BindingSlot<Binding, N>::template Bind<T>{arr};
-}
