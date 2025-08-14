@@ -1,9 +1,13 @@
 #pragma once
 
 #include "BindResource.hpp"
+#include "VulkanContext.hpp"
 #include <cstring>
 #include <type_traits>
 #include <vector>
+#include <vulkan/vulkan_core.h>
+
+
 
 template <typename Resource, VkDescriptorType ResourceType, int BindingSet, int Binding, int DescriptorCount>
 struct ShaderBinding
@@ -30,10 +34,11 @@ struct ShaderBinding
 
 
 
-template <VkDescriptorType ResourceType, int Binding, int DescriptorCount, typename Resource>
+template <typename Resource, VkDescriptorType ResourceType, int Stages, int Binding, int DescriptorCount>
 struct ResourceBinding
 {
     using resourceType = Resource*;
+    static constexpr int get_stages() { return Stages; }
     static constexpr VkDescriptorType type() { return ResourceType; }
     static constexpr int get_binding() { return Binding; }
     static constexpr int get_descriptor_count() { return DescriptorCount; }
@@ -43,11 +48,24 @@ struct ResourceBinding
         std::memcpy(resources, info, DescriptorCount * sizeof(Resource*));
     }
 
-    ResourceBinding(std::initializer_list<Resource*> init) {
-        static_assert(init.size() == DescriptorCount, "The number of descriptors must be equal to the descriptorCount");
-        std::copy(init.begin(), init.end(), resources);
+    template <typename... Args>
+    ResourceBinding(Args*... args) : resources{args...} {
+        static_assert(sizeof...(Args) == DescriptorCount, 
+                      "The number of descriptors must be equal to the descriptorCount");
     }
 
+    
+
+    void writeAll(VkDevice device, std::vector<VkDescriptorSet> descriptorSets)
+    {
+        for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+        {
+            for (int i = 0; i < DescriptorCount; i++)
+            {
+                write(device, descriptorSets[frame], i, frame);
+            }
+        }
+    }
 
     void write(VkDevice device, VkDescriptorSet& descriptorSet, int element, int frame)
     {
@@ -56,7 +74,7 @@ struct ResourceBinding
         descriptorWrite.dstSet = descriptorSet;
         descriptorWrite.dstBinding = get_binding();
         descriptorWrite.dstArrayElement = element;
-        descriptorWrite.descriptorType = get_type();
+        descriptorWrite.descriptorType = type();
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pNext = nullptr;
         resources[element]->write(descriptorWrite, element);

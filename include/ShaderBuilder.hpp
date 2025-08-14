@@ -238,25 +238,25 @@ struct FixedString {
     }
 };
 
+template <typename... Shaders>
+struct has_duplicate_shader_bindings;
+
+template <>
+struct has_duplicate_shader_bindings<> {
+    static constexpr bool value = false;
+};
+
+template <typename First, typename... Rest>
+struct has_duplicate_shader_bindings<First, Rest...>
+{
+    static constexpr bool value = 
+        ((First::get_binding_set() == Rest::get_binding_set() || First::get_binding() == Rest::get_binding() || First::get_binding_count() == Rest::get_binding_count()) || ...) ||
+        has_duplicate_shader_bindings<Rest...>::value;
+};
+
 template <FixedString ShaderName, FixedString Path, ShaderType Type, typename... Bindings>
 class Shader {
 private:
-
-    template <typename... Shaders>
-    struct has_duplicate_shader_bindings;
-
-    template <>
-    struct has_duplicate_shader_bindings<> {
-        static constexpr bool value = false;
-    };
-
-    template <typename First, typename... Rest>
-    struct has_duplicate_shader_bindings<First, Rest...>
-    {
-        static constexpr bool value = 
-            ((First::get_binding_set() == Rest::get_binding_set() || First::get_binding() == Rest::get_binding() || First::get_binding_count() == Rest::get_binding_count()) || ...) ||
-            has_duplicate_shader_bindings<Rest...>::value;
-    };
 
     static_assert(!has_duplicate_shader_bindings<Bindings...>::value, "Shader cannot have duplicate bindings");
 
@@ -328,7 +328,10 @@ public:
     using shaders = std::tuple<Shaders...>;
     
     // Original constructor
-    ShaderGroup(Shaders&... shaders) : m_shaders(shaders...) {}
+    ShaderGroup(Shaders&... shaders) : m_shaders(shaders...) {
+        printf("Creating shader group\n");
+        fflush(stdout);
+    }
 
     std::tuple<Shaders&...> m_shaders;
 };
@@ -342,28 +345,26 @@ public:
 
 
 
+
+template <typename... Shaders>
+struct has_duplicate_bindings;
+
+template <>
+struct has_duplicate_bindings<> {
+    static constexpr bool value = false;
+};
+
+template <typename First, typename... Rest>
+struct has_duplicate_bindings<First, Rest...>
+{
+    static constexpr bool value = 
+        ((std::is_same_v<typename First::resourceType, typename Rest::resourceType> || First::get_type() == Rest::get_type() || First::get_binding() == Rest::get_binding() || First::get_descriptor_count() == Rest::get_descriptor_count()) || ...) ||
+        has_duplicate_bindings<Rest...>::value;
+};
+
 template <typename... Bindings>
 class ShaderResourceSet
 {
-
-    template <typename... Shaders>
-    struct has_duplicate_bindings;
-
-    template <>
-    struct has_duplicate_bindings<> {
-        static constexpr bool value = false;
-    };
-
-    template <typename First, typename... Rest>
-    struct has_duplicate_bindings<First, Rest...>
-    {
-        static constexpr bool value = 
-            ((std::is_same_v<typename First::resourceType, typename Rest::resourceType> || First::get_type() == Rest::get_type() || First::get_binding() == Rest::get_binding() || First::get_descriptor_count() == Rest::get_descriptor_count()) || ...) ||
-            has_duplicate_bindings<Rest...>::value;
-    };
-
-    template <typename ResourceBindings>
-    struct gather_bindings;
 
     static_assert(!has_duplicate_bindings<Bindings...>::value, "Shader Resource Set cannot have duplicate bindings!");
 
@@ -371,10 +372,66 @@ public:
 
     using BindingResources = std::tuple<Bindings...>;
 
-    ShaderResourceSet(std::unique_ptr<VulkanContext>& ctx, Bindings... bindings)
-    {
-        
-    }
+    ShaderResourceSet(std::unique_ptr<VulkanContext>& ctx, Bindings&&... bindings) :
+    descriptorSetLayout([&]() {
+        printf("Creating descriptor set layout\n");
+        fflush(stdout);
+
+        std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
+
+        // Fold expression over Bindings...
+        (void(
+            [&] {
+                using BindingType = Bindings;
+                VkDescriptorSetLayoutBinding bindInfo{};
+                bindInfo.binding = BindingType::get_binding();
+                bindInfo.descriptorCount = BindingType::get_descriptor_count();
+                bindInfo.descriptorType = BindingType::type();
+                bindInfo.stageFlags = BindingType::get_stages();
+                bindInfo.pImmutableSamplers = nullptr;
+                descriptorBindings.push_back(bindInfo);
+            }()
+        ), ...); // this iterates over each Binding type
+
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
+        descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(descriptorBindings.size());
+        descriptorSetLayoutInfo.pBindings = descriptorBindings.data();
+        descriptorSetLayoutInfo.pNext = nullptr;
+
+        VkDescriptorSetLayout layout;
+        if (vkCreateDescriptorSetLayout(ctx->getDevice(), &descriptorSetLayoutInfo, nullptr, &layout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor set layout!");
+        }
+
+        return layout;
+    }()),
+    descriptorSets([&](){
+        printf("Creating descriptor sets\n");
+        fflush(stdout);
+        VkDescriptorSetAllocateInfo allocInfo = {};
+        std::vector<VkDescriptorSetLayout> descriptorSetLayouts{MAX_FRAMES_IN_FLIGHT, descriptorSetLayout};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = DescriptorPool::instance().get();
+        allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+        allocInfo.pSetLayouts = descriptorSetLayouts.data();
+
+        std::vector<VkDescriptorSet> descriptorSets(MAX_FRAMES_IN_FLIGHT);
+        if (vkAllocateDescriptorSets(ctx->getDevice(), &allocInfo, descriptorSets.data())) {
+            throw std::runtime_error("Failed to create raytracing descriptor set!");
+        }
+
+        return std::move(descriptorSets);
+    }()),
+    bindings(
+        ([&](auto&& b) {
+            printf("Creating bindings\n");
+        fflush(stdout);
+            b.writeAll(ctx->getDevice(), descriptorSets);
+            return std::move(b);
+        }(std::forward<Bindings>(bindings)))...
+    )
+    {}
 
 private:
 
@@ -385,79 +442,81 @@ private:
 
 
 
+template <int SetIndex, typename ShaderBinding, typename ResourceTuple>
+struct vgp_find_invalid_binding;
+
+template <int SetIndex, typename ShaderBinding>
+struct vgp_find_invalid_binding<SetIndex, ShaderBinding, std::tuple<>> {
+    static constexpr bool value = false;
+};
+
+template <int SetIndex, typename ShaderBinding, typename First, typename... Rest>
+struct vgp_find_invalid_binding<SetIndex, ShaderBinding, std::tuple<First, Rest...>> {
+    static constexpr bool value =
+        (ShaderBinding::get_binding() != First::get_binding() ||
+         ShaderBinding::get_descriptor_count() != First::get_descriptor_count() ||
+         ShaderBinding::type() != First::type()) ||
+        vgp_find_invalid_binding<SetIndex, ShaderBinding, std::tuple<Rest...>>::value;
+};
+
+
+// 2. Check a ShaderBinding against all ResourceSets
+template <int SetIndex, typename ShaderBinding, typename... Sets>
+struct vgp_shader_invalid_resource;
+
+template <int SetIndex, typename ShaderBinding>
+struct vgp_shader_invalid_resource<SetIndex, ShaderBinding> {
+    static constexpr bool value = false;
+};
+
+template <int SetIndex, typename ShaderBinding, typename FirstSet, typename... RestSets>
+struct vgp_shader_invalid_resource<SetIndex, ShaderBinding, FirstSet, RestSets...> {
+    static constexpr bool value =
+        vgp_find_invalid_binding<SetIndex, ShaderBinding, typename FirstSet::BindingResources>::value ||
+        vgp_shader_invalid_resource<SetIndex + 1, ShaderBinding, RestSets...>::value;
+};
+
+
+// 3. Check all bindings in a shader
+template <typename ShaderBindingsTuple, typename... Sets>
+struct vgp_shader_invalid;
+
+template <typename... Sets>
+struct vgp_shader_invalid<std::tuple<>, Sets...> {
+    static constexpr bool value = false;
+};
+
+template <typename FirstBinding, typename... RestBindings, typename... Sets>
+struct vgp_shader_invalid<std::tuple<FirstBinding, RestBindings...>, Sets...> {
+    static constexpr bool value =
+        vgp_shader_invalid_resource<0, FirstBinding, Sets...>::value ||
+        vgp_shader_invalid<std::tuple<RestBindings...>, Sets...>::value;
+};
+
+
+// 4. Iterate over all shaders in the ShaderGroup
+template <typename ShaderTuple, typename... Sets>
+struct vgp_invalid;
+
+template <typename... Sets>
+struct vgp_invalid<std::tuple<>, Sets...> {
+    static constexpr bool value = false;
+};
+
+template <typename FirstShader, typename... RestShaders, typename... Sets>
+struct vgp_invalid<std::tuple<FirstShader, RestShaders...>, Sets...> {
+    static constexpr bool value =
+        vgp_shader_invalid<typename FirstShader::BindingsList, Sets...>::value ||
+        vgp_invalid<std::tuple<RestShaders...>, Sets...>::value;
+};
+
+
+// ----------------------------
+// Step 2: Main struct wrapper
+// ----------------------------
 template <typename ShaderGroup, typename... ResourceSets>
 struct validate_graphics_pipeline {
-
-    // Check a single ShaderBinding against a single ResourceSet
-    template <int SetIndex, typename ShaderBinding, typename ResourceTuple>
-    struct find_invalid_binding;
-
-    template <int SetIndex, typename ShaderBinding>
-    struct find_invalid_binding<SetIndex, ShaderBinding, std::tuple<>> {
-        static constexpr bool value = false;
-    };
-
-    template <int SetIndex, typename ShaderBinding, typename First, typename... Rest>
-    struct find_invalid_binding<SetIndex, ShaderBinding, std::tuple<First, Rest...>> {
-        static constexpr bool value =
-            (ShaderBinding::get_binding() != First::get_binding() ||
-             ShaderBinding::get_descriptor_count() != First::get_descriptor_count() ||
-             ShaderBinding::type() != First::type()) ||
-            find_invalid_binding<SetIndex, ShaderBinding, std::tuple<Rest...>>::value;
-    };
-
-
-    // Check a ShaderBinding against all ResourceSets (uses SetIndex as the set number)
-    template <int SetIndex, typename ShaderBinding, typename... Sets>
-    struct shader_invalid_resource;
-
-    template <int SetIndex, typename ShaderBinding>
-    struct shader_invalid_resource<SetIndex, ShaderBinding> {
-        static constexpr bool value = false;
-    };
-
-    template <int SetIndex, typename ShaderBinding, typename FirstSet, typename... RestSets>
-    struct shader_invalid_resource<SetIndex, ShaderBinding, FirstSet, RestSets...> {
-        static constexpr bool value =
-            find_invalid_binding<SetIndex, ShaderBinding, typename FirstSet::BindingResources>::value ||
-            shader_invalid_resource<SetIndex + 1, ShaderBinding, RestSets...>::value;
-    };
-
-
-    // Check all bindings in a shader
-    template <typename Shader, typename... Sets>
-    struct shader_invalid;
-
-    template <typename... Sets>
-    struct shader_invalid<std::tuple<>, Sets...> {
-        static constexpr bool value = false;
-    };
-
-    template <typename FirstBinding, typename... RestBindings, typename... Sets>
-    struct shader_invalid<std::tuple<FirstBinding, RestBindings...>, Sets...> {
-        static constexpr bool value =
-            shader_invalid_resource<0, FirstBinding, Sets...>::value ||
-            shader_invalid<std::tuple<RestBindings...>, Sets...>::value;
-    };
-
-
-    // Iterate over all shaders in the ShaderGroup
-    template <typename ShaderTuple>
-    struct invalid;
-
-    template <>
-    struct invalid<std::tuple<>> {
-        static constexpr bool value = false;
-    };
-
-    template <typename FirstShader, typename... RestShaders>
-    struct invalid<std::tuple<FirstShader, RestShaders...>> {
-        static constexpr bool value =
-            shader_invalid<typename FirstShader::BindingsList, ResourceSets...>::value ||
-            invalid<std::tuple<RestShaders...>>::value;
-    };
-
-    static constexpr bool value = !invalid<typename ShaderGroup::shaders>::value;
+    static constexpr bool value = !vgp_invalid<typename ShaderGroup::shaders, ResourceSets...>::value;
 };
 
 
@@ -469,7 +528,8 @@ class GraphicsPipeline
 public:
     GraphicsPipeline(ShaderGroup shaderGroup, ShaderResourcesBindings... resources)
     {
-
+        printf("Creating Pipeline\n");
+        fflush(stdout);
     }
 };
 
