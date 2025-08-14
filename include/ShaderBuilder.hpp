@@ -80,7 +80,7 @@ private:
             A::type() == B::type();
 
         static constexpr bool same_count =
-            (A::get_binding_count() == B::get_binding_count());
+            (A::get_descriptor_count() == B::get_descriptor_count());
 
         static constexpr bool value = !same_slot || (same_type && same_count);
     };
@@ -442,55 +442,56 @@ private:
 
 
 
-template <int SetIndex, typename ShaderBinding, typename ResourceTuple>
+template <int Stage, int SetIndex, typename ShaderBinding, typename ResourceTuple>
 struct vgp_find_invalid_binding;
 
-template <int SetIndex, typename ShaderBinding>
-struct vgp_find_invalid_binding<SetIndex, ShaderBinding, std::tuple<>> {
+template <int Stage, int SetIndex, typename ShaderBinding>
+struct vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, std::tuple<>> {
     static constexpr bool value = false;
 };
 
-template <int SetIndex, typename ShaderBinding, typename First, typename... Rest>
-struct vgp_find_invalid_binding<SetIndex, ShaderBinding, std::tuple<First, Rest...>> {
+template <int Stage, int SetIndex, typename ShaderBinding, typename First, typename... Rest>
+struct vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, std::tuple<First, Rest...>> {
     static constexpr bool value =
         (ShaderBinding::get_binding() != First::get_binding() ||
          ShaderBinding::get_descriptor_count() != First::get_descriptor_count() ||
          ShaderBinding::type() != First::type()) ||
-        vgp_find_invalid_binding<SetIndex, ShaderBinding, std::tuple<Rest...>>::value;
+         (Stage & First::get_stages()) == 0 ||
+        vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, std::tuple<Rest...>>::value;
 };
 
 
 // 2. Check a ShaderBinding against all ResourceSets
-template <int SetIndex, typename ShaderBinding, typename... Sets>
+template <int Stage, int SetIndex, typename ShaderBinding, typename... Sets>
 struct vgp_shader_invalid_resource;
 
-template <int SetIndex, typename ShaderBinding>
-struct vgp_shader_invalid_resource<SetIndex, ShaderBinding> {
+template <int Stage, int SetIndex, typename ShaderBinding>
+struct vgp_shader_invalid_resource<Stage, SetIndex, ShaderBinding> {
     static constexpr bool value = false;
 };
 
-template <int SetIndex, typename ShaderBinding, typename FirstSet, typename... RestSets>
-struct vgp_shader_invalid_resource<SetIndex, ShaderBinding, FirstSet, RestSets...> {
+template <int Stage, int SetIndex, typename ShaderBinding, typename FirstSet, typename... RestSets>
+struct vgp_shader_invalid_resource<Stage, SetIndex, ShaderBinding, FirstSet, RestSets...> {
     static constexpr bool value =
-        vgp_find_invalid_binding<SetIndex, ShaderBinding, typename FirstSet::BindingResources>::value ||
-        vgp_shader_invalid_resource<SetIndex + 1, ShaderBinding, RestSets...>::value;
+        vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, typename FirstSet::BindingResources>::value ||
+        vgp_shader_invalid_resource<Stage, SetIndex + 1, ShaderBinding, RestSets...>::value;
 };
 
 
 // 3. Check all bindings in a shader
-template <typename ShaderBindingsTuple, typename... Sets>
+template <int Stage, typename ShaderBindingsTuple, typename... Sets>
 struct vgp_shader_invalid;
 
-template <typename... Sets>
-struct vgp_shader_invalid<std::tuple<>, Sets...> {
+template <int Stage, typename... Sets>
+struct vgp_shader_invalid<Stage, std::tuple<>, Sets...> {
     static constexpr bool value = false;
 };
 
-template <typename FirstBinding, typename... RestBindings, typename... Sets>
-struct vgp_shader_invalid<std::tuple<FirstBinding, RestBindings...>, Sets...> {
+template <int Stage, typename FirstBinding, typename... RestBindings, typename... Sets>
+struct vgp_shader_invalid<Stage, std::tuple<FirstBinding, RestBindings...>, Sets...> {
     static constexpr bool value =
-        vgp_shader_invalid_resource<0, FirstBinding, Sets...>::value ||
-        vgp_shader_invalid<std::tuple<RestBindings...>, Sets...>::value;
+        vgp_shader_invalid_resource<Stage, 0, FirstBinding, Sets...>::value ||
+        vgp_shader_invalid<Stage, std::tuple<RestBindings...>, Sets...>::value;
 };
 
 
@@ -506,7 +507,7 @@ struct vgp_invalid<std::tuple<>, Sets...> {
 template <typename FirstShader, typename... RestShaders, typename... Sets>
 struct vgp_invalid<std::tuple<FirstShader, RestShaders...>, Sets...> {
     static constexpr bool value =
-        vgp_shader_invalid<typename FirstShader::BindingsList, Sets...>::value ||
+        vgp_shader_invalid<FirstShader::get_type(), typename FirstShader::BindingsList, Sets...>::value ||
         vgp_invalid<std::tuple<RestShaders...>, Sets...>::value;
 };
 
