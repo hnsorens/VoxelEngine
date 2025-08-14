@@ -13,6 +13,10 @@ using GlobalShaderTypes = ShaderTypes<
     "main_frag",
     "bin/frag.spv",
     SHADER_FRAGMENT,
-    ShaderBinding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 1, 1>
+    ShaderBindings<
+      ShaderBinding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 1, 1>
+    >,
+    ShaderAttachments<
+    >
   >
 >;

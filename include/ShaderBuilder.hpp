@@ -24,201 +24,6 @@ enum ShaderType
 };
 
 
-
-
-
-
-
-template <typename... Shaders>
-struct has_duplicate_shader_types;
-
-template <>
-struct has_duplicate_shader_types<> {
-    static constexpr bool value = false;
-};
-
-template <typename First, typename... Rest>
-struct has_duplicate_shader_types<First, Rest...>
-{
-    static constexpr bool value = 
-        ((First::get_type() == Rest::get_type()) || ...) ||
-        has_duplicate_shader_types<Rest...>::value;
-};
-
-template <typename... Shaders>
-struct all_shader_types_unique {
-    static constexpr bool value = !has_duplicate_shader_types<Shaders...>::value;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename... Shaders>
-struct validate_shader_bindings {
-private:
-    // Combine all shaders' BindingsList tuple types into one tuple type
-    using all_bindings_tuple = decltype(std::tuple_cat(
-        std::declval<typename Shaders::BindingsList>()...
-    ));
-
-    // Check compatibility of two binding types
-    template <typename A, typename B>
-    struct compatible {
-        static constexpr bool same_slot =
-            (A::get_binding_set() == B::get_binding_set()) &&
-            (A::get_binding()     == B::get_binding());
-
-        static constexpr bool same_type  =
-            A::type() == B::type();
-
-        static constexpr bool same_count =
-            (A::get_descriptor_count() == B::get_descriptor_count());
-
-        static constexpr bool value = !same_slot || (same_type && same_count);
-    };
-
-    // Recursive pairwise checker
-    template <typename... Ts>
-    struct check_all {
-        static constexpr bool value = true; // Empty pack or single element is fine
-    };
-
-    template <typename First, typename... Rest>
-    struct check_all<First, Rest...> {
-        static constexpr bool value =
-            ((compatible<First, Rest>::value) && ...) && // Compare First with all Rest
-            check_all<Rest...>::value;                   // Then recurse
-    };
-
-    // Turn tuple<Ts...> into check_all<Ts...>::value
-    template <typename Tuple>
-    struct tuple_check;
-
-    template <typename... Ts>
-    struct tuple_check<std::tuple<Ts...>> {
-        static constexpr bool value = check_all<Ts...>::value;
-    };
-
-public:
-    static constexpr bool value = tuple_check<all_bindings_tuple>::value;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template<typename A, typename B>
-struct BindingLess {
-    static constexpr bool value = A::get_binding() < B::get_binding();
-};
-// Helper to filter elements less than pivot
-
-// Generic tuple filter
-template<typename Tuple, template<typename> class Predicate>
-struct FilterTuple;
-
-template<template<typename> class Predicate>
-struct FilterTuple<std::tuple<>, Predicate> {
-    using type = std::tuple<>;
-};
-
-template<typename T, typename... Ts, template<typename> class Predicate>
-struct FilterTuple<std::tuple<T, Ts...>, Predicate> {
-    using type = decltype(std::tuple_cat(
-        std::conditional_t<Predicate<T>::value, std::tuple<T>, std::tuple<>>{},
-        typename FilterTuple<std::tuple<Ts...>, Predicate>::type{}
-    ));
-};
-
-template<typename T, typename... Ts>
-struct FilterLess {
-    template<typename U>
-    struct Predicate {
-        static constexpr bool value = BindingLess<U, T>::value;
-    };
-    
-    using type = typename FilterTuple<std::tuple<Ts...>, Predicate>::type;
-};
-
-// Helper to filter elements greater than or equal to pivot
-template<typename T, typename... Ts>
-struct FilterGreaterEqual {
-    template<typename U>
-    struct Predicate {
-        static constexpr bool value = !BindingLess<U, T>::value;
-    };
-    
-    using type = typename FilterTuple<std::tuple<Ts...>, Predicate>::type;
-};
-
-template <typename Tuple>
-struct SortBindings;
-
-template<>
-struct SortBindings<std::tuple<>> {
-    using type = std::tuple<>;
-};
-
-template<typename T>
-struct SortBindings<std::tuple<T>> {
-    using type = std::tuple<T>;
-};
-
-// Updated SortBindings implementation
-template<typename Pivot, typename... Others>
-struct SortBindings<std::tuple<Pivot, Others...>> {
-    using less_partition = typename FilterLess<Pivot, Others...>::type;
-    using greater_partition = typename FilterGreaterEqual<Pivot, Others...>::type;
-    
-    using less_sorted = typename SortBindings<less_partition>::type;
-    using greater_sorted = typename SortBindings<greater_partition>::type;
-    
-    using type = decltype(std::tuple_cat(
-        less_sorted{},
-        std::tuple<Pivot>{},
-        greater_sorted{}
-    ));
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template<size_t N>
 struct FixedString {
     char value[N] = {};
@@ -238,33 +43,109 @@ struct FixedString {
     }
 };
 
-template <typename... Shaders>
-struct has_duplicate_shader_bindings;
-
-template <>
-struct has_duplicate_shader_bindings<> {
-    static constexpr bool value = false;
-};
-
-template <typename First, typename... Rest>
-struct has_duplicate_shader_bindings<First, Rest...>
+template <typename... Bindings>
+struct ShaderBindings
 {
-    static constexpr bool value = 
-        ((First::get_binding_set() == Rest::get_binding_set() || First::get_binding() == Rest::get_binding() || First::get_binding_count() == Rest::get_binding_count()) || ...) ||
-        has_duplicate_shader_bindings<Rest...>::value;
+    using Options = std::tuple<Bindings...>;
 };
 
-template <FixedString ShaderName, FixedString Path, ShaderType Type, typename... Bindings>
+template <typename... Attachments>
+struct ShaderAttachments
+{
+    using Options = std::tuple<Attachments...>;
+};
+
+
+namespace ShaderDetails
+{
+    template <typename... Shaders>
+    struct has_duplicate_shader_bindings;
+
+    template <>
+    struct has_duplicate_shader_bindings<> {
+        static constexpr bool value = false;
+    };
+
+    template <typename First, typename... Rest>
+    struct has_duplicate_shader_bindings<First, Rest...>
+    {
+        static constexpr bool value = 
+            ((First::get_binding_set() == Rest::get_binding_set() || First::get_binding() == Rest::get_binding() || First::get_binding_count() == Rest::get_binding_count()) || ...) ||
+            has_duplicate_shader_bindings<Rest...>::value;
+    };
+
+    template <typename options>
+    struct find_bindings;
+
+    template <>
+    struct find_bindings<std::tuple<>>
+    {
+        using type = ShaderBindings<>;
+    };
+
+
+    // Recursive case: check first element
+    template <typename First, typename... Rest>
+    struct find_bindings<std::tuple<First, Rest...>> {
+    private:
+        // Helper: true if First is a ShaderBindings<...>
+        template <typename T>
+        struct is_shader_bindings : std::false_type {};
+
+        template <typename... Bs>
+        struct is_shader_bindings<ShaderBindings<Bs...>> : std::true_type {};
+
+    public:
+        using type = std::conditional_t<
+            is_shader_bindings<First>::value,
+            First,
+            typename find_bindings<std::tuple<Rest...>>::type
+        >;
+    };
+
+    template <typename options>
+    struct find_attachments;
+
+    template <>
+    struct find_attachments<std::tuple<>>
+    {
+        using type = ShaderAttachments<>;
+    };
+
+    template <typename First, typename... Rest>
+    struct find_attachments<std::tuple<First, Rest...>> {
+    private:
+        // Helper: true if First is a ShaderBindings<...>
+        template <typename T>
+        struct is_shader_attachment : std::false_type {};
+
+        template <typename... Bs>
+        struct is_shader_attachment<ShaderAttachments<Bs...>> : std::true_type {};
+
+    public:
+        using type = std::conditional_t<
+            is_shader_attachment<First>::value,
+            First,
+            typename find_attachments<std::tuple<Rest...>>::type
+        >;
+    };
+}
+
+template <FixedString ShaderName, FixedString Path, ShaderType Type, typename... ShaderOptions>
 class Shader {
 private:
 
-    static_assert(!has_duplicate_shader_bindings<Bindings...>::value, "Shader cannot have duplicate bindings");
+    using Bindings = ShaderDetails::find_bindings<std::tuple<ShaderOptions...>>::type::Options;
+    using Attachments = ShaderDetails::find_attachments<std::tuple<ShaderOptions...>>::type::Options;
+
+    static_assert(std::tuple_size<Attachments>::value > 0 ? Type == SHADER_FRAGMENT : true, "Only fragment shaders can contain attachments");
+    static_assert(!ShaderDetails::has_duplicate_shader_bindings<Bindings>::value, "Shader cannot have duplicate bindings");
 
 public:
     static constexpr FixedString name = ShaderName.value;
     static constexpr FixedString path = Path.value;
 
-    using BindingsList = std::tuple<Bindings...>;
+    using BindingsList = Bindings;
 
     Shader(std::unique_ptr<VulkanContext>& ctx) 
     {
@@ -281,6 +162,8 @@ public:
     }
 
     static constexpr ShaderType get_type() { return Type; }
+
+    VkPipelineShaderStageCreateInfo getShaderInfo() { return shaderInfo; }
     
 private:
 
@@ -305,22 +188,65 @@ private:
 };
 
 
+namespace ShaderGroupDetails
+{
+    template <typename... Shaders>
+    struct validate_shader_bindings {
+    private:
+        // Combine all shaders' BindingsList tuple types into one tuple type
+        using all_bindings_tuple = decltype(std::tuple_cat(
+            std::declval<typename Shaders::BindingsList>()...
+        ));
 
+        // Check compatibility of two binding types
+        template <typename A, typename B>
+        struct compatible {
+            static constexpr bool same_slot =
+                (A::get_binding_set() == B::get_binding_set()) &&
+                (A::get_binding()     == B::get_binding());
 
+            static constexpr bool same_type  =
+                A::type() == B::type();
 
+            static constexpr bool same_count =
+                (A::get_descriptor_count() == B::get_descriptor_count());
 
+            static constexpr bool value = !same_slot || (same_type && same_count);
+        };
 
+        // Recursive pairwise checker
+        template <typename... Ts>
+        struct check_all {
+            static constexpr bool value = true; // Empty pack or single element is fine
+        };
 
+        template <typename First, typename... Rest>
+        struct check_all<First, Rest...> {
+            static constexpr bool value =
+                ((compatible<First, Rest>::value) && ...) && // Compare First with all Rest
+                check_all<Rest...>::value;                   // Then recurse
+        };
 
+        // Turn tuple<Ts...> into check_all<Ts...>::value
+        template <typename Tuple>
+        struct tuple_check;
 
+        template <typename... Ts>
+        struct tuple_check<std::tuple<Ts...>> {
+            static constexpr bool value = check_all<Ts...>::value;
+        };
 
+    public:
+        static constexpr bool value = tuple_check<all_bindings_tuple>::value;
+    };
+}
 
 template <typename... Shaders>
 class ShaderGroup
 {
     // static_assert(all_shader_types_unique<Shaders...>::value,
     //              "Shader types conflict - multiple shaders with the same shader type!");
-    static_assert(validate_shader_bindings<Shaders...>::value,
+    static_assert(ShaderGroupDetails::validate_shader_bindings<Shaders...>::value,
                  "Shader bindings conflict - same binding number with different resource type or different binding counts!");
 public:
 
@@ -328,45 +254,50 @@ public:
     using shaders = std::tuple<Shaders...>;
     
     // Original constructor
-    ShaderGroup(Shaders&... shaders) : m_shaders(shaders...) {
-        printf("Creating shader group\n");
-        fflush(stdout);
+    ShaderGroup(Shaders&... shaders) : 
+    m_shaders([&](){
+        (m_shaders.push_back(shaders.getShaderInfo()), ...);
+    }()) {}
+
+    size_t size()
+    {
+        return m_shaders.size();
     }
 
-    std::tuple<Shaders&...> m_shaders;
+    VkPipelineShaderStageCreateInfo* data()
+    {
+        return m_shaders.data();
+    }
+    
+private:
+
+    std::vector<VkPipelineShaderStageCreateInfo> m_shaders;
 };
 
-
-
-
-
-
-
-
-
-
-
-template <typename... Shaders>
-struct has_duplicate_bindings;
-
-template <>
-struct has_duplicate_bindings<> {
-    static constexpr bool value = false;
-};
-
-template <typename First, typename... Rest>
-struct has_duplicate_bindings<First, Rest...>
+namespace ShaderResourceSetDetails
 {
-    static constexpr bool value = 
-        ((std::is_same_v<typename First::resourceType, typename Rest::resourceType> || First::get_type() == Rest::get_type() || First::get_binding() == Rest::get_binding() || First::get_descriptor_count() == Rest::get_descriptor_count()) || ...) ||
-        has_duplicate_bindings<Rest...>::value;
-};
+    template <typename... Shaders>
+    struct has_duplicate_bindings;
+
+    template <>
+    struct has_duplicate_bindings<> {
+        static constexpr bool value = false;
+    };
+
+    template <typename First, typename... Rest>
+    struct has_duplicate_bindings<First, Rest...>
+    {
+        static constexpr bool value = 
+            ((std::is_same_v<typename First::resourceType, typename Rest::resourceType> || First::get_type() == Rest::get_type() || First::get_binding() == Rest::get_binding() || First::get_descriptor_count() == Rest::get_descriptor_count()) || ...) ||
+            has_duplicate_bindings<Rest...>::value;
+    };
+}
 
 template <typename... Bindings>
 class ShaderResourceSet
 {
 
-    static_assert(!has_duplicate_bindings<Bindings...>::value, "Shader Resource Set cannot have duplicate bindings!");
+    static_assert(!ShaderResourceSetDetails::has_duplicate_bindings<Bindings...>::value, "Shader Resource Set cannot have duplicate bindings!");
 
 public:
 
@@ -432,6 +363,8 @@ public:
         }(std::forward<Bindings>(bindings)))...
     )
     {}
+
+    VkDescriptorSetLayout getLayout() { return descriptorSetLayout; }
 
 private:
 
@@ -527,11 +460,54 @@ class GraphicsPipeline
     static_assert(validate_graphics_pipeline<ShaderGroup, ShaderResourcesBindings...>::value, "Graphics Pipeline Invalid");
 
 public:
-    GraphicsPipeline(ShaderGroup shaderGroup, ShaderResourcesBindings... resources)
+    GraphicsPipeline(std::unique_ptr<VulkanContext>& ctx, ShaderGroup shaderGroup, ShaderResourcesBindings... resources) :
+    pipelineLayout([&](){
+
+        std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+
+        (descriptorSetLayouts.push_back(resources.getLayout()), ...);
+
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
+        pipelineLayoutInfo.pushConstantRangeCount = 0;
+        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+
+        VkPipelineLayout layout;
+        if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,
+                                    &layout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create pipeline layout!");
+        }
+
+        return layout;
+    }()),
+    pipeline([&](){
+        VkGraphicsPipelineCreateInfo pipelineInfo;
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.stageCount = shaderGroup.size();
+        pipelineInfo.pStages = shaderGroup.data();
+        pipelineInfo.renderPass = info.renderPass;
+        pipelineInfo.subpass = 0;
+        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+        pipelineInfo.layout = pipelineLayout;
+
+        VkPipeline pipeline;
+        if (vkCreateGraphicsPipelines(ctx->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
+        nullptr, &pipeline) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create graphics pipeline!");
+        }
+
+        return pipeline;
+    }())
     {
         printf("Creating Pipeline\n");
         fflush(stdout);
     }
+
+private:
+
+    VkPipelineLayout pipelineLayout;
+    VkPipeline pipeline;
 };
 
 
