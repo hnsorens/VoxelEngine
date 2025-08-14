@@ -13,6 +13,7 @@
 #include <string>
 #include <vulkan/vulkan_core.h>
 #include "Binding.hpp"
+#include "DescriptorPool.hpp"
 
 
 enum ShaderType
@@ -301,47 +302,11 @@ public:
 
         return layout;
     }()),
-    descriptorPool([&](){
-        printf("Creating descriptor Pool\n");
-        fflush(stdout);
-        std::unordered_map<VkDescriptorType, int> descriptorCounts;
-
-        [&]<std::size_t... Is>(std::index_sequence<Is...>) {
-            ([&] {
-                using BindingType = std::tuple_element_t<Is, SortedBindings>;
-                descriptorCounts[BindingType::type()] += BindingType::get_descriptor_count();
-            }(), ...);
-        }(std::make_index_sequence<std::tuple_size_v<SortedBindings>>{});
-
-        std::vector<VkDescriptorPoolSize> poolSizes;
-        for (auto& [descriptorType, descriptorCount] : descriptorCounts)
-        {
-            VkDescriptorPoolSize poolSize = {};
-            poolSize.type = descriptorType;
-            poolSize.descriptorCount = descriptorCount * MAX_FRAMES_IN_FLIGHT;
-            poolSizes.push_back(poolSize);
-        }
-
-        VkDescriptorPoolCreateInfo createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        createInfo.poolSizeCount = poolSizes.size();
-        createInfo.pPoolSizes = poolSizes.data();
-        createInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
-        
-        VkDescriptorPool pool;
-        if (vkCreateDescriptorPool(ctx->getDevice(), &createInfo, nullptr, &pool) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create raytracing descriptor pool!");
-        }
-
-        return pool;
-    }()),
     setLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout)
     {}
     
 private:
     VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSetLayout> setLayouts;
     
     VkDescriptorSetLayoutCreateInfo layoutCreateInfo;
@@ -358,7 +323,7 @@ public:
     descriptorSets([&](){
         VkDescriptorSetAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = shaderResourceLayout.descriptorPool;
+        allocInfo.descriptorPool = DescriptorPool::instance().get();
         allocInfo.descriptorSetCount = static_cast<uint32_t>(shaderResourceLayout.setLayouts.size());
         allocInfo.pSetLayouts = shaderResourceLayout.setLayouts.data();
 
@@ -392,7 +357,7 @@ public:
                     binding.write(ctx->getDevice(), descriptorSets[i], i, frame);
                 }
             }(bindings), ...);
-        }, std::forward<ShaderResource::SortedBindings>(bindings));
+        }, std::forward<typename ShaderResource::SortedBindings>(bindings));
     }
 
     std::vector<VkDescriptorSet> descriptorSets;
@@ -430,6 +395,8 @@ private:
     std::tuple<Shaders...> shaders;
 
 public:
+    using types = std::tuple<Shaders...>;
+
     ShaderTypes(std::unique_ptr<VulkanContext>& ctx) : shaders(Shaders(ctx)...) {}
 
     template <FixedString Name>
@@ -445,40 +412,3 @@ auto make_binding_array(const T& d) {
     std::fill(std::begin(arr), std::end(arr), d);
     return typename BindingSlot<Binding, N>::template Bind<T>{arr};
 }
-
-// int main() {
-//     // These will compile (compatible bindings)
-//     std::unique_ptr<VulkanContext> ctx;
-
-//     ShaderTypes<
-//         Shader<
-//             "main_frag",
-//             "path1",
-//             SHADER_VERTEX,
-//             ImageBinding<1, 512>,
-//             BufferBinding<2, 1>
-//         >,
-//         Shader<
-//             "main_vert",
-//             "path2",
-//             SHADER_FRAGMENT,
-//             ImageBinding<1, 512>,
-//             BufferBinding<3, 1>
-//         >
-//     > shaders(ctx);
-
-//     auto& vert = shaders.get<"maind_vert">();
-//     auto& frag = shaders.get<"main_frag">();
-
-//     auto image_bindings = make_binding_array<1, 512, ImageBindingInfo>({  });
-
-//     // auto& vert = ShaderRegistry::get<"name1">();
-    
-//     ShaderPipeline pipelineBuilder({
-//         BindingSlot<1, 512>::Bind{image_bindings}, 
-//         BindingSlot<2, 1>::Bind{BufferBindingInfo{}}, 
-//         BindingSlot<3, 1>::Bind{BufferBindingInfo{}}
-//     }, vert, frag);
-    
-//     return 0;
-// }

@@ -9,8 +9,8 @@
 template <typename Resource, VkDescriptorType ResourceType, int BindingCount, int Count>
 struct Binding
 {
-    static_assert(std::is_base_of_v<BindResource, Resource>,
-                  "Resource must be derived from BindResource");
+    // static_assert(std::is_base_of_v<BindResource, Resource>,
+    //               "Resource must be derived from BindResource");
 
     using infoType = Resource*;
     static constexpr VkDescriptorType type() { return ResourceType; }

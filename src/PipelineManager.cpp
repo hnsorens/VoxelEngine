@@ -23,14 +23,14 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL};
 
-    ShaderResourceLayout shaderPipeline{
+    ShaderResourceLayout shaderResourceLayout{
       vulkanContext,
       vert_shader, frag_shader
     };
 
     ShaderResources shaderResources{
       vulkanContext,
-      shaderPipeline,
+      shaderResourceLayout,
       {
         BindingSlot<1, 1>::Bind{image}
       }

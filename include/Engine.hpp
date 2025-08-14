@@ -87,6 +87,7 @@ private:
 
 
   friend class Image;
+  friend class DescriptorPool;
 };
 
 static float semiRandomFloat(float x, float y, float z) {
