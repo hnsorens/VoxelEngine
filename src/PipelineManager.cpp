@@ -28,13 +28,12 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
     );
 
 
-    ShaderResourceSet set{vulkanContext,
+    ShaderResourceSet set1{vulkanContext,
       ResourceBinding<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, 1, Image>{image}
     };
 
-    GraphicsPipeline<decltype(group), decltype(set)> pipeline{
-      group, 
-      set
+    GraphicsPipeline pipeline{
+      group, set1
     };
 
 

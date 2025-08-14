@@ -61,90 +61,54 @@ struct all_shader_types_unique {
 
 
 
-
-
 template <typename... Shaders>
 struct validate_shader_bindings {
 private:
-    // Helper to combine all bindings from all shaders
-    template<typename... Ts>
-    static constexpr auto combine_bindings() {
-        return std::tuple_cat(typename Ts::BindingsList{}...);
-    }
-    
-    using Combined = decltype(combine_bindings<Shaders...>());
+    // Combine all shaders' BindingsList tuple types into one tuple type
+    using all_bindings_tuple = decltype(std::tuple_cat(
+        std::declval<typename Shaders::BindingsList>()...
+    ));
 
-    // Helper to check if a binding exists with given set and binding numbers
-    template <int Set, int Binding, typename... Bindings>
-    struct has_binding : std::false_type {};
-    
-    template <int Set, int Binding, typename First, typename... Rest>
-    struct has_binding<Set, Binding, First, Rest...> : 
-        std::conditional_t<(First::get_binding_set() == Set && First::get_binding() == Binding),
-                          std::true_type,
-                          has_binding<Set, Binding, Rest...>> {};
-    
-    // Helper to get the type of a binding
-    template <int Set, int Binding, typename... Bindings>
-    struct get_binding_type;
-    
-    template <int Set, int Binding, typename First, typename... Rest>
-    struct get_binding_type<Set, Binding, First, Rest...> {
-        using type = std::conditional_t<
-            (First::get_binding_set() == Set && First::get_binding() == Binding),
-            First,
-            typename get_binding_type<Set, Binding, Rest...>::type>;
-    };
-    
-    // Helper to get the count of a binding
-    template <int Set, int Binding, typename... Bindings>
-    struct get_binding_count;
-    
-    template <int Set, int Binding, typename First, typename... Rest>
-    struct get_binding_count<Set, Binding, First, Rest...> {
-        static constexpr int value = 
-            (First::get_binding_set() == Set && First::get_binding() == Binding)
-                ? First::get_binding_count()
-                : get_binding_count<Set, Binding, Rest...>::value;
+    // Check compatibility of two binding types
+    template <typename A, typename B>
+    struct compatible {
+        static constexpr bool same_slot =
+            (A::get_binding_set() == B::get_binding_set()) &&
+            (A::get_binding()     == B::get_binding());
+
+        static constexpr bool same_type  =
+            A::type() == B::type();
+
+        static constexpr bool same_count =
+            (A::get_binding_count() == B::get_binding_count());
+
+        static constexpr bool value = !same_slot || (same_type && same_count);
     };
 
-    // Main validation logic
-    template <typename... Bindings>
-    struct check_conflicts {
-        template <typename Binding>
-        struct check_binding {
-            static constexpr bool value = []{
-                constexpr int set = Binding::get_binding_set();
-                constexpr int binding = Binding::get_binding();
-                constexpr int count = Binding::get_binding_count();
-                using CurrentType = Binding;
-                
-                bool valid = true;
-                
-                // Check against each shader
-                [&]<size_t... Is>(std::index_sequence<Is...>) {
-                    ([&] {
-                        using Shader = std::tuple_element_t<Is, std::tuple<Shaders...>>;
-                        if constexpr (has_binding<set, binding, typename Shader::BindingsList>::value) {
-                            using ShaderBindingType = typename get_binding_type<set, binding, typename Shader::BindingsList>::type;
-                            constexpr int shader_count = get_binding_count<set, binding, typename Shader::BindingsList>::value;
-                            
-                            valid = valid && 
-                                   std::is_same_v<CurrentType, ShaderBindingType> && 
-                                   (count == shader_count);
-                        }
-                    }(), ...);
-                }(std::make_index_sequence<sizeof...(Shaders)>{});
-                
-                return valid;
-            }();
-        };
-        
-        static constexpr bool value = (check_binding<Bindings>::value && ...);
+    // Recursive pairwise checker
+    template <typename... Ts>
+    struct check_all {
+        static constexpr bool value = true; // Empty pack or single element is fine
+    };
+
+    template <typename First, typename... Rest>
+    struct check_all<First, Rest...> {
+        static constexpr bool value =
+            ((compatible<First, Rest>::value) && ...) && // Compare First with all Rest
+            check_all<Rest...>::value;                   // Then recurse
+    };
+
+    // Turn tuple<Ts...> into check_all<Ts...>::value
+    template <typename Tuple>
+    struct tuple_check;
+
+    template <typename... Ts>
+    struct tuple_check<std::tuple<Ts...>> {
+        static constexpr bool value = check_all<Ts...>::value;
     };
 
 public:
-    static constexpr bool value = check_conflicts<typename Combined::type>::value;
+    static constexpr bool value = tuple_check<all_bindings_tuple>::value;
 };
 
 
@@ -356,8 +320,8 @@ class ShaderGroup
 {
     // static_assert(all_shader_types_unique<Shaders...>::value,
     //              "Shader types conflict - multiple shaders with the same shader type!");
-    // static_assert(validate_shader_bindings<Shaders...>::value,
-    //              "Shader bindings conflict - same binding number with different resource type or different binding counts!");
+    static_assert(validate_shader_bindings<Shaders...>::value,
+                 "Shader bindings conflict - same binding number with different resource type or different binding counts!");
 public:
 
     
@@ -405,7 +369,7 @@ class ShaderResourceSet
 
 public:
 
-    using BindingResources = gather_bindings<Bindings...>;
+    using BindingResources = std::tuple<Bindings...>;
 
     ShaderResourceSet(std::unique_ptr<VulkanContext>& ctx, Bindings... bindings)
     {
@@ -421,100 +385,89 @@ private:
 
 
 
+template <typename ShaderGroup, typename... ResourceSets>
+struct validate_graphics_pipeline {
 
+    // Check a single ShaderBinding against a single ResourceSet
+    template <int SetIndex, typename ShaderBinding, typename ResourceTuple>
+    struct find_invalid_binding;
+
+    template <int SetIndex, typename ShaderBinding>
+    struct find_invalid_binding<SetIndex, ShaderBinding, std::tuple<>> {
+        static constexpr bool value = false;
+    };
+
+    template <int SetIndex, typename ShaderBinding, typename First, typename... Rest>
+    struct find_invalid_binding<SetIndex, ShaderBinding, std::tuple<First, Rest...>> {
+        static constexpr bool value =
+            (ShaderBinding::get_binding() != First::get_binding() ||
+             ShaderBinding::get_descriptor_count() != First::get_descriptor_count() ||
+             ShaderBinding::type() != First::type()) ||
+            find_invalid_binding<SetIndex, ShaderBinding, std::tuple<Rest...>>::value;
+    };
+
+
+    // Check a ShaderBinding against all ResourceSets (uses SetIndex as the set number)
+    template <int SetIndex, typename ShaderBinding, typename... Sets>
+    struct shader_invalid_resource;
+
+    template <int SetIndex, typename ShaderBinding>
+    struct shader_invalid_resource<SetIndex, ShaderBinding> {
+        static constexpr bool value = false;
+    };
+
+    template <int SetIndex, typename ShaderBinding, typename FirstSet, typename... RestSets>
+    struct shader_invalid_resource<SetIndex, ShaderBinding, FirstSet, RestSets...> {
+        static constexpr bool value =
+            find_invalid_binding<SetIndex, ShaderBinding, typename FirstSet::BindingResources>::value ||
+            shader_invalid_resource<SetIndex + 1, ShaderBinding, RestSets...>::value;
+    };
+
+
+    // Check all bindings in a shader
+    template <typename Shader, typename... Sets>
+    struct shader_invalid;
+
+    template <typename... Sets>
+    struct shader_invalid<std::tuple<>, Sets...> {
+        static constexpr bool value = false;
+    };
+
+    template <typename FirstBinding, typename... RestBindings, typename... Sets>
+    struct shader_invalid<std::tuple<FirstBinding, RestBindings...>, Sets...> {
+        static constexpr bool value =
+            shader_invalid_resource<0, FirstBinding, Sets...>::value ||
+            shader_invalid<std::tuple<RestBindings...>, Sets...>::value;
+    };
+
+
+    // Iterate over all shaders in the ShaderGroup
+    template <typename ShaderTuple>
+    struct invalid;
+
+    template <>
+    struct invalid<std::tuple<>> {
+        static constexpr bool value = false;
+    };
+
+    template <typename FirstShader, typename... RestShaders>
+    struct invalid<std::tuple<FirstShader, RestShaders...>> {
+        static constexpr bool value =
+            shader_invalid<typename FirstShader::BindingsList, ResourceSets...>::value ||
+            invalid<std::tuple<RestShaders...>>::value;
+    };
+
+    static constexpr bool value = !invalid<typename ShaderGroup::shaders>::value;
+};
 
 
 template <typename ShaderGroup, typename... ShaderResourcesBindings>
 class GraphicsPipeline
 {
-
-    template <typename Shaders>
-    struct get_shaders
-    {
-        using type = Shaders::shaders;
-    };
-
-    template <typename>
-    struct ExtractAllShaderBindingsFromTuple;
-
-    // Specialization for std::tuple
-    template <typename... Shaders>
-    struct ExtractAllShaderBindingsFromTuple<std::tuple<Shaders...>> {
-        // Helper to get BindingsList from a single shader
-        template <typename Shader>
-        struct GetBindingsList {
-            using type = typename Shader::BindingsList;
-        };
-
-        // Combine all BindingsLists
-        using type = decltype(std::tuple_cat(
-            std::declval<typename GetBindingsList<Shaders>::type>()...
-        ));
-    };
-
-    // Helper alias for direct usage with ShaderGroup
-    using AllShaderBindings = typename ExtractAllShaderBindingsFromTuple<typename ShaderGroup::shaders>::type;
-
-    template <typename>
-    struct ExtractAllBindingsFromTuple;
-
-    // Specialization for std::tuple
-    template <typename... Bindings>
-    struct ExtractAllBindingsFromTuple<std::tuple<Bindings...>> {
-        // Helper to get BindingsList from a single shader
-        template <typename BindingSet>
-        struct GetBindingsList {
-            using type = typename BindingSet::BindingResources;
-        };
-
-        // Combine all BindingsLists
-        using type = decltype(std::tuple_cat(
-            std::declval<typename GetBindingsList<Bindings>::type>()...
-        ));
-    };
-
-    using AllResourceBindings = typename ExtractAllBindingsFromTuple<ShaderResourcesBindings...>::type;
-
-    // Validator to check if all shader bindings have matching resource bindings
-    template <typename ShaderBindingTuple, typename ResourceBindingTuple>
-    struct validate_bindings_match;
-
-    template <>
-    struct validate_bindings_match<std::tuple<>, std::tuple<>> {
-        static constexpr bool value = true;
-    };
-
-    template <typename ShaderBinding, typename... ShaderBindings, 
-              typename ResourceBinding, typename... ResourceBindings>
-    struct validate_bindings_match<std::tuple<ShaderBinding, ShaderBindings...>, 
-                                  std::tuple<ResourceBinding, ResourceBindings...>> {
-        static constexpr bool check_one() {
-            return ShaderBinding::get_binding_set() == ResourceBinding::get_binding_set() &&
-                   ShaderBinding::get_binding() == ResourceBinding::get_binding() &&
-                   ShaderBinding::get_binding_count() == ResourceBinding::get_binding_count() &&
-                   std::is_same_v<typename ShaderBinding::resourceType, 
-                                 typename ResourceBinding::resourceType>;
-        }
-
-        static constexpr bool value = check_one() && 
-            validate_bindings_match<std::tuple<ShaderBindings...>, 
-                                  std::tuple<ResourceBindings...>>::value;
-    };
-
-    // Check if all shader bindings are covered by resource bindings
-    static constexpr bool bindings_valid = 
-        validate_bindings_match<
-            AllShaderBindings,
-            AllResourceBindings
-        >::value;
-
-    // static_assert(bindings_valid, 
-    //     "Shader bindings don't match provided resource bindings! "
-    //     "Check that all sets/bindings in shaders have matching resources with the same type and count.");
-
+    static_assert(validate_graphics_pipeline<ShaderGroup, ShaderResourcesBindings...>::value, "Graphics Pipeline Invalid");
 
 public:
-    GraphicsPipeline(AllShaderBindings bindings)
+    GraphicsPipeline(ShaderGroup shaderGroup, ShaderResourcesBindings... resources)
     {
 
     }

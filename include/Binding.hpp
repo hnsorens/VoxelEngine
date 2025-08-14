@@ -5,15 +5,15 @@
 #include <type_traits>
 #include <vector>
 
-template <typename Resource, VkDescriptorType ResourceType, int BindingSet, int Binding, int BindingCount>
-class ShaderBinding
+template <typename Resource, VkDescriptorType ResourceType, int BindingSet, int Binding, int DescriptorCount>
+struct ShaderBinding
 {
     using infoType = Resource*;
     static constexpr VkDescriptorType type() { return ResourceType; }
 
     static constexpr int get_binding_set() { return BindingSet; }
     static constexpr int get_binding() { return Binding; }
-    static constexpr int get_binding_count() { return BindingCount; }
+    static constexpr int get_descriptor_count() { return DescriptorCount; }
 
     ShaderBinding()
     {
@@ -34,7 +34,7 @@ template <VkDescriptorType ResourceType, int Binding, int DescriptorCount, typen
 struct ResourceBinding
 {
     using resourceType = Resource*;
-    static constexpr VkDescriptorType get_type() { return ResourceType; }
+    static constexpr VkDescriptorType type() { return ResourceType; }
     static constexpr int get_binding() { return Binding; }
     static constexpr int get_descriptor_count() { return DescriptorCount; }
 
