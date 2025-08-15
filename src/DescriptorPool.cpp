@@ -14,22 +14,22 @@ struct DescriptorTypeObject
     static constexpr VkDescriptorType value = Type;
 };
 
-template <typename T>
-struct ShaderBindings;
+template <typename Ts>
+struct get_shader_bindings;
 
 // Base case: empty tuple
 template <>
-struct ShaderBindings<std::tuple<>> {
+struct get_shader_bindings<std::tuple<>> {
     using type = std::tuple<>;
 };
 
 // Recursive case
 template <typename First, typename... Rest>
-struct ShaderBindings<std::tuple<First, Rest...>> {
+struct get_shader_bindings<std::tuple<First, Rest...>> {
     using type = decltype(
         std::tuple_cat(
             std::declval<typename First::BindingsList>(),
-            std::declval<typename ShaderBindings<std::tuple<Rest...>>::type>()
+            std::declval<typename get_shader_bindings<std::tuple<Rest...>>::type>()
         )
     );
 };
@@ -84,7 +84,7 @@ DescriptorPool::DescriptorPool()
     std::vector<VkDescriptorPoolSize> poolSizes;
 
 
-    using types = typename unique_types<DescriptorTypes<ShaderBindings<GlobalShaderTypes::types>::type>::type>::type;
+    using types = typename unique_types<DescriptorTypes<get_shader_bindings<GlobalShaderTypes::types>::type>::type>::type;
 
     std::apply([&]<typename... Ts>(Ts...){
        ([&](VkDescriptorType type){

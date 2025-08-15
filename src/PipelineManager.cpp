@@ -10,6 +10,7 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #include "image.hpp"
+#include "RenderPass.hpp"
 
 PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
                                  std::unique_ptr<Raytracer> &raytracer) 
@@ -17,6 +18,8 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
 
     auto& vert_shader = VoxelEngine::get_shader<"main_vert">();
     auto& frag_shader = VoxelEngine::get_shader<"main_frag">();
+    auto& vert_shader2 = VoxelEngine::get_shader<"main_vert2">();
+    auto& frag_shader2 = VoxelEngine::get_shader<"main_frag2">();
 
     Image* image = new Image{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
         VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -25,6 +28,10 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
 
     ShaderGroup group(
       vert_shader, frag_shader
+    );
+
+    ShaderGroup group2(
+      vert_shader2, frag_shader2
     );
 
     ShaderResourceSet set1{vulkanContext,
@@ -36,6 +43,15 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
       group, set1
     };
 
+    GraphicsPipeline something2{
+      vulkanContext,
+      group2, set1
+    };
+
+    RenderPass renderPass{
+      vulkanContext,
+      something, something2
+    };
 
 
 

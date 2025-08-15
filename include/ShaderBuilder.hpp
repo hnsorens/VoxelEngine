@@ -2,9 +2,11 @@
 #include "VulkanContext.hpp"
 // #include "image.hpp"
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <cstring>
 #include <memory>
+#include <stdexcept>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -14,6 +16,7 @@
 #include <vulkan/vulkan_core.h>
 #include "Binding.hpp"
 #include "DescriptorPool.hpp"
+#include "FixedString.hpp"
 
 
 enum ShaderType
@@ -21,26 +24,6 @@ enum ShaderType
     SHADER_VERTEX = VK_SHADER_STAGE_VERTEX_BIT,
     SHADER_FRAGMENT = VK_SHADER_STAGE_FRAGMENT_BIT,
     SHADER_GEOMETRY = VK_SHADER_STAGE_GEOMETRY_BIT,
-};
-
-
-template<size_t N>
-struct FixedString {
-    char value[N] = {};
-    
-    constexpr FixedString(const char (&str)[N]) {
-        std::copy_n(str, N, value);
-    }
-    
-    // Constexpr comparison operator
-    template<size_t M>
-    constexpr bool operator==(const FixedString<M>& other) const {
-        if (N != M) return false;
-        for (size_t i = 0; i < N; ++i) {
-            if (value[i] != other.value[i]) return false;
-        }
-        return true;
-    }
 };
 
 template <typename... Bindings>
@@ -52,9 +35,9 @@ struct ShaderBindings
 template <typename... Attachments>
 struct ShaderAttachments
 {
+    // TODO: verify that all attachments are either ShaderInput, ShaderPreserve, ShaderDepthAttachment, or ShaderColorAttachment
     using Options = std::tuple<Attachments...>;
 };
-
 
 namespace ShaderDetails
 {
@@ -133,15 +116,9 @@ namespace ShaderDetails
 
 template <FixedString ShaderName, FixedString Path, ShaderType Type, typename... ShaderOptions>
 class Shader {
-private:
-
+public:
     using Bindings = ShaderDetails::find_bindings<std::tuple<ShaderOptions...>>::type::Options;
     using Attachments = ShaderDetails::find_attachments<std::tuple<ShaderOptions...>>::type::Options;
-
-    static_assert(std::tuple_size<Attachments>::value > 0 ? Type == SHADER_FRAGMENT : true, "Only fragment shaders can contain attachments");
-    static_assert(!ShaderDetails::has_duplicate_shader_bindings<Bindings>::value, "Shader cannot have duplicate bindings");
-
-public:
     static constexpr FixedString name = ShaderName.value;
     static constexpr FixedString path = Path.value;
 
@@ -166,6 +143,9 @@ public:
     VkPipelineShaderStageCreateInfo getShaderInfo() { return shaderInfo; }
     
 private:
+
+    static_assert(std::tuple_size<Attachments>::value > 0 ? Type == SHADER_FRAGMENT : true, "Only fragment shaders can contain attachments");
+    static_assert(!ShaderDetails::has_duplicate_shader_bindings<Bindings>::value, "Shader cannot have duplicate bindings");
 
     VkShaderModule createShaderModule(VkDevice device,
                                         const std::vector<char> &code) {
@@ -239,6 +219,24 @@ namespace ShaderGroupDetails
     public:
         static constexpr bool value = tuple_check<all_bindings_tuple>::value;
     };
+
+    template <typename Attachments>
+    struct collect_attachments;
+
+    template <>
+    struct collect_attachments<std::tuple<>>
+    {
+        using value = std::tuple<>;
+    };
+
+    template <typename First, typename... Rest>
+    struct collect_attachments<std::tuple<First, Rest...>>
+    {
+        using value = decltype(std::tuple_cat(
+            std::declval<typename First::Attachments>(),
+            std::declval<typename collect_attachments<std::tuple<Rest...>>::value>() 
+        ));
+    };
 }
 
 template <typename... Shaders>
@@ -252,12 +250,11 @@ public:
 
     
     using shaders = std::tuple<Shaders...>;
+    using Attachments = ShaderGroupDetails::collect_attachments<shaders>::value;
     
     // Original constructor
     ShaderGroup(Shaders&... shaders) : 
-    m_shaders([&](){
-        (m_shaders.push_back(shaders.getShaderInfo()), ...);
-    }()) {}
+    m_shaders{shaders.getShaderInfo()...} {}
 
     size_t size()
     {
@@ -453,14 +450,17 @@ struct validate_graphics_pipeline {
     static constexpr bool value = !vgp_invalid<typename ShaderGroup::shaders, ResourceSets...>::value;
 };
 
-
 template <typename ShaderGroup, typename... ShaderResourcesBindings>
 class GraphicsPipeline
 {
     static_assert(validate_graphics_pipeline<ShaderGroup, ShaderResourcesBindings...>::value, "Graphics Pipeline Invalid");
 
 public:
+
+    using Attachments = ShaderGroup::Attachments;
+
     GraphicsPipeline(std::unique_ptr<VulkanContext>& ctx, ShaderGroup shaderGroup, ShaderResourcesBindings... resources) :
+    m_shaderGroup(shaderGroup),
     pipelineLayout([&](){
 
         std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
@@ -480,34 +480,39 @@ public:
         }
 
         return layout;
-    }()),
-    pipeline([&](){
-        VkGraphicsPipelineCreateInfo pipelineInfo;
+    }())
+    {
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = shaderGroup.size();
-        pipelineInfo.pStages = shaderGroup.data();
-        pipelineInfo.renderPass = info.renderPass;
+        // TODO save the shader arrays, so if it goes out of scope the references are still there
+        pipelineInfo.stageCount = m_shaderGroup.size();
+        pipelineInfo.pStages = m_shaderGroup.data();
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.layout = pipelineLayout;
+    }
 
-        VkPipeline pipeline;
-        if (vkCreateGraphicsPipelines(ctx->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
+    void create_pipeline(VkDevice device, VkRenderPass renderPass)
+    {
+        if (pipeline)
+        {
+            throw std::runtime_error("Cannot use pipeline in more than one renderpass!");
+        }
+        pipelineInfo.renderPass = renderPass;
+
+        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo,
         nullptr, &pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
-
-        return pipeline;
-    }())
-    {
-        printf("Creating Pipeline\n");
-        fflush(stdout);
+        // Frees all memory in shader group because it cannot be used anymore
+        ShaderGroup group = std::move(m_shaderGroup);
     }
 
 private:
-
+    
+    ShaderGroup m_shaderGroup;
+    VkGraphicsPipelineCreateInfo pipelineInfo;
     VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
+    VkPipeline pipeline = VK_NULL_HANDLE;
 };
 
 
@@ -686,3 +691,12 @@ public:
         return std::get<index>(shaders);
     }
 };
+
+
+
+
+
+
+
+
+
