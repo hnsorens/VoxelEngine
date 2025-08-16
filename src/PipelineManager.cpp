@@ -24,7 +24,7 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
     );
 
     ShaderResourceSet set1{vulkanContext,
-      ResourceBinding<Image, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SHADER_FRAGMENT, 1, 1>{raytracer->getStorageImage()}
+      ResourceBinding<Image, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SHADER_FRAGMENT, 0, 1>{raytracer->getStorageImage()}
     };
 
     GraphicsPipeline something{
@@ -37,6 +37,7 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
       something
     };
 
+    printf("pipeline: %d\n", something.pipeline);
     pipeline = something.pipeline;
     pipelineLayout = something.pipelineLayout;
     renderpass = renderPass.renderPass;

@@ -419,7 +419,7 @@ void main() {
     vec3 normal = calculateVoxelNormal(ivec3(hit));
 
     vec3 contribution = vec3(0);
-    const int sampleCount = 5;
+    const int sampleCount = 2;
 
     ivec2 screenPos =
         worldToPixel(-ivec3(hit), transform.view, transform.invproj,

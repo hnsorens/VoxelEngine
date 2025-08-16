@@ -24,6 +24,8 @@ enum ShaderType
     SHADER_VERTEX = VK_SHADER_STAGE_VERTEX_BIT,
     SHADER_FRAGMENT = VK_SHADER_STAGE_FRAGMENT_BIT,
     SHADER_GEOMETRY = VK_SHADER_STAGE_GEOMETRY_BIT,
+    SHADER_RMISS = VK_SHADER_STAGE_MISS_BIT_KHR,
+    SHADER_RGEN = VK_SHADER_STAGE_RAYGEN_BIT_KHR,
 };
 
 template <typename... Bindings>
@@ -461,7 +463,7 @@ public:
 
     using Attachments = ShaderGroup::Attachments;
 
-    GraphicsPipeline(std::unique_ptr<VulkanContext>& ctx, ShaderGroup shaderGroup, ShaderResourcesBindings... resources) :
+    GraphicsPipeline(std::unique_ptr<VulkanContext>& ctx, ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
     m_shaderGroup(shaderGroup),
     pipelineLayout([&](){
 
@@ -474,6 +476,8 @@ public:
         pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
         pipelineLayoutInfo.pushConstantRangeCount = 0;
         pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+
+        printf("Pipeline Layout SIze: %d\n", descriptorSetLayouts.size());
 
         VkPipelineLayout layout;
         if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,

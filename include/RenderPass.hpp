@@ -247,7 +247,7 @@ public:
 
     static_assert(std::tuple_size<allAttachments>::value > 0, "RenderPass must have at least one attachment.");
 
-    RenderPass(std::unique_ptr<VulkanContext>& ctx, Pipelines... pipelines)
+    RenderPass(std::unique_ptr<VulkanContext>& ctx, Pipelines&... pipelines)
     {
         // Gather all global attachments
         std::vector<VkAttachmentDescription> attachmentDescriptions;
