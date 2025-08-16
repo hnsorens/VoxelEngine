@@ -16,27 +16,10 @@ using GlobalShaderTypes = ShaderTypes<
     "bin/frag.spv",
     SHADER_FRAGMENT,
     ShaderBindings<
-      ShaderBinding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 1, 1>
+      ShaderBinding<class Image, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, 1, 1>
     >,
     ShaderAttachments<
-      ColorAttachment<"output", VK_FORMAT_R32_UINT, 0>
-    >
-  >,
-   Shader<
-    "main_vert2",
-    "bin/vert.spv",
-    SHADER_VERTEX
-  >,
-  Shader<
-    "main_frag2",
-    "bin/frag.spv",
-    SHADER_FRAGMENT,
-    ShaderBindings<
-      ShaderBinding<class Image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 1, 1>
-    >,
-    ShaderAttachments<
-      ColorAttachment<"output", VK_FORMAT_R32_UINT, 0>,
-      InputAttachment<"output", VK_FORMAT_R32_UINT, 1>
+      ColorAttachment<"output", VK_FORMAT_R16G16B16A16_SFLOAT, 0>
     >
   >
 >;

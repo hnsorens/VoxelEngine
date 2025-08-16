@@ -497,12 +497,89 @@ public:
         {
             throw std::runtime_error("Cannot use pipeline in more than one renderpass!");
         }
+
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+    VkPipelineViewportStateCreateInfo viewportState{};
+    VkPipelineRasterizationStateCreateInfo rasterizer{};
+    VkPipelineMultisampleStateCreateInfo multisampling{};
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    VkPipelineColorBlendStateCreateInfo colorBlending{};
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+
+    std::vector<VkDynamicState> dynamicStates;
+
+     vertexInputInfo.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount = 0;
+    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+
+    inputAssembly.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.primitiveRestartEnable = VK_FALSE;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.scissorCount = 1;
+    pipelineInfo.pViewportState = &viewportState;
+
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizer.lineWidth = 1.0f;
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.depthBiasEnable = VK_FALSE;
+    pipelineInfo.pRasterizationState = &rasterizer;
+
+    multisampling.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sampleShadingEnable = VK_FALSE;
+    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    pipelineInfo.pMultisampleState = &multisampling;
+
+    colorBlendAttachment.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_FALSE;
+    
+    colorBlending.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable = VK_FALSE;
+    colorBlending.logicOp = VK_LOGIC_OP_COPY;
+    colorBlending.attachmentCount = 1;
+    colorBlending.pAttachments = &colorBlendAttachment;
+    colorBlending.blendConstants[0] = 0.0f;
+    colorBlending.blendConstants[1] = 0.0f;
+    colorBlending.blendConstants[2] = 0.0f;
+    colorBlending.blendConstants[3] = 0.0f;
+    pipelineInfo.pColorBlendState = &colorBlending;
+  
+    dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_SCISSOR};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+    dynamicState.pDynamicStates = dynamicStates.data();
+    pipelineInfo.pDynamicState = &dynamicState;
+
+        pipelineInfo.pVertexInputState = &vertexInputInfo;
+        pipelineInfo.pInputAssemblyState = &inputAssembly;
+        pipelineInfo.pViewportState = &viewportState;
+        pipelineInfo.pRasterizationState = &rasterizer;
+        pipelineInfo.pMultisampleState = &multisampling;
+        pipelineInfo.pColorBlendState = &colorBlending;
+        pipelineInfo.pDynamicState = &dynamicState;
+
         pipelineInfo.renderPass = renderPass;
 
         if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo,
         nullptr, &pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
+
         // Frees all memory in shader group because it cannot be used anymore
         ShaderGroup group = std::move(m_shaderGroup);
     }
@@ -510,7 +587,7 @@ public:
 private:
     
     ShaderGroup m_shaderGroup;
-    VkGraphicsPipelineCreateInfo pipelineInfo;
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline = VK_NULL_HANDLE;
 };
@@ -518,137 +595,6 @@ private:
 
 
 
-
-
-// template <typename ShaderResource>
-// class ShaderResources;
-
-// template <typename... Shaders>
-// class ShaderResourceLayout {
-//     static_assert(all_shader_types_unique<Shaders...>::value,
-//                  "Shader types conflict - multiple shaders with the same shader type");
-//     static_assert(validate_shader_bindings<Shaders...>::value,
-//                  "Shader bindings conflict - same binding number with different resource type");
-    
-// public:
-//     using UniqueBindings = typename CombinedBindings<Shaders...>::type;
-//     using SortedBindings = typename SortBindings<UniqueBindings>::type;
-//     using UniqueBindingResources = typename BindingResources<SortedBindings>::type;
-    
-//     ShaderResourceLayout(std::unique_ptr<VulkanContext>& ctx, Shaders&... shaders) : m_shaders(shaders...),
-//     descriptorSetLayout([&]() {
-//         printf("Creating descriptor set layout\n");
-//         fflush(stdout);
-//         std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
-//         std::unordered_map<int, int> bindingStages;
-
-//         // Helper to accumulate stage flags for each binding
-//         auto accumulate_stages = [&](auto& shader) {
-//             using TypeShader = std::decay_t<decltype(shader)>;
-//             const ShaderType stage = TypeShader::get_type();
-            
-//             [&]<typename... Bs>(std::tuple<Bs...>*) {  // Pointer-to-tuple avoids construction
-//                 ([&] {
-//                     constexpr int binding = Bs::get_binding();  // Access static method
-//                     bindingStages[binding] |= static_cast<int>(stage);
-//                 }(), ...);
-//             }(static_cast<typename TypeShader::BindingsList*>(nullptr));
-//         };
-        
-//         // Process all shaders
-//         (accumulate_stages(shaders), ...);
-        
-//         std::make_index_sequence<std::tuple_size_v<SortedBindings>> seq;
-
-//         [&]<std::size_t... Is>(std::index_sequence<Is...>) {
-//             // Fold over the indices
-//             ([&] {
-//                 using BindingType = std::tuple_element_t<Is, SortedBindings>;
-//                 VkDescriptorSetLayoutBinding bindInfo{};
-//                 bindInfo.binding = BindingType::get_binding();
-//                 bindInfo.descriptorCount = BindingType::get_descriptor_count();
-//                 bindInfo.descriptorType = BindingType::type();
-//                 bindInfo.stageFlags = bindingStages.at(BindingType::get_binding());
-//                 bindInfo.pImmutableSamplers = nullptr;
-//                 descriptorBindings.push_back(bindInfo);
-//             }(), ...);
-//         }(std::make_index_sequence<std::tuple_size_v<SortedBindings>>{});
-
-//         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo = {};
-//         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-//         descriptorSetLayoutInfo.bindingCount = descriptorBindings.size();
-//         descriptorSetLayoutInfo.pBindings = descriptorBindings.data();
-//         descriptorSetLayoutInfo.pNext = nullptr;
-
-//         VkDescriptorSetLayout layout;
-//         if (vkCreateDescriptorSetLayout(ctx->getDevice(), &descriptorSetLayoutInfo, nullptr, &layout) != VK_SUCCESS)
-//         {
-//             throw std::runtime_error("failed to create raytracing descriptor set layout!");
-//         }
-
-//         return layout;
-//     }()),
-//     setLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout)
-//     {}
-    
-// private:
-//     VkDescriptorSetLayout descriptorSetLayout;
-//     std::vector<VkDescriptorSetLayout> setLayouts;
-    
-//     VkDescriptorSetLayoutCreateInfo layoutCreateInfo;
-//     std::tuple<Shaders&...> m_shaders;
-
-//     friend ShaderResources<ShaderResourceLayout<Shaders...>>;
-// };
-
-// template <typename ShaderResource>
-// class ShaderResources
-// {
-// public:
-//     ShaderResources(std::unique_ptr<VulkanContext>& ctx, ShaderResource& shaderResourceLayout, ShaderResource::UniqueBindingResources resources) :
-//     descriptorSets([&](){
-//         VkDescriptorSetAllocateInfo allocInfo = {};
-//         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-//         allocInfo.descriptorPool = DescriptorPool::instance().get();
-//         allocInfo.descriptorSetCount = static_cast<uint32_t>(shaderResourceLayout.setLayouts.size());
-//         allocInfo.pSetLayouts = shaderResourceLayout.setLayouts.data();
-
-//         std::vector<VkDescriptorSet> descriptorSets(MAX_FRAMES_IN_FLIGHT);
-//         if (vkAllocateDescriptorSets(ctx->getDevice(), &allocInfo, descriptorSets.data())) {
-//             throw std::runtime_error("Failed to create raytracing descriptor set!");
-//         }
-
-//         return std::move(descriptorSets);
-//     }()),
-//     bindings([&]() {
-//         return std::apply([&](auto&&... resources) {
-//             return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
-//                 using ResultTuple = ShaderResource::SortedBindings;
-//                 return ResultTuple{
-//                     // Ensure we're using the correct construction method
-//                     [&]<size_t I>(auto&& resource) {
-//                         using BindingType = std::tuple_element_t<I, ResultTuple>;
-//                         return BindingType{ctx->getDevice(), descriptorSets, resource.info};
-//                     }.template operator()<Is>(resources)...
-//                 };
-//             }(std::make_index_sequence<sizeof...(resources)>{});
-//         }, std::move(resources));
-//     }())
-//     {
-//         std::apply([&](auto&&... bindings){
-//             ([&](auto&& binding){
-//                 for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
-//                 {
-//                     for (int i = 0; i < binding.get_descriptor_count(); i++)
-//                     binding.write(ctx->getDevice(), descriptorSets[i], i, frame);
-//                 }
-//             }(bindings), ...);
-//         }, std::forward<typename ShaderResource::SortedBindings>(bindings));
-//     }
-
-//     std::vector<VkDescriptorSet> descriptorSets;
-//     ShaderResource::SortedBindings bindings;
-// };
 
 // Shader index finder
 template <FixedString Name, typename... Shaders>

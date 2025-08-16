@@ -2,6 +2,7 @@
 
 #include "VulkanContext.hpp"
 #include <cstdint>
+#include <cstdio>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -335,6 +336,8 @@ public:
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
+        printf("Finished");
+        fflush(stdout);
         if (vkCreateRenderPass(ctx->getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create render pass!");
         }

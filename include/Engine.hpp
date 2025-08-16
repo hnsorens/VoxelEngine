@@ -1,5 +1,6 @@
 #include "VulkanContext.hpp"
 #include "shaders.hpp"
+#include <cstdio>
 #include <memory>
 #include <iostream>
 
@@ -78,6 +79,7 @@ private:
                 const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
                 void *pUserData) {
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+    fflush(stderr);
 
     return VK_FALSE;
   }

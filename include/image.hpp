@@ -17,6 +17,7 @@ public:
     {
         imageInfos[frame].imageLayout = imageLayout;
         imageInfos[frame].imageView = imageViews[frame];
+        imageInfos[frame].sampler = sampler;
         descriptorWrite.pImageInfo = &imageInfos[frame];
     }
 
@@ -25,5 +26,6 @@ public:
     VkImage images[MAX_FRAMES_IN_FLIGHT];
     VkImageView imageViews[MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory deviceMemories[MAX_FRAMES_IN_FLIGHT];
+    VkSampler sampler;
     VkImageLayout imageLayout;
 };
