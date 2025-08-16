@@ -348,4 +348,5 @@ public:
 
 private:
     VkRenderPass renderPass;
+    friend class PipelineManager;
 };

@@ -1,5 +1,6 @@
 #pragma once
 #include "VoxelWorld.hpp"
+#include "image.hpp"
 #include <memory>
 #include <vector>
 #define GLFW_INCLUDE_VULKAN
@@ -32,32 +33,16 @@ public:
   const VkPipeline &getPipeline() const;
   const VkPipelineLayout &getPipelineLayout() const;
   const VkDescriptorSet &getDescriptorSet(int i) const;
-  const VkImageView &getStorageImage(int i) const;
+  Image* getStorageImage();
 
 private:
-  std::vector<VkImage> raytracingStorageImage;
-  std::vector<VkImageView> raytracingStorageImageView;
-  std::vector<VkDeviceMemory> raytracingStorageMemory;
 
-  std::vector<VkImage> raytracingPositionStorageImage;
-  std::vector<VkImageView> raytracingPositionStorageImageView;
-  std::vector<VkDeviceMemory> raytracingPositionStorageMemory;
-
-  std::vector<VkImage> raytracingLightStorageImageX;
-  std::vector<VkImageView> raytracingLightStorageImageViewX;
-  std::vector<VkDeviceMemory> raytracingLightStorageMemoryX;
-
-  std::vector<VkImage> raytracingLightStorageImageY;
-  std::vector<VkImageView> raytracingLightStorageImageViewY;
-  std::vector<VkDeviceMemory> raytracingLightStorageMemoryY;
-
-  std::vector<VkImage> raytracingLightStorageImageZ;
-  std::vector<VkImageView> raytracingLightStorageImageViewZ;
-  std::vector<VkDeviceMemory> raytracingLightStorageMemoryZ;
-
-  std::vector<VkImage> raytracingLightStorageImageW;
-  std::vector<VkImageView> raytracingLightStorageImageViewW;
-  std::vector<VkDeviceMemory> raytracingLightStorageMemoryW;
+  Image raytracingStorageImage;
+  Image raytracingPositionStorageImage;
+  Image raytracingLightStorageImageX;
+  Image raytracingLightStorageImageY;
+  Image raytracingLightStorageImageZ;
+  Image raytracingLightStorageImageW;
 
   VkPipeline raytracingPipeline;
   VkPipelineLayout raytracingPipelineLayout;

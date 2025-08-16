@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 class PipelineManager {
 public:
@@ -15,12 +16,14 @@ public:
   const VkPipeline &getGraphicsPipeline() const;
   const VkPipelineLayout &getGraphicsPipelineLayout() const;
   const VkDescriptorSet &getDescriptorSet(int i) const;
+  const VkRenderPass &getRenderPass() const;
 
   static VkShaderModule createShaderModule(VkDevice device,
                                            const std::vector<char> &code);
 
 private:
-  Pipeline* pipeline;
-  DescriptorSet* descriptorSet;
-  std::vector<VkSampler> imageSampler;
+  VkPipeline pipeline;
+  VkPipelineLayout pipelineLayout;
+  std::vector<VkDescriptorSet> descriptorSet;
+  VkRenderPass renderpass;
 };

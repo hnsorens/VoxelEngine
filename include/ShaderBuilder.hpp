@@ -368,6 +368,8 @@ private:
     VkDescriptorSetLayout descriptorSetLayout;
     std::vector<VkDescriptorSet> descriptorSets;
     std::tuple<Bindings...> bindings;
+
+    friend class PipelineManager;
 };
 
 
@@ -590,6 +592,8 @@ private:
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline = VK_NULL_HANDLE;
+
+    friend class PipelineManager;
 };
 
 

@@ -5,6 +5,7 @@
 #include "ResourceManager.hpp"
 #include "VoxelWorld.hpp"
 #include "VulkanContext.hpp"
+#include "image.hpp"
 #include <memory>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
@@ -12,7 +13,35 @@
 Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
                      std::unique_ptr<VulkanContext> &vulkanContext,
                      std::unique_ptr<VoxelWorld> &voxelWorld,
-                     std::unique_ptr<Camera> &camera)
+                     std::unique_ptr<Camera> &camera) :
+    raytracingStorageImage{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+        VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
+    raytracingPositionStorageImage{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+        VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
+
+    raytracingLightStorageImageX{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+        VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
+
+    raytracingLightStorageImageY{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+        VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
+
+    raytracingLightStorageImageZ{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+        VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
+
+    raytracingLightStorageImageW{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+        VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL}
 
 {
   createRaytracingResources(commandManager, vulkanContext);
@@ -31,125 +60,16 @@ const VkPipelineLayout &Raytracer::getPipelineLayout() const {
 const VkDescriptorSet &Raytracer::getDescriptorSet(int i) const {
   return raytracingDescriptorSets[i];
 }
-const VkImageView &Raytracer::getStorageImage(int i) const {
-  return raytracingStorageImageView[i];
+Image* Raytracer::getStorageImage() {
+  return &raytracingStorageImage;
 }
 
 void Raytracer::createRaytracingResources(
     std::unique_ptr<CommandManager> &commandManager,
     std::unique_ptr<VulkanContext> &vulkanContext) {
-  raytracingStorageImage.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingStorageImageView.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingStorageMemory.resize(MAX_FRAMES_IN_FLIGHT);
-
-  raytracingPositionStorageImage.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingPositionStorageImageView.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingPositionStorageMemory.resize(MAX_FRAMES_IN_FLIGHT);
-
-  raytracingLightStorageImageX.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingLightStorageImageViewX.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingLightStorageMemoryX.resize(MAX_FRAMES_IN_FLIGHT);
-
-  raytracingLightStorageImageY.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingLightStorageImageViewY.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingLightStorageMemoryY.resize(MAX_FRAMES_IN_FLIGHT);
-
-  raytracingLightStorageImageZ.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingLightStorageImageViewZ.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingLightStorageMemoryZ.resize(MAX_FRAMES_IN_FLIGHT);
-
-  raytracingLightStorageImageW.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingLightStorageImageViewW.resize(MAX_FRAMES_IN_FLIGHT);
-  raytracingLightStorageMemoryW.resize(MAX_FRAMES_IN_FLIGHT);
 
   VkDevice device = vulkanContext->getDevice();
   VkPhysicalDevice physicalDevice = vulkanContext->getPhysicalDevice();
-
-  for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    ResourceManager::createImage(
-        device, physicalDevice, RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
-        VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, raytracingStorageImage[i],
-        raytracingStorageMemory[i]);
-    ResourceManager::createImageView(device, VK_FORMAT_R16G16B16A16_UNORM,
-                                     raytracingStorageImage[i],
-                                     raytracingStorageImageView[i]);
-    ResourceManager::transitionImageLayout(
-        commandManager, vulkanContext, raytracingStorageImage[i],
-        VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_GENERAL, 1);
-
-    ResourceManager::createImage(
-        device, physicalDevice, RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
-        VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, raytracingPositionStorageImage[i],
-        raytracingPositionStorageMemory[i]);
-    ResourceManager::createImageView(device, VK_FORMAT_R32_UINT,
-                                     raytracingPositionStorageImage[i],
-                                     raytracingPositionStorageImageView[i]);
-    ResourceManager::transitionImageLayout(
-        commandManager, vulkanContext, raytracingPositionStorageImage[i],
-        VK_FORMAT_R32_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-        1);
-
-    ResourceManager::createImage(
-        device, physicalDevice, RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
-        VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, raytracingLightStorageImageX[i],
-        raytracingLightStorageMemoryX[i]);
-    ResourceManager::createImageView(device, VK_FORMAT_R32_UINT,
-                                     raytracingLightStorageImageX[i],
-                                     raytracingLightStorageImageViewX[i]);
-    ResourceManager::transitionImageLayout(
-        commandManager, vulkanContext, raytracingLightStorageImageX[i],
-        VK_FORMAT_R32_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-        1);
-
-    ResourceManager::createImage(
-        device, physicalDevice, RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
-        VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, raytracingLightStorageImageY[i],
-        raytracingLightStorageMemoryY[i]);
-    ResourceManager::createImageView(device, VK_FORMAT_R32_UINT,
-                                     raytracingLightStorageImageY[i],
-                                     raytracingLightStorageImageViewY[i]);
-    ResourceManager::transitionImageLayout(
-        commandManager, vulkanContext, raytracingLightStorageImageY[i],
-        VK_FORMAT_R32_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-        1);
-
-    ResourceManager::createImage(
-        device, physicalDevice, RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
-        VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, raytracingLightStorageImageZ[i],
-        raytracingLightStorageMemoryZ[i]);
-    ResourceManager::createImageView(device, VK_FORMAT_R32_UINT,
-                                     raytracingLightStorageImageZ[i],
-                                     raytracingLightStorageImageViewZ[i]);
-    ResourceManager::transitionImageLayout(
-        commandManager, vulkanContext, raytracingLightStorageImageZ[i],
-        VK_FORMAT_R32_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-        1);
-
-    ResourceManager::createImage(
-        device, physicalDevice, RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
-        VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, raytracingLightStorageImageW[i],
-        raytracingLightStorageMemoryW[i]);
-    ResourceManager::createImageView(device, VK_FORMAT_R32_UINT,
-                                     raytracingLightStorageImageW[i],
-                                     raytracingLightStorageImageViewW[i]);
-    ResourceManager::transitionImageLayout(
-        commandManager, vulkanContext, raytracingLightStorageImageW[i],
-        VK_FORMAT_R32_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-        1);
-  }
 }
 
 void Raytracer::createRaytracingPipeline(
@@ -388,7 +308,7 @@ void Raytracer::createRaytracingPipeline(
 
   for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     VkDescriptorImageInfo positionImageInfo = {};
-    positionImageInfo.imageView = raytracingPositionStorageImageView[i];
+    positionImageInfo.imageView = raytracingPositionStorageImage.imageViews[i];
     positionImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkWriteDescriptorSet writePositionStorageDescriptorSet = {};
@@ -403,19 +323,19 @@ void Raytracer::createRaytracingPipeline(
     writePositionStorageDescriptorSet.pImageInfo = &positionImageInfo;
 
     VkDescriptorImageInfo lightImageInfoX = {};
-    lightImageInfoX.imageView = raytracingLightStorageImageViewX[i];
+    lightImageInfoX.imageView = raytracingLightStorageImageX.imageViews[i];
     lightImageInfoX.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkDescriptorImageInfo lightImageInfoY = {};
-    lightImageInfoY.imageView = raytracingLightStorageImageViewY[i];
+    lightImageInfoY.imageView = raytracingLightStorageImageY.imageViews[i];
     lightImageInfoY.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkDescriptorImageInfo lightImageInfoZ = {};
-    lightImageInfoZ.imageView = raytracingLightStorageImageViewZ[i];
+    lightImageInfoZ.imageView = raytracingLightStorageImageZ.imageViews[i];
     lightImageInfoZ.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkDescriptorImageInfo lightImageInfoW = {};
-    lightImageInfoW.imageView = raytracingLightStorageImageViewW[i];
+    lightImageInfoW.imageView = raytracingLightStorageImageW.imageViews[i];
     lightImageInfoW.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkWriteDescriptorSet writeLightStorageDescriptorSetX = {};
@@ -463,7 +383,7 @@ void Raytracer::createRaytracingPipeline(
     writeLightStorageDescriptorSetW.pImageInfo = &lightImageInfoW;
 
     VkDescriptorImageInfo imageInfo = {};
-    imageInfo.imageView = raytracingStorageImageView[i];
+    imageInfo.imageView = raytracingStorageImage.imageViews[i];
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkWriteDescriptorSet writeStorageDescriptorSet = {};
