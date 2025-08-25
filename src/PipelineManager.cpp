@@ -59,8 +59,8 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
     pipeline = something.pipeline;
     pipelineLayout = something.pipelineLayout;
     renderpass = renderPass.renderPass;
-    descriptorSet = set1.descriptorSets;
     framebuffers = renderPass.framebuffers;
+    descriptorSet = set1.descriptorSets;
 
         for (auto& s : framebuffers)
         {

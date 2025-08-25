@@ -318,6 +318,25 @@ public:
 
     RenderPass(uint32_t width, uint32_t height, std::unique_ptr<VulkanContext>& ctx, Resources& resources, Pipelines&... pipelines) : width{width}, height{height}
     {
+        createRenderPass(ctx, resources, pipelines...);
+    }
+    
+    void recreateSwapchain(std::unique_ptr<VulkanContext>& ctx, Resources& resources, Pipelines&... pipelines) {
+        // Clean up old framebuffers
+        for (auto framebuffer : framebuffers) {
+            vkDestroyFramebuffer(ctx->getDevice(), framebuffer, nullptr);
+        }
+        framebuffers.clear();
+        
+        // Recreate the render pass and framebuffers
+        createRenderPass(ctx, resources, pipelines...);
+    }
+    
+    const std::vector<VkFramebuffer>& getFramebuffers() const { return framebuffers; }
+    VkRenderPass getRenderPass() const { return renderPass; }
+    
+private:
+    void createRenderPass(std::unique_ptr<VulkanContext>& ctx, Resources& resources, Pipelines&... pipelines) {
         // Gather all global attachments
         std::vector<VkAttachmentDescription> attachmentDescriptions;
         tuple_for_each(commonAttachments{}, [&](auto att){
