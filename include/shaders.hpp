@@ -2,8 +2,9 @@
 
 
 #include "RenderPass.hpp"
-// #include "ShaderBuilder.hpp"
+#include "ShaderBuilder.hpp"
 #include <vulkan/vulkan_core.h>
+#include "Binding.hpp"
 
 using GlobalShaderTypes = ShaderTypes<
   Shader<

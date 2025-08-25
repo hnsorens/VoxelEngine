@@ -1,17 +1,15 @@
 #pragma once
 
-#include "ImageHelper.h"
 #include "VulkanContext.hpp"
 #include <cstdint>
 #include <cstdio>
-#include <limits>
 #include <memory>
 #include <tuple>
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
+#include "ImageHelper.h"
 #include "FixedString.hpp"
-#include "ShaderBuilder.hpp"
 
 template <FixedString Name>
 class RenderPassResource
@@ -229,68 +227,6 @@ namespace RenderPassDetails
         using value = typename assign_global_locations<filtered>::type;
     };
 };
-
-// template <typename... Pipelines>
-// class RenderPass
-// {
-// public:
-
-//     using allAttachments = RenderPassDetails::get_all_attachments<std::tuple<Pipelines...>>::value;
-
-//     // static_assert(RenderPassDetails::validate_attachments<Pipelines...>::value, "Attachments are not compatible!");
-
-//     using commonAttachments = RenderPassDetails::get_common_attachments<allAttachments>::filtered;
-
-//     static_assert(std::tuple_size<allAttachments>::value > 0, "Only fragment shaders can contain attachments");
-
-//     RenderPass(std::unique_ptr<VulkanContext>& ctx, Pipelines&... pipelines)
-//     {
-//         std::vector<std::vector<VkAttachmentReference>> colorAttachmentRefs;
-//         std::vector<VkAttachmentReference> depthAttachmentRefs;
-//         std::vector<std::vector<uint32_t>> preserveAttachmentRefs;
-//         std::vector<VkSubpassDescription> subPasses;
-//         ([&](auto& pipeline){
-//             std::vector<VkAttachmentReference> colorRefs;
-//             VkAttachmentReference depthRef;
-//             std::vector<uint32_t> preserveRefs;
-
-//             VkSubpassDescription subpass{};
-//             subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-//             subpass.colorAttachmentCount = colorRefs.size();
-//             subpass.pColorAttachments = colorRefs.data();
-//             subpass.preserveAttachmentCount = preserveRefs.size();
-//             subpass.pPreserveAttachments = preserveRefs.data();
-//             subpass.pDepthStencilAttachment = nullptr;
-
-//             subPasses.push_back(std::move(subpass));
-//             colorAttachmentRefs.push_back(std::move(colorRefs));
-//             preserveAttachmentRefs.push_back(std::move(preserveRefs));
-//         }(pipelines), ...);
-
-//         std::vector<VkAttachmentDescription> attachments;
-
-//         VkRenderPassCreateInfo renderPassInfo{};
-//         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-//         renderPassInfo.attachmentCount = attachments.size();
-//         renderPassInfo.pAttachments = attachments.data();
-//         renderPassInfo.subpassCount = subPasses.size();
-//         renderPassInfo.pSubpasses = subPasses.data();
-//         renderPassInfo.dependencyCount = 1;
-//         renderPassInfo.pDependencies = &dependency;
-
-//         if (vkCreateRenderPass(ctx->getDevice(), &renderPassInfo, nullptr, &renderPass) !=
-//             VK_SUCCESS) {
-//             throw std::runtime_error("failed to create render pass!");
-//         }
-
-//         (pipelines.create_pipeline(ctx->getDevice(), renderPass), ...);
-//     }
-
-// private:
-//     VkRenderPass renderPass;
-// };
-
-
 
 // Compile-time tuple iteration
 template <typename Tuple, typename Func, std::size_t... I>
