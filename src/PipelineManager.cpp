@@ -92,9 +92,11 @@ void PipelineManager::recreateFramebuffers(std::unique_ptr<VulkanContext>& vulka
     }
     
     // Create new framebuffers with updated swapchain image views
-    framebuffers.resize(2); // Assuming 2 framebuffers as in the original code
+    // Use the actual number of swapchain images instead of hardcoded 2
+    size_t numImages = vulkanContext->getSwapChainImageViews().size();
+    framebuffers.resize(numImages);
     
-    for (size_t i = 0; i < 2; i++) {
+    for (size_t i = 0; i < numImages; i++) {
         VkImageView attachments[] = {vulkanContext->getSwapChainImageViews()[i]};
         
         VkFramebufferCreateInfo framebufferInfo{};
