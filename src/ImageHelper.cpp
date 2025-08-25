@@ -3,12 +3,12 @@
 #include "image.hpp"
 
 
-VkImageView getImageView(Image* image, int index)
+VkImageView getImageView(AttachmentImage* image, int index)
 {
     return image->imageViews[index];
 }
 
-size_t getImageFramebufferCount(Image* image)
+size_t getImageFramebufferCount(AttachmentImage* image)
 {
     return MAX_FRAMES_IN_FLIGHT;
 }

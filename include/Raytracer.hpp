@@ -3,7 +3,6 @@
 #include "image.hpp"
 #include <memory>
 #include <vector>
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
@@ -33,16 +32,16 @@ public:
   const VkPipeline &getPipeline() const;
   const VkPipelineLayout &getPipelineLayout() const;
   const VkDescriptorSet &getDescriptorSet(int i) const;
-  Image* getStorageImage();
+  ShaderImage* getStorageImage();
 
 private:
 
-  Image raytracingStorageImage;
-  Image raytracingPositionStorageImage;
-  Image raytracingLightStorageImageX;
-  Image raytracingLightStorageImageY;
-  Image raytracingLightStorageImageZ;
-  Image raytracingLightStorageImageW;
+  ShaderImage raytracingStorageImage;
+  ShaderImage raytracingPositionStorageImage;
+  ShaderImage raytracingLightStorageImageX;
+  ShaderImage raytracingLightStorageImageY;
+  ShaderImage raytracingLightStorageImageZ;
+  ShaderImage raytracingLightStorageImageW;
 
   VkPipeline raytracingPipeline;
   VkPipelineLayout raytracingPipelineLayout;

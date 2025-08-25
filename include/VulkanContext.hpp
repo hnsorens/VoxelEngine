@@ -6,7 +6,7 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
-#define MAX_FRAMES_IN_FLIGHT 2
+#include "VulkanInfo.hpp"
 
 struct QueueFamilyIndices {
   std::optional<uint32_t> graphicsFamily;

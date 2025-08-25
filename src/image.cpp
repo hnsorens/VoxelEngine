@@ -2,11 +2,11 @@
 #include "ResourceManager.hpp"
 #include "Engine.hpp"
 
-Image::Image(uint32_t width, uint32_t height,
+void ImageImpl::CreateImages(uint32_t width, uint32_t height,
         VkFormat format, VkImageTiling tiling,
         VkImageUsageFlags usage,
         VkMemoryPropertyFlags properties,
-        VkImageLayout initialLayout) : imageLayout(initialLayout)
+        VkImageLayout initialLayout, size_t imageCount, VkImage* images, VkImageView* imageViews, VkDeviceMemory* deviceMemories, VkSampler* sampler)
 {
     std::unique_ptr<VulkanContext>& ctx = VoxelEngine::vulkanContext;
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -34,7 +34,7 @@ Image::Image(uint32_t width, uint32_t height,
     samplerCreateInfo.mipLodBias = 0.0f;
   
     if (vkCreateSampler(ctx->getDevice(), &samplerCreateInfo, nullptr,
-                        &sampler) != VK_SUCCESS) {
+                        sampler) != VK_SUCCESS) {
       throw std::runtime_error("failed to create sampler");
     }
 }

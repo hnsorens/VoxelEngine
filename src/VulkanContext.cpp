@@ -1,4 +1,5 @@
 #include "VulkanContext.hpp"
+#include "VulkanInfo.hpp"
 #include "WindowManager.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -500,7 +501,7 @@ void VulkanContext::createSwapChain(
   createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
   createInfo.surface = surface;
 
-  createInfo.minImageCount = 2; //imageCount; // TODO fix this later so it is images again, make a new image type that is dynamic for this
+  createInfo.minImageCount = std::min(static_cast<int>(imageCount), MAX_FRAMEBUFFER_COUNT);
   createInfo.imageFormat = surfaceFormat.format;
   createInfo.imageColorSpace = surfaceFormat.colorSpace;
   createInfo.imageExtent = extent;

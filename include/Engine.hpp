@@ -23,7 +23,6 @@ public:
     return shaders->get<name>();
   }
 
-private:
   static std::unique_ptr<class WindowManager> windowManager;
   static std::unique_ptr<class VulkanContext> vulkanContext;
   static std::unique_ptr<class SyncManager> syncManager;
@@ -84,11 +83,6 @@ private:
     return VK_FALSE;
   }
 
-
-
-
-
-  friend class Image;
   friend class DescriptorPool;
 };
 

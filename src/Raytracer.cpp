@@ -60,7 +60,7 @@ const VkPipelineLayout &Raytracer::getPipelineLayout() const {
 const VkDescriptorSet &Raytracer::getDescriptorSet(int i) const {
   return raytracingDescriptorSets[i];
 }
-Image* Raytracer::getStorageImage() {
+ShaderImage* Raytracer::getStorageImage() {
   return &raytracingStorageImage;
 }
 

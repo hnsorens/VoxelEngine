@@ -24,7 +24,7 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
     );
 
     ShaderResourceSet set1{vulkanContext,
-      ResourceBinding<Image, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SHADER_FRAGMENT, 0, 1>{raytracer->getStorageImage()}
+      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SHADER_FRAGMENT, 0, 1>{raytracer->getStorageImage()}
     };
 
     GraphicsPipeline something{
@@ -32,14 +32,15 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
       group, set1
     };
 
-    Image swapchainImages{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+    AttachmentImage swapchainImages{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
         VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL};
 
-        
-    swapchainImages.imageViews[0] = vulkanContext->getSwapChainImageViews()[0];
-    swapchainImages.imageViews[1] = vulkanContext->getSwapChainImageViews()[1];
+    for (int i = 0; i < vulkanContext->getSwapChainImageViews().size(); i++)
+    {
+      swapchainImages.imageViews[i] = vulkanContext->getSwapChainImageViews()[i];
+    }
 
     RenderPassResourceSet set2{
       RenderPassResource<"output">{&swapchainImages}

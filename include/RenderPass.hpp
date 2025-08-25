@@ -17,10 +17,10 @@ template <FixedString Name>
 class RenderPassResource
 {
 public:
-    RenderPassResource(class Image* image) : resource{image} {}
+    RenderPassResource(class AttachmentImage* image) : resource{image} {}
 
     static constexpr FixedString name = Name.value;
-    class Image* resource;
+    class AttachmentImage* resource;
 };
 
 namespace RenderPassResourceSetDetails
@@ -49,7 +49,7 @@ class RenderPassResourceSet
 {
 public:
     RenderPassResourceSet(Resources... resources) : images{resources...} {}
-    int framebufferCount = 2;
+    int framebufferCount = 3;
 
     template <typename Attachments>
     std::vector<VkImageView> getAttachments(int index)
