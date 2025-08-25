@@ -45,7 +45,6 @@ public:
   VkRenderPass getRenderPass() const;
   const std::vector<VkImage> &getSwapChainImages() const;
   const std::vector<VkImageView> &getSwapChainImageViews() const;
-  const std::vector<VkFramebuffer> &getSwapChainFramebuffers() const;
 
 private:
   bool checkValidationLayerSupport();
@@ -80,8 +79,6 @@ private:
   void createLogicalDevice();
   void createSwapChain(std::unique_ptr<WindowManager> &windowManager);
   void createImageViews();
-  void createRenderPass();
-  void createFramebuffers();
   void cleanupSwapChain();
 
   VkInstance instance;
@@ -92,11 +89,9 @@ private:
   VkQueue presentQueue;
   VkSurfaceKHR surface;
   VkSwapchainKHR swapChain;
-  VkRenderPass renderPass;
   std::vector<VkImage> swapChainImages;
+  std::vector<VkImageView> swapChainImageViews;
   VkFormat swapChainImageFormat;
   VkExtent2D swapChainExtent;
-  std::vector<VkImageView> swapChainImageViews;
-  std::vector<VkFramebuffer> swapChainFramebuffers;
   QueueFamilyIndices queueFamilyIndices;
 };

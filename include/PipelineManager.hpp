@@ -17,6 +17,9 @@ public:
   const VkPipelineLayout &getGraphicsPipelineLayout() const;
   const VkDescriptorSet &getDescriptorSet(int i) const;
   const VkRenderPass &getRenderPass() const;
+  const VkFramebuffer getFrameBuffer(int i) const { return framebuffers[i]; }
+  
+  void recreateFramebuffers(std::unique_ptr<VulkanContext>& vulkanContext);
 
   static VkShaderModule createShaderModule(VkDevice device,
                                            const std::vector<char> &code);
@@ -25,5 +28,6 @@ private:
   VkPipeline pipeline;
   VkPipelineLayout pipelineLayout;
   std::vector<VkDescriptorSet> descriptorSet;
+  std::vector<VkFramebuffer> framebuffers;
   VkRenderPass renderpass;
 };

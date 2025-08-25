@@ -4,6 +4,7 @@
 #include "Raytracer.hpp"
 #include "SyncManager.hpp"
 #include "VoxelWorld.hpp"
+#include <cstdio>
 #include <memory>
 
 // Static member definitions
@@ -292,29 +293,29 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
   void VoxelEngine::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
+printf("Got here 4\n"); fflush(stdout);
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
       throw std::runtime_error("failed to begin recording command buffer!");
     }
-
+printf("Got here 4\n"); fflush(stdout);
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = pipelineManager->getRenderPass();
-    renderPassInfo.framebuffer =
-        vulkanContext->getSwapChainFramebuffers()[imageIndex];
+    renderPassInfo.framebuffer = pipelineManager->getFrameBuffer(imageIndex);
+    printf("BUFFER %d\n", pipelineManager->getFrameBuffer(imageIndex)); fflush(stdout);
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = vulkanContext->getSwapChainExtent();
-
+printf("Got here 4\n"); fflush(stdout);
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
-
+printf("Got here 4\n"); fflush(stdout);
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
                          VK_SUBPASS_CONTENTS_INLINE);
-
+printf("Got here 4\n"); fflush(stdout);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                       pipelineManager->getGraphicsPipeline());
-
+printf("Got here 4\n"); fflush(stdout);
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -323,32 +324,34 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
+printf("Got here 4\n"); fflush(stdout);
     VkRect2D scissor{};
     scissor.offset = {0, 0};
     scissor.extent = vulkanContext->getSwapChainExtent();
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
+printf("Got here 4\n"); fflush(stdout);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipelineManager->getGraphicsPipelineLayout(), 0, 1,
                             &pipelineManager->getDescriptorSet(currentFrame), 0,
                             nullptr);
-
+printf("Got here 4\n"); fflush(stdout);
     vkCmdDraw(commandBuffer, 6, 1, 0, 0);
-
+printf("Got here 4\n"); fflush(stdout);
     vkCmdEndRenderPass(commandBuffer);
-
+printf("Got here 4\n"); fflush(stdout);
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
       throw std::runtime_error("failed to record command buffer!");
     }
+    printf("Got here 4\n"); fflush(stdout);
   }
 
   void VoxelEngine::drawFrame() {
+    printf("Got here 1\n"); fflush(stdout);
     vkWaitForFences(vulkanContext->getDevice(), 1,
                     &syncManager->getInFlightFences()[currentFrame], VK_TRUE,
                     UINT64_MAX);
     camera->update(windowManager, voxelWorld, currentFrame);
-
+    printf("Got here 2\n"); fflush(stdout);
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(
         vulkanContext->getDevice(), vulkanContext->getSwapChain(), UINT64_MAX,
@@ -357,11 +360,12 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
       vulkanContext->recreateSwapchain(windowManager);
+      pipelineManager->recreateFramebuffers(vulkanContext);
       return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
       throw std::runtime_error("failed to acquire swap chain image!");
     }
-
+    printf("Got here 3\n"); fflush(stdout);
     vkResetFences(vulkanContext->getDevice(), 1,
                   &syncManager->getInFlightFences()[currentFrame]);
 
@@ -371,14 +375,16 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
         raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) %
                                  MAX_FRAMES_IN_FLIGHT],
         0);
-
+          printf("Got here 4\n"); fflush(stdout);
     recordCommandBuffer(commandManager->getCommandBuffers()[currentFrame],
                         imageIndex);
+                        printf("Got here 4\n"); fflush(stdout);
     recordVoxelCommandBuffer(
         raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) %
                                  MAX_FRAMES_IN_FLIGHT],
         (currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_IN_FLIGHT,
         section);
+        printf("Got here 4\n"); fflush(stdout);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -390,7 +396,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
-
+printf("Got here 5\n"); fflush(stdout);
     std::vector<VkCommandBuffer> commands;
     commands.push_back(
         raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) %
@@ -399,7 +405,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
 
     submitInfo.commandBufferCount = 2;
     submitInfo.pCommandBuffers = commands.data();
-
+printf("Got here 6\n"); fflush(stdout);
     VkSemaphore signalSemaphores[] = {
         syncManager->getRenderFinishedSemaphores()[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
@@ -410,7 +416,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
         VK_SUCCESS) {
       throw std::runtime_error("failed to submit draw command buffer!");
     }
-
+printf("Got here 6\n"); fflush(stdout);
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -424,11 +430,12 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     presentInfo.pImageIndices = &imageIndex;
 
     result = vkQueuePresentKHR(vulkanContext->getPresentQueue(), &presentInfo);
-
+printf("Got here 7\n"); fflush(stdout);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
         windowManager->framebufferResized) {
       windowManager->framebufferResized = false;
       vulkanContext->recreateSwapchain(windowManager);
+      pipelineManager->recreateFramebuffers(vulkanContext);
     } else if (result != VK_SUCCESS) {
       throw std::runtime_error("failed to present swap chain image!");
     }
@@ -436,6 +443,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     if (currentFrame == 0)
       section = (section + 1) % 16;
+    printf("Got here 8\n"); fflush(stdout);
   }
 
   SwapChainSupportDetails VoxelEngine::querySwapChainSupport(VkPhysicalDevice device) {

@@ -1,8 +1,10 @@
 #pragma once
 
+#include "ImageHelper.h"
 #include "VulkanContext.hpp"
 #include <cstdint>
 #include <cstdio>
+#include <limits>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -11,6 +13,73 @@
 #include "FixedString.hpp"
 #include "ShaderBuilder.hpp"
 
+template <FixedString Name>
+class RenderPassResource
+{
+public:
+    RenderPassResource(class Image* image) : resource{image} {}
+
+    static constexpr FixedString name = Name.value;
+    class Image* resource;
+};
+
+namespace RenderPassResourceSetDetails
+{
+    // Compile-time name matching to find resource index
+    template <FixedString TargetName, typename Tuple, std::size_t Index = 0>
+    constexpr std::size_t findResourceIndex()
+    {
+        if constexpr (Index >= std::tuple_size_v<Tuple>) {
+            static_assert(Index < std::tuple_size_v<Tuple>, 
+                "Resource not found for attachment");
+            return Index;
+        } else {
+            using Element = std::tuple_element_t<Index, Tuple>;
+            if constexpr (Element::name == TargetName) {
+                return Index;
+            } else {
+                return findResourceIndex<TargetName, Tuple, Index + 1>();
+            }
+        }
+    }
+};
+
+template <typename... Resources>
+class RenderPassResourceSet
+{
+public:
+    RenderPassResourceSet(Resources... resources) : images{resources...} {}
+    int framebufferCount = 2;
+
+    template <typename Attachments>
+    std::vector<VkImageView> getAttachments(int index)
+    {
+        std::vector<VkImageView> attachments;
+        attachments.reserve(std::tuple_size_v<Attachments>);
+        
+        // For each attachment, find the matching resource at compile time
+        [&] <std::size_t... I> (std::index_sequence<I...>) {
+            (attachments.push_back(
+                getImageView(std::get<
+                    RenderPassResourceSetDetails::findResourceIndex<
+                        std::tuple_element_t<I, Attachments>::name,
+                        std::tuple<Resources...>
+                    >()
+                >(images).resource, index)
+            ), ...);
+        }(std::make_index_sequence<std::tuple_size_v<Attachments>>{});
+        
+        for (auto& s : attachments)
+        {
+            printf("image: %d\n", s);
+            fflush(stdout);
+        }
+
+        return std::move(attachments);
+    }
+
+    std::tuple<Resources...> images;
+};
 
 template <FixedString Name, VkFormat Format, int Location>
 struct ColorAttachment
@@ -238,7 +307,7 @@ constexpr void tuple_for_each(Tuple&& t, Func&& f) {
     );
 }
 
-template <typename... Pipelines>
+template <typename Resources, typename... Pipelines>
 class RenderPass
 {
 public:
@@ -247,7 +316,7 @@ public:
 
     static_assert(std::tuple_size<allAttachments>::value > 0, "RenderPass must have at least one attachment.");
 
-    RenderPass(std::unique_ptr<VulkanContext>& ctx, Pipelines&... pipelines)
+    RenderPass(uint32_t width, uint32_t height, std::unique_ptr<VulkanContext>& ctx, Resources& resources, Pipelines&... pipelines) : width{width}, height{height}
     {
         // Gather all global attachments
         std::vector<VkAttachmentDescription> attachmentDescriptions;
@@ -263,7 +332,7 @@ public:
 
             if constexpr (std::is_same_v<AttType, ColorAttachment<AttType::name, AttType::get_format(), AttType::get_location()>>) {
                 desc.format = AttType::get_format();
-                desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             } else if constexpr (std::is_same_v<AttType, DepthAttachment<AttType::name, AttType::get_format(), AttType::get_location()>>) {
                 desc.format = AttType::get_format();
                 desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -317,15 +386,30 @@ public:
 
         }(pipelines), ...);
 
-        // Optional: dependencies
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependency.dependencyFlags = 0;
+        // Dependencies for proper layout transitions
+        std::vector<VkSubpassDependency> dependencies;
+        
+        // First dependency: External to first subpass (for initial layout transition)
+        VkSubpassDependency dependency1{};
+        dependency1.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency1.dstSubpass = 0;
+        dependency1.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency1.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency1.srcAccessMask = 0;
+        dependency1.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependency1.dependencyFlags = 0;
+        dependencies.push_back(dependency1);
+        
+        // Second dependency: Last subpass to external (for final layout transition to present)
+        VkSubpassDependency dependency2{};
+        dependency2.srcSubpass = 0;
+        dependency2.dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependency2.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency2.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        dependency2.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependency2.dstAccessMask = 0;
+        dependency2.dependencyFlags = 0;
+        dependencies.push_back(dependency2);
 
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -333,8 +417,8 @@ public:
         renderPassInfo.pAttachments = attachmentDescriptions.data();
         renderPassInfo.subpassCount = static_cast<uint32_t>(subpassDescs.size());
         renderPassInfo.pSubpasses = subpassDescs.data();
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &dependency;
+        renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+        renderPassInfo.pDependencies = dependencies.data();
 
         printf("Finished");
         fflush(stdout);
@@ -344,9 +428,45 @@ public:
 
         // Create pipelines for each subpass
         (pipelines.create_pipeline(ctx->getDevice(), renderPass), ...);
+
+
+printf("IDK: %d\n", resources.framebufferCount);
+fflush(stdout);
+        framebuffers.resize(resources.framebufferCount);
+
+        for (size_t i = 0; i < resources.framebufferCount; i++) {
+            // VkImageView attachments[] = {swapChainImageViews[i]};
+
+            std::vector<VkImageView> attachments = resources.template getAttachments<commonAttachments>(i);
+
+             for (auto& s : attachments)
+        {
+            printf("image: %d\n", s);
+            fflush(stdout);
+        }
+
+            VkFramebufferCreateInfo framebufferInfo{};
+            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferInfo.renderPass = renderPass;
+            framebufferInfo.attachmentCount = attachments.size();
+            framebufferInfo.pAttachments = attachments.data();
+            framebufferInfo.width = width;
+            framebufferInfo.height = height;
+            framebufferInfo.layers = 1;
+
+            if (vkCreateFramebuffer(ctx->getDevice(), &framebufferInfo, nullptr,
+                                    &framebuffers[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create framebuffer!");
+            }
+        }
+        printf("Finished framebuffers\n");
+        fflush(stdout);
     }
 
 private:
+    uint32_t width, height;
     VkRenderPass renderPass;
+    std::vector<VkFramebuffer> framebuffers;
     friend class PipelineManager;
+
 };
