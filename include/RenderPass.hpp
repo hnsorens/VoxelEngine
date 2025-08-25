@@ -8,8 +8,8 @@
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include "ImageHelper.h"
 #include "FixedString.hpp"
+#include "image.hpp"
 
 template <FixedString Name>
 class RenderPassResource
@@ -58,12 +58,12 @@ public:
         // For each attachment, find the matching resource at compile time
         [&] <std::size_t... I> (std::index_sequence<I...>) {
             (attachments.push_back(
-                getImageView(std::get<
+                std::get<
                     RenderPassResourceSetDetails::findResourceIndex<
                         std::tuple_element_t<I, Attachments>::name,
                         std::tuple<Resources...>
                     >()
-                >(images).resource, index)
+                >(images).resource->imageViews[index]
             ), ...);
         }(std::make_index_sequence<std::tuple_size_v<Attachments>>{});
         

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "VulkanInfo.hpp"
 #include "BindResource.hpp"
 #include "VulkanInfo.hpp"
 #include <vulkan/vulkan_core.h>

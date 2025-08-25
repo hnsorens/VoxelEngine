@@ -2,6 +2,7 @@
 #include "ResourceManager.hpp"
 #include "VoxelWorld.hpp"
 #include "VulkanContext.hpp"
+#include "VulkanInfo.hpp"
 #include "WindowManager.hpp"
 #include <cstring>
 #include <glm/ext/matrix_clip_space.hpp>

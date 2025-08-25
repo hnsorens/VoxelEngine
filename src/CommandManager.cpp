@@ -1,5 +1,6 @@
 #include "CommandManager.hpp"
 #include "VulkanContext.hpp"
+#include "VulkanInfo.hpp"
 #include <memory>
 #include <stdexcept>
 
