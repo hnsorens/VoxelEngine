@@ -9,6 +9,8 @@
 #include <memory>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
+#include "Engine.hpp"
+#include "shaders.hpp"
 
 Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
                      std::unique_ptr<VulkanContext> &vulkanContext,
@@ -76,6 +78,31 @@ void Raytracer::createRaytracingPipeline(
     VkDevice device, std::vector<VkBuffer> &uniformBuffer,
     std::vector<VkImageView> &voxelImageView, VkSampler voxelTextureSampler,
     std::vector<VkImageView> &voxelChunkMapImageView) {
+
+    auto& rmiss_shader = VoxelEngine::get_shader<"main_rmiss">();
+    auto& rgen_shader = VoxelEngine::get_shader<"main_rgen">();
+
+    ShaderGroup group(
+      rmiss_shader, rgen_shader
+    );
+
+    ShaderResourceSet set1{VoxelEngine::vulkanContext,
+      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 0, 1>{getStorageImage()},
+      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SHADER_RGEN, 1, 1>{getStorageImage()},
+      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 2, 1>{getStorageImage()},
+      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 3, 512>{getStorageImage()},
+      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 4, 1>{getStorageImage()},
+      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 5, 1>{getStorageImage()},
+      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 6, 1>{getStorageImage()},
+      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 7, 1>{getStorageImage()},
+      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 8, 1>{getStorageImage()}
+    };
+
+    RaytracingPipeline something{
+      VoxelEngine::vulkanContext,
+      group, set1
+    };
+
   auto raygenShaderCode = ResourceManager::readFile("bin/rgen.spv");
   auto missShaderCode = ResourceManager::readFile("bin/rmiss.spv");
 

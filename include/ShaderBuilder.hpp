@@ -287,7 +287,7 @@ namespace ShaderResourceSetDetails
     struct has_duplicate_bindings<First, Rest...>
     {
         static constexpr bool value = 
-            ((std::is_same_v<typename First::resourceType, typename Rest::resourceType> || First::get_type() == Rest::get_type() || First::get_binding() == Rest::get_binding() || First::get_descriptor_count() == Rest::get_descriptor_count()) || ...) ||
+            ((First::get_binding() == Rest::get_binding()) || ...) ||
             has_duplicate_bindings<Rest...>::value;
     };
 }
@@ -381,7 +381,7 @@ struct vgp_find_invalid_binding;
 
 template <int Stage, int SetIndex, typename ShaderBinding>
 struct vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, std::tuple<>> {
-    static constexpr bool value = false;
+    static constexpr bool value = true;
 };
 
 template <int Stage, int SetIndex, typename ShaderBinding, typename First, typename... Rest>
@@ -389,60 +389,60 @@ struct vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, std::tuple<First
     static constexpr bool value =
         (ShaderBinding::get_binding() != First::get_binding() ||
          ShaderBinding::get_descriptor_count() != First::get_descriptor_count() ||
-         ShaderBinding::type() != First::type()) ||
-         (Stage & First::get_stages()) == 0 ||
+         ShaderBinding::type() != First::type() ||
+         (Stage & First::get_stages()) == 0) &&
         vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, std::tuple<Rest...>>::value;
 };
 
 
 // 2. Check a ShaderBinding against all ResourceSets
-template <int Stage, int SetIndex, typename ShaderBinding, typename... Sets>
+template <int Stage, int SetIndex, typename ShaderBinding, typename SetTuple>
 struct vgp_shader_invalid_resource;
 
 template <int Stage, int SetIndex, typename ShaderBinding>
-struct vgp_shader_invalid_resource<Stage, SetIndex, ShaderBinding> {
+struct vgp_shader_invalid_resource<Stage, SetIndex, ShaderBinding, std::tuple<>> {
     static constexpr bool value = false;
 };
 
 template <int Stage, int SetIndex, typename ShaderBinding, typename FirstSet, typename... RestSets>
-struct vgp_shader_invalid_resource<Stage, SetIndex, ShaderBinding, FirstSet, RestSets...> {
+struct vgp_shader_invalid_resource<Stage, SetIndex, ShaderBinding, std::tuple<FirstSet, RestSets...>> {
     static constexpr bool value =
         vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, typename FirstSet::BindingResources>::value ||
-        vgp_shader_invalid_resource<Stage, SetIndex + 1, ShaderBinding, RestSets...>::value;
+        vgp_shader_invalid_resource<Stage, SetIndex + 1, ShaderBinding, std::tuple<RestSets...>>::value;
 };
 
-
 // 3. Check all bindings in a shader
-template <int Stage, typename ShaderBindingsTuple, typename... Sets>
+template <int Stage, typename Sets, typename ShaderBindingsTuple>
 struct vgp_shader_invalid;
 
-template <int Stage, typename... Sets>
-struct vgp_shader_invalid<Stage, std::tuple<>, Sets...> {
+template <int Stage, typename Sets>
+struct vgp_shader_invalid<Stage, Sets, std::tuple<>> {
     static constexpr bool value = false;
 };
 
-template <int Stage, typename FirstBinding, typename... RestBindings, typename... Sets>
-struct vgp_shader_invalid<Stage, std::tuple<FirstBinding, RestBindings...>, Sets...> {
+template <int Stage, typename Sets, typename FirstBinding, typename... RestBindings>
+struct vgp_shader_invalid<Stage, Sets, std::tuple<FirstBinding, RestBindings...>> {
+    // Use the helper to spread Sets into vgp_shader_invalid_resource
     static constexpr bool value =
-        vgp_shader_invalid_resource<Stage, 0, FirstBinding, Sets...>::value ||
-        vgp_shader_invalid<Stage, std::tuple<RestBindings...>, Sets...>::value;
+        vgp_shader_invalid_resource<Stage, 0, FirstBinding, Sets>::value ||
+        vgp_shader_invalid<Stage, Sets, std::tuple<RestBindings...>>::value;
 };
 
 
 // 4. Iterate over all shaders in the ShaderGroup
-template <typename ShaderTuple, typename... Sets>
+template <typename Sets, typename ShaderTuple>
 struct vgp_invalid;
 
-template <typename... Sets>
-struct vgp_invalid<std::tuple<>, Sets...> {
+template <typename Sets>
+struct vgp_invalid<Sets, std::tuple<>> {
     static constexpr bool value = false;
 };
 
-template <typename FirstShader, typename... RestShaders, typename... Sets>
-struct vgp_invalid<std::tuple<FirstShader, RestShaders...>, Sets...> {
+template <typename Sets, typename FirstShader, typename... RestShaders>
+struct vgp_invalid<Sets, std::tuple<FirstShader, RestShaders...>> {
     static constexpr bool value =
-        vgp_shader_invalid<FirstShader::get_type(), typename FirstShader::BindingsList, Sets...>::value ||
-        vgp_invalid<std::tuple<RestShaders...>, Sets...>::value;
+        vgp_shader_invalid<FirstShader::get_type(), Sets, typename FirstShader::BindingsList>::value ||
+        vgp_invalid<Sets, std::tuple<RestShaders...>>::value;
 };
 
 
@@ -451,7 +451,7 @@ struct vgp_invalid<std::tuple<FirstShader, RestShaders...>, Sets...> {
 // ----------------------------
 template <typename ShaderGroup, typename... ResourceSets>
 struct validate_graphics_pipeline {
-    static constexpr bool value = !vgp_invalid<typename ShaderGroup::shaders, ResourceSets...>::value;
+    static constexpr bool value = !vgp_invalid<std::tuple<ResourceSets...>, typename ShaderGroup::shaders>::value;
 };
 
 template <typename ShaderGroup, typename... ShaderResourcesBindings>
@@ -600,8 +600,97 @@ private:
     friend class PipelineManager;
 };
 
+template <typename ShaderGroup, typename... ShaderResourcesBindings>
+class RaytracingPipeline
+{
+    static_assert(validate_graphics_pipeline<ShaderGroup, ShaderResourcesBindings...>::value, "Graphics Pipeline Invalid");
 
+public:
 
+    using Attachments = ShaderGroup::Attachments;
+
+    RaytracingPipeline(std::unique_ptr<VulkanContext>& ctx, ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
+    m_shaderGroup(shaderGroup),
+    pipelineLayout([&](){
+
+        std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+
+        (descriptorSetLayouts.push_back(resources.getLayout()), ...);
+
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
+        pipelineLayoutInfo.pushConstantRangeCount = 0;
+        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+
+        printf("Pipeline Layout SIze: %d\n", descriptorSetLayouts.size());
+
+        VkPipelineLayout layout;
+        if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,
+                                    &layout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create pipeline layout!");
+        }
+
+        return layout;
+    }())
+    {
+        VkRayTracingShaderGroupCreateInfoKHR shaderGroups[2] = {};
+
+        shaderGroups[0].sType =
+            VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        shaderGroups[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        shaderGroups[0].generalShader = 0;
+        shaderGroups[0].closestHitShader = VK_SHADER_UNUSED_KHR;
+        shaderGroups[0].anyHitShader = VK_SHADER_UNUSED_KHR;
+        shaderGroups[0].intersectionShader = VK_SHADER_UNUSED_KHR;
+
+        shaderGroups[1].sType =
+            VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        shaderGroups[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        shaderGroups[1].generalShader = 1;
+        shaderGroups[1].closestHitShader = VK_SHADER_UNUSED_KHR;
+        shaderGroups[1].anyHitShader = VK_SHADER_UNUSED_KHR;
+        shaderGroups[1].intersectionShader = VK_SHADER_UNUSED_KHR;
+        
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        // TODO save the shader arrays, so if it goes out of scope the references are still there
+        pipelineInfo.stageCount = m_shaderGroup.size();
+        pipelineInfo.pStages = m_shaderGroup.data();
+        pipelineInfo.groupCount = 2;
+        pipelineInfo.pGroups = shaderGroups;
+        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+        pipelineInfo.maxPipelineRayRecursionDepth = 1;
+        pipelineInfo.layout = pipelineLayout;
+    }
+
+    void create_pipeline(VkDevice device, VkRenderPass renderPass)
+    {
+        if (pipeline)
+        {
+            throw std::runtime_error("Cannot use pipeline in more than one renderpass!");
+        }
+
+        PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
+          vkGetDeviceProcAddr(device, "vkCreateRayTracingPipelinesKHR"));
+        if (vkCreateRayTracingPipelinesKHR(device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
+                                            &pipelineInfo, nullptr,
+                                            &pipeline) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create raytracing pipeline!");
+        }
+
+        // Frees all memory in shader group because it cannot be used anymore
+        ShaderGroup group = std::move(m_shaderGroup);
+    }
+
+private:
+    
+    ShaderGroup m_shaderGroup;
+    VkRayTracingPipelineCreateInfoKHR pipelineInfo{};
+    VkPipelineLayout pipelineLayout;
+    VkPipeline pipeline = VK_NULL_HANDLE;
+
+    friend class PipelineManager;
+};
 
 
 // Shader index finder
