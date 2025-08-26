@@ -24,7 +24,7 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
     );
 
     ShaderResourceSet set1{vulkanContext,
-      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SHADER_FRAGMENT, 0, 1>{raytracer->getStorageImage()}
+      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SHADER_FRAGMENT, 0, 1>{raytracer->getStorageImage()}
     };
 
     GraphicsPipeline something{
@@ -32,7 +32,7 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
       group, set1
     };
 
-    AttachmentImage swapchainImages{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+    AttachmentImage swapchainImages{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
         VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL};

@@ -16,31 +16,31 @@ Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
                      std::unique_ptr<VulkanContext> &vulkanContext,
                      std::unique_ptr<VoxelWorld> &voxelWorld,
                      std::unique_ptr<Camera> &camera) :
-    raytracingStorageImage{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+    raytracingStorageImage{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
         VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
-    raytracingPositionStorageImage{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+    raytracingPositionStorageImage{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
         VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
 
-    raytracingLightStorageImageX{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+    raytracingLightStorageImageX{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
         VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
 
-    raytracingLightStorageImageY{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+    raytracingLightStorageImageY{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
         VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
 
-    raytracingLightStorageImageZ{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+    raytracingLightStorageImageZ{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
         VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
 
-    raytracingLightStorageImageW{RAYTRACE_WIDTH, RAYTRACE_HEIGHT,
+    raytracingLightStorageImageW{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
         VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL}
@@ -48,9 +48,8 @@ Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
 {
   createRaytracingResources(commandManager, vulkanContext);
   createRaytracingPipeline(vulkanContext->getDevice(), camera->uniformBuffer,
-                           voxelWorld->voxelImageView,
-                           voxelWorld->voxelTextureSampler,
-                           voxelWorld->voxelChunkMapImageView);
+                           voxelWorld->voxelImages.data(),
+                           &voxelWorld->voxelChunkMapImage);
 }
 
 Raytracer::~Raytracer() {}
@@ -62,7 +61,7 @@ const VkPipelineLayout &Raytracer::getPipelineLayout() const {
 const VkDescriptorSet &Raytracer::getDescriptorSet(int i) const {
   return raytracingDescriptorSets[i];
 }
-ShaderImage* Raytracer::getStorageImage() {
+SwapImage* Raytracer::getStorageImage() {
   return &raytracingStorageImage;
 }
 
@@ -76,8 +75,8 @@ void Raytracer::createRaytracingResources(
 
 void Raytracer::createRaytracingPipeline(
     VkDevice device, std::vector<VkBuffer> &uniformBuffer,
-    std::vector<VkImageView> &voxelImageView, VkSampler voxelTextureSampler,
-    std::vector<VkImageView> &voxelChunkMapImageView) {
+    StagedSharedImage* voxelImage,
+    StagedSharedImage* voxelChunkMapImage) {
 
     auto& rmiss_shader = VoxelEngine::get_shader<"main_rmiss">();
     auto& rgen_shader = VoxelEngine::get_shader<"main_rgen">();
@@ -87,15 +86,15 @@ void Raytracer::createRaytracingPipeline(
     );
 
     ShaderResourceSet set1{VoxelEngine::vulkanContext,
-      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 0, 1>{getStorageImage()},
-      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SHADER_RGEN, 1, 1>{getStorageImage()},
-      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 2, 1>{getStorageImage()},
-      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 3, 512>{getStorageImage()},
-      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 4, 1>{getStorageImage()},
-      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 5, 1>{getStorageImage()},
-      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 6, 1>{getStorageImage()},
-      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 7, 1>{getStorageImage()},
-      ResourceBinding<ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 8, 1>{getStorageImage()}
+      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 0, 1>{&raytracingStorageImage},
+      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SHADER_RGEN, 1, 1>{getStorageImage()},
+      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 2, 1>{&raytracingPositionStorageImage},
+      ResourceBinding<StagedSharedImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 3, 512>{voxelImage},
+      ResourceBinding<StagedSharedImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 4, 1>{voxelChunkMapImage},
+      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 5, 1>{&raytracingLightStorageImageX},
+      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 6, 1>{&raytracingLightStorageImageY},
+      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 7, 1>{&raytracingLightStorageImageZ},
+      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 8, 1>{&raytracingLightStorageImageW}
     };
 
     RaytracingPipeline something{
@@ -103,387 +102,32 @@ void Raytracer::createRaytracingPipeline(
       group, set1
     };
 
-  auto raygenShaderCode = ResourceManager::readFile("bin/rgen.spv");
-  auto missShaderCode = ResourceManager::readFile("bin/rmiss.spv");
+//   VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+//   layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+//   layoutCreateInfo.bindingCount = 9;
+//   layoutCreateInfo.pBindings = bindings;
+//   layoutCreateInfo.flags =
+//       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
-  VkShaderModule raygenShaderModule =
-      PipelineManager::createShaderModule(device, raygenShaderCode);
-  VkShaderModule missShaderModule =
-      PipelineManager::createShaderModule(device, missShaderCode);
+//   VkDescriptorBindingFlags bindless_flags =
+//       VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT |
+//       VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+//   VkDescriptorBindingFlags flags[] = {0, 0, bindless_flags, 0, 0, 0, 0, 0, 0};
 
-  VkPipelineShaderStageCreateInfo raygenShaderStageInfo{};
-  raygenShaderStageInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  raygenShaderStageInfo.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  raygenShaderStageInfo.module = raygenShaderModule;
-  raygenShaderStageInfo.pName = "main";
+//   VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extended_info{
+//       VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
+//       nullptr};
+//   extended_info.bindingCount = 9;
+//   extended_info.pBindingFlags = flags;
 
-  VkPipelineShaderStageCreateInfo missShaderStageInfo{};
-  missShaderStageInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  missShaderStageInfo.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
-  missShaderStageInfo.module = missShaderModule;
-  missShaderStageInfo.pName = "main";
+//   layoutCreateInfo.pNext = &extended_info;
 
-  VkPipelineShaderStageCreateInfo shaderStages[] = {raygenShaderStageInfo,
-                                                    missShaderStageInfo};
+  raytracingPipeline = something.pipeline;
+  printf("RAY PIPELINE : %d\n", something.pipeline); fflush(stdout);
+  raytracingPipelineLayout = something.pipelineLayout;
+  raytracingDescriptorSetLayout = set1.getLayout();
+  raytracingDescriptorSets = set1.descriptorSets;
 
-  VkRayTracingShaderGroupCreateInfoKHR shaderGroups[2] = {};
-
-  shaderGroups[0].sType =
-      VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-  shaderGroups[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-  shaderGroups[0].generalShader = 0;
-  shaderGroups[0].closestHitShader = VK_SHADER_UNUSED_KHR;
-  shaderGroups[0].anyHitShader = VK_SHADER_UNUSED_KHR;
-  shaderGroups[0].intersectionShader = VK_SHADER_UNUSED_KHR;
-
-  shaderGroups[1].sType =
-      VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-  shaderGroups[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-  shaderGroups[1].generalShader = 1;
-  shaderGroups[1].closestHitShader = VK_SHADER_UNUSED_KHR;
-  shaderGroups[1].anyHitShader = VK_SHADER_UNUSED_KHR;
-  shaderGroups[1].intersectionShader = VK_SHADER_UNUSED_KHR;
-
-  VkDescriptorSetLayoutBinding storageImageBinding = {};
-  storageImageBinding.binding = 0;
-  storageImageBinding.descriptorCount = 1;
-  storageImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-  storageImageBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  storageImageBinding.pImmutableSamplers = nullptr;
-
-  VkDescriptorSetLayoutBinding uniformBinding = {};
-  uniformBinding.binding = 1;
-  uniformBinding.descriptorCount = 1;
-  uniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  uniformBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  uniformBinding.pImmutableSamplers = nullptr;
-
-  VkDescriptorSetLayoutBinding positionStorageImageBinding = {};
-  positionStorageImageBinding.binding = 2;
-  positionStorageImageBinding.descriptorCount = 1;
-  positionStorageImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-  positionStorageImageBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  positionStorageImageBinding.pImmutableSamplers = nullptr;
-
-  VkDescriptorSetLayoutBinding voxelTexture = {};
-  voxelTexture.binding = 3;
-  voxelTexture.descriptorCount = 512;
-  voxelTexture.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-  voxelTexture.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  voxelTexture.pImmutableSamplers = nullptr;
-
-  VkDescriptorSetLayoutBinding voxelChunkMapTexture = {};
-  voxelChunkMapTexture.binding = 4;
-  voxelChunkMapTexture.descriptorCount = 1;
-  voxelChunkMapTexture.descriptorType =
-      VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-  voxelChunkMapTexture.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  voxelChunkMapTexture.pImmutableSamplers = nullptr;
-
-  VkDescriptorSetLayoutBinding lightStorageImageBindingX = {};
-  lightStorageImageBindingX.binding = 5;
-  lightStorageImageBindingX.descriptorCount = 1;
-  lightStorageImageBindingX.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-  lightStorageImageBindingX.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  lightStorageImageBindingX.pImmutableSamplers = nullptr;
-
-  VkDescriptorSetLayoutBinding lightStorageImageBindingY = {};
-  lightStorageImageBindingY.binding = 6;
-  lightStorageImageBindingY.descriptorCount = 1;
-  lightStorageImageBindingY.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-  lightStorageImageBindingY.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  lightStorageImageBindingY.pImmutableSamplers = nullptr;
-
-  VkDescriptorSetLayoutBinding lightStorageImageBindingZ = {};
-  lightStorageImageBindingZ.binding = 7;
-  lightStorageImageBindingZ.descriptorCount = 1;
-  lightStorageImageBindingZ.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-  lightStorageImageBindingZ.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  lightStorageImageBindingZ.pImmutableSamplers = nullptr;
-
-  VkDescriptorSetLayoutBinding lightStorageImageBindingW = {};
-  lightStorageImageBindingW.binding = 8;
-  lightStorageImageBindingW.descriptorCount = 1;
-  lightStorageImageBindingW.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-  lightStorageImageBindingW.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  lightStorageImageBindingW.pImmutableSamplers = nullptr;
-
-  VkDescriptorSetLayoutBinding bindings[] = {storageImageBinding,
-                                             uniformBinding,
-                                             voxelTexture,
-                                             positionStorageImageBinding,
-                                             voxelChunkMapTexture,
-                                             lightStorageImageBindingX,
-                                             lightStorageImageBindingY,
-                                             lightStorageImageBindingZ,
-                                             lightStorageImageBindingW};
-
-  VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-  layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-  layoutCreateInfo.bindingCount = 9;
-  layoutCreateInfo.pBindings = bindings;
-  layoutCreateInfo.flags =
-      VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-
-  VkDescriptorBindingFlags bindless_flags =
-      VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT |
-      VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
-  VkDescriptorBindingFlags flags[] = {0, 0, bindless_flags, 0, 0, 0, 0, 0, 0};
-
-  VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extended_info{
-      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
-      nullptr};
-  extended_info.bindingCount = 9;
-  extended_info.pBindingFlags = flags;
-
-  layoutCreateInfo.pNext = &extended_info;
-
-  if (vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr,
-                                  &raytracingDescriptorSetLayout) !=
-      VK_SUCCESS) {
-    throw std::runtime_error(
-        "failed to create raytracing descriptor set layout!");
-  }
-
-  VkPushConstantRange pushConstantRange{};
-  pushConstantRange.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  pushConstantRange.offset = 0;
-  pushConstantRange.size = 8;
-
-  VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
-  pipelineLayoutCreateInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutCreateInfo.setLayoutCount = 1;
-  pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-  pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-  pipelineLayoutCreateInfo.pSetLayouts = &raytracingDescriptorSetLayout;
-
-  if (vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr,
-                             &raytracingPipelineLayout) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create raytracing pipeline layout!");
-  }
-
-  VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo{};
-  pipelineCreateInfo.sType =
-      VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-  pipelineCreateInfo.stageCount = 2;
-  pipelineCreateInfo.pStages = shaderStages;
-  pipelineCreateInfo.groupCount = 2;
-  pipelineCreateInfo.pGroups = shaderGroups;
-  pipelineCreateInfo.maxPipelineRayRecursionDepth = 1;
-  pipelineCreateInfo.layout = raytracingPipelineLayout;
-
-  PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR =
-      reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
-          vkGetDeviceProcAddr(device, "vkCreateRayTracingPipelinesKHR"));
-  if (vkCreateRayTracingPipelinesKHR(device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
-                                     &pipelineCreateInfo, nullptr,
-                                     &raytracingPipeline) != VK_SUCCESS) {
-    throw std::runtime_error("Failed to create raytracing pipeline!");
-  }
-  vkDestroyShaderModule(device, raygenShaderModule, nullptr);
-  vkDestroyShaderModule(device, missShaderModule, nullptr);
-
-  // Pool
-
-  VkDescriptorPoolSize storageImagePoolSize = {};
-  storageImagePoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-  storageImagePoolSize.descriptorCount = 1500;
-
-  VkDescriptorPoolSize uboPoolSize = {};
-  uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  uboPoolSize.descriptorCount = 100;
-
-  VkDescriptorPoolSize upperVoxelPoolSize = {};
-  upperVoxelPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-  upperVoxelPoolSize.descriptorCount = 600;
-
-  VkDescriptorPoolSize poolSizes[] = {storageImagePoolSize, uboPoolSize,
-                                      upperVoxelPoolSize};
-
-  VkDescriptorPoolCreateInfo poolCreateInfo = {};
-  poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-  poolCreateInfo.poolSizeCount = 3;
-  poolCreateInfo.pPoolSizes = poolSizes;
-  poolCreateInfo.maxSets = 50;
-  poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
-
-  if (vkCreateDescriptorPool(device, &poolCreateInfo, nullptr,
-                             &raytracingDescriptorPool) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create raytracing descriptor pool!");
-  }
-
-  // Updating Descriptor Set
-
-  raytracingDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-
-  VkDescriptorSetLayout setLayouts[] = {raytracingDescriptorSetLayout,
-                                        raytracingDescriptorSetLayout};
-
-  VkDescriptorSetAllocateInfo allocInfo = {};
-  allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-  allocInfo.descriptorPool = raytracingDescriptorPool;
-  allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-  allocInfo.pSetLayouts = setLayouts;
-
-  if (vkAllocateDescriptorSets(device, &allocInfo,
-                               raytracingDescriptorSets.data())) {
-    throw std::runtime_error("Failed to create raytracing descriptor set!");
-  }
-
-  for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    VkDescriptorImageInfo positionImageInfo = {};
-    positionImageInfo.imageView = raytracingPositionStorageImage.imageViews[i];
-    positionImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkWriteDescriptorSet writePositionStorageDescriptorSet = {};
-    writePositionStorageDescriptorSet.sType =
-        VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writePositionStorageDescriptorSet.dstSet = raytracingDescriptorSets[i];
-    writePositionStorageDescriptorSet.dstBinding = 2;
-    writePositionStorageDescriptorSet.dstArrayElement = 0;
-    writePositionStorageDescriptorSet.descriptorType =
-        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    writePositionStorageDescriptorSet.descriptorCount = 1;
-    writePositionStorageDescriptorSet.pImageInfo = &positionImageInfo;
-
-    VkDescriptorImageInfo lightImageInfoX = {};
-    lightImageInfoX.imageView = raytracingLightStorageImageX.imageViews[i];
-    lightImageInfoX.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkDescriptorImageInfo lightImageInfoY = {};
-    lightImageInfoY.imageView = raytracingLightStorageImageY.imageViews[i];
-    lightImageInfoY.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkDescriptorImageInfo lightImageInfoZ = {};
-    lightImageInfoZ.imageView = raytracingLightStorageImageZ.imageViews[i];
-    lightImageInfoZ.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkDescriptorImageInfo lightImageInfoW = {};
-    lightImageInfoW.imageView = raytracingLightStorageImageW.imageViews[i];
-    lightImageInfoW.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkWriteDescriptorSet writeLightStorageDescriptorSetX = {};
-    writeLightStorageDescriptorSetX.sType =
-        VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeLightStorageDescriptorSetX.dstSet = raytracingDescriptorSets[i];
-    writeLightStorageDescriptorSetX.dstBinding = 5;
-    writeLightStorageDescriptorSetX.dstArrayElement = 0;
-    writeLightStorageDescriptorSetX.descriptorType =
-        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    writeLightStorageDescriptorSetX.descriptorCount = 1;
-    writeLightStorageDescriptorSetX.pImageInfo = &lightImageInfoX;
-
-    VkWriteDescriptorSet writeLightStorageDescriptorSetY = {};
-    writeLightStorageDescriptorSetY.sType =
-        VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeLightStorageDescriptorSetY.dstSet = raytracingDescriptorSets[i];
-    writeLightStorageDescriptorSetY.dstBinding = 6;
-    writeLightStorageDescriptorSetY.dstArrayElement = 0;
-    writeLightStorageDescriptorSetY.descriptorType =
-        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    writeLightStorageDescriptorSetY.descriptorCount = 1;
-    writeLightStorageDescriptorSetY.pImageInfo = &lightImageInfoY;
-
-    VkWriteDescriptorSet writeLightStorageDescriptorSetZ = {};
-    writeLightStorageDescriptorSetZ.sType =
-        VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeLightStorageDescriptorSetZ.dstSet = raytracingDescriptorSets[i];
-    writeLightStorageDescriptorSetZ.dstBinding = 7;
-    writeLightStorageDescriptorSetZ.dstArrayElement = 0;
-    writeLightStorageDescriptorSetZ.descriptorType =
-        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    writeLightStorageDescriptorSetZ.descriptorCount = 1;
-    writeLightStorageDescriptorSetZ.pImageInfo = &lightImageInfoZ;
-
-    VkWriteDescriptorSet writeLightStorageDescriptorSetW = {};
-    writeLightStorageDescriptorSetW.sType =
-        VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeLightStorageDescriptorSetW.dstSet = raytracingDescriptorSets[i];
-    writeLightStorageDescriptorSetW.dstBinding = 8;
-    writeLightStorageDescriptorSetW.dstArrayElement = 0;
-    writeLightStorageDescriptorSetW.descriptorType =
-        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    writeLightStorageDescriptorSetW.descriptorCount = 1;
-    writeLightStorageDescriptorSetW.pImageInfo = &lightImageInfoW;
-
-    VkDescriptorImageInfo imageInfo = {};
-    imageInfo.imageView = raytracingStorageImage.imageViews[i];
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkWriteDescriptorSet writeStorageDescriptorSet = {};
-    writeStorageDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeStorageDescriptorSet.dstSet = raytracingDescriptorSets[i];
-    writeStorageDescriptorSet.dstBinding = 0;
-    writeStorageDescriptorSet.dstArrayElement = 0;
-    writeStorageDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    writeStorageDescriptorSet.descriptorCount = 1;
-    writeStorageDescriptorSet.pImageInfo = &imageInfo;
-
-    VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = uniformBuffer[i];
-    bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(TransformUBO);
-
-    VkWriteDescriptorSet writeTransformDescriptorSet = {};
-    writeTransformDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeTransformDescriptorSet.dstSet = raytracingDescriptorSets[i];
-    writeTransformDescriptorSet.dstBinding = 1;
-    writeTransformDescriptorSet.dstArrayElement = 0;
-    writeTransformDescriptorSet.descriptorType =
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writeTransformDescriptorSet.descriptorCount = 1;
-    writeTransformDescriptorSet.pBufferInfo = &bufferInfo;
-
-    std::vector<VkDescriptorImageInfo> voxelImageInfos(512);
-
-    for (int i = 0; i < 512; i++) {
-      voxelImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-      voxelImageInfos[i].imageView = voxelImageView[i];
-      voxelImageInfos[i].sampler = voxelTextureSampler;
-    }
-
-    VkWriteDescriptorSet voxelDescriptorSet = {};
-    voxelDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    voxelDescriptorSet.dstSet = raytracingDescriptorSets[i];
-    voxelDescriptorSet.dstBinding = 3;
-    voxelDescriptorSet.dstArrayElement = 0;
-    voxelDescriptorSet.descriptorType =
-        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    voxelDescriptorSet.descriptorCount = 512;
-    voxelDescriptorSet.pImageInfo = voxelImageInfos.data();
-
-    VkDescriptorImageInfo voxelChunkMapImageInfo = {};
-    voxelChunkMapImageInfo.imageLayout =
-        VK_IMAGE_LAYOUT_GENERAL;
-    voxelChunkMapImageInfo.imageView = voxelChunkMapImageView[i];
-    voxelChunkMapImageInfo.sampler = voxelTextureSampler;
-
-    VkWriteDescriptorSet voxelChunkMapDescriptorSet = {};
-    voxelChunkMapDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    voxelChunkMapDescriptorSet.dstSet = raytracingDescriptorSets[i];
-    voxelChunkMapDescriptorSet.dstBinding = 4;
-    voxelChunkMapDescriptorSet.dstArrayElement = 0;
-    voxelChunkMapDescriptorSet.descriptorType =
-        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    voxelChunkMapDescriptorSet.descriptorCount = 1;
-    voxelChunkMapDescriptorSet.pImageInfo = &voxelChunkMapImageInfo;
-
-    VkWriteDescriptorSet writeDescriptorSets[] = {
-        writeStorageDescriptorSet,
-        writeTransformDescriptorSet,
-        voxelDescriptorSet,
-        writeLightStorageDescriptorSetX,
-        writeLightStorageDescriptorSetY,
-        writeLightStorageDescriptorSetZ,
-        writeLightStorageDescriptorSetW,
-        writePositionStorageDescriptorSet,
-        voxelChunkMapDescriptorSet};
-
-    vkUpdateDescriptorSets(device, 9, writeDescriptorSets, 0, nullptr);
-  }
 }
 
 void Raytracer::recordRaytracingCommandBuffer(VkCommandBuffer commandBuffer,

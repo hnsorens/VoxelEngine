@@ -329,6 +329,36 @@ public:
         descriptorSetLayoutInfo.pBindings = descriptorBindings.data();
         descriptorSetLayoutInfo.pNext = nullptr;
 
+        descriptorSetLayoutInfo.flags =
+            VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+
+        VkDescriptorBindingFlags bindless_flags =
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT |
+            VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+        std::vector<VkDescriptorBindingFlags> flags;
+
+        (void(
+            [&] {
+                using BindingType = Bindings;
+
+                if (BindingType::get_descriptor_count() > 1)
+                {
+                    flags.push_back(bindless_flags);
+                }
+                else {
+                    flags.push_back(0);
+                }
+            }()
+        ), ...); // this iterates over each Binding type
+
+        VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extended_info{
+            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
+            nullptr};
+        extended_info.bindingCount = flags.size();
+        extended_info.pBindingFlags = flags.data();
+
+        descriptorSetLayoutInfo.pNext = &extended_info;
+
         VkDescriptorSetLayout layout;
         if (vkCreateDescriptorSetLayout(ctx->getDevice(), &descriptorSetLayoutInfo, nullptr, &layout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor set layout!");
@@ -372,6 +402,7 @@ private:
     std::tuple<Bindings...> bindings;
 
     friend class PipelineManager;
+    friend class Raytracer;
 };
 
 
@@ -620,8 +651,16 @@ public:
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
         pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+
+        VkPushConstantRange pushConstantRange{};
+        pushConstantRange.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+        pushConstantRange.offset = 0;
+        pushConstantRange.size = 8;
+
+        VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
+        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
 
         printf("Pipeline Layout SIze: %d\n", descriptorSetLayouts.size());
 
@@ -652,7 +691,7 @@ public:
         shaderGroups[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         shaderGroups[1].intersectionShader = VK_SHADER_UNUSED_KHR;
         
-        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
         // TODO save the shader arrays, so if it goes out of scope the references are still there
         pipelineInfo.stageCount = m_shaderGroup.size();
         pipelineInfo.pStages = m_shaderGroup.data();
@@ -661,18 +700,10 @@ public:
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.maxPipelineRayRecursionDepth = 1;
         pipelineInfo.layout = pipelineLayout;
-    }
 
-    void create_pipeline(VkDevice device, VkRenderPass renderPass)
-    {
-        if (pipeline)
-        {
-            throw std::runtime_error("Cannot use pipeline in more than one renderpass!");
-        }
-
-        PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
-          vkGetDeviceProcAddr(device, "vkCreateRayTracingPipelinesKHR"));
-        if (vkCreateRayTracingPipelinesKHR(device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
+         PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
+          vkGetDeviceProcAddr(ctx->getDevice(), "vkCreateRayTracingPipelinesKHR"));
+        if (vkCreateRayTracingPipelinesKHR(ctx->getDevice(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
                                             &pipelineInfo, nullptr,
                                             &pipeline) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create raytracing pipeline!");
@@ -689,7 +720,7 @@ private:
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline = VK_NULL_HANDLE;
 
-    friend class PipelineManager;
+    friend class Raytracer;
 };
 
 

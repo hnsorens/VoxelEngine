@@ -1,6 +1,7 @@
 #include "ResourceManager.hpp"
 #include "CommandManager.hpp"
 #include "VulkanContext.hpp"
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -17,18 +18,18 @@ void ResourceManager::createBuffer(VkDevice device,
                                    VkDeviceMemory &bufferMemory) {}
 void ResourceManager::createImage(VkDevice device,
                                   VkPhysicalDevice physicalDevice,
-                                  uint32_t width, uint32_t height,
+                                  uint32_t width, uint32_t height, uint32_t depth,
                                   VkFormat format, VkImageTiling tiling,
                                   VkImageUsageFlags usage,
                                   VkMemoryPropertyFlags properties,
                                   VkImage &image, VkDeviceMemory &imageMemory) {
   VkImageCreateInfo imageCreateInfo = {};
   imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-  imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+  imageCreateInfo.imageType = depth > 1 ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
   imageCreateInfo.format = format;
   imageCreateInfo.extent.width = width;
   imageCreateInfo.extent.height = height;
-  imageCreateInfo.extent.depth = 1;
+  imageCreateInfo.extent.depth = depth;
   imageCreateInfo.mipLevels = 1;
   imageCreateInfo.arrayLayers = 1;
   imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -67,12 +68,12 @@ void ResourceManager::createImage(VkDevice device,
 
   vkBindImageMemory(device, image, imageMemory, 0);
 }
-void ResourceManager::createImageView(VkDevice device, VkFormat format,
+void ResourceManager::createImageView(uint32_t depth, VkDevice device, VkFormat format,
                                       VkImage &image, VkImageView &imageView) {
   VkImageViewCreateInfo viewCreateInfo = {};
   viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
   viewCreateInfo.image = image;
-  viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  viewCreateInfo.viewType = depth > 1 ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D;
   viewCreateInfo.format = format;
   viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
   viewCreateInfo.subresourceRange.baseMipLevel = 0;

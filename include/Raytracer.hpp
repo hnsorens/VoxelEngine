@@ -21,8 +21,8 @@ public:
 
   void createRaytracingPipeline(
       VkDevice device, std::vector<VkBuffer> &uniformBuffer,
-      std::vector<VkImageView> &voxelImageView, VkSampler voxelTextureSampler,
-      std::vector<VkImageView> &voxelChunkMapImageView);
+      StagedSharedImage* voxelImage,
+      StagedSharedImage* voxelChunkMapImage);
   void createRaytracingResources(
       std::unique_ptr<class CommandManager> &commandManager,
       std::unique_ptr<class VulkanContext> &vulkanContext);
@@ -32,20 +32,19 @@ public:
   const VkPipeline &getPipeline() const;
   const VkPipelineLayout &getPipelineLayout() const;
   const VkDescriptorSet &getDescriptorSet(int i) const;
-  ShaderImage* getStorageImage();
+  SwapImage* getStorageImage();
 
 private:
 
-  ShaderImage raytracingStorageImage;
-  ShaderImage raytracingPositionStorageImage;
-  ShaderImage raytracingLightStorageImageX;
-  ShaderImage raytracingLightStorageImageY;
-  ShaderImage raytracingLightStorageImageZ;
-  ShaderImage raytracingLightStorageImageW;
+  SwapImage raytracingStorageImage;
+  SwapImage raytracingPositionStorageImage;
+  SwapImage raytracingLightStorageImageX;
+  SwapImage raytracingLightStorageImageY;
+  SwapImage raytracingLightStorageImageZ;
+  SwapImage raytracingLightStorageImageW;
 
   VkPipeline raytracingPipeline;
   VkPipelineLayout raytracingPipelineLayout;
   VkDescriptorSetLayout raytracingDescriptorSetLayout;
-  VkDescriptorPool raytracingDescriptorPool;
   std::vector<VkDescriptorSet> raytracingDescriptorSets;
 };

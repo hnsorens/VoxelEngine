@@ -43,18 +43,13 @@ struct ResourceBinding
     static constexpr int get_binding() { return Binding; }
     static constexpr int get_descriptor_count() { return DescriptorCount; }
 
-    ResourceBinding(Resource* info[DescriptorCount])
+    ResourceBinding(Resource* info)
     {
-        std::memcpy(resources, info, DescriptorCount * sizeof(Resource*));
+        for (int i = 0; i < DescriptorCount; i++)
+        {
+            resources[i] = &info[i];
+        }
     }
-
-    template <typename... Args>
-    ResourceBinding(Args*... args) : resources{args...} {
-        static_assert(sizeof...(Args) == DescriptorCount, 
-                      "The number of descriptors must be equal to the descriptorCount");
-    }
-
-    
 
     void writeAll(VkDevice device, std::vector<VkDescriptorSet> descriptorSets)
     {
@@ -62,6 +57,7 @@ struct ResourceBinding
         {
             for (int i = 0; i < DescriptorCount; i++)
             {
+                if (ResourceType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
                 write(device, descriptorSets[frame], i, frame);
             }
         }
@@ -77,9 +73,10 @@ struct ResourceBinding
         descriptorWrite.descriptorType = type();
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pNext = nullptr;
-        resources[element]->write(descriptorWrite, element);
+        resources[element]->writeDescriptor(descriptorWrite, element);
 
         vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+        printf("UPDATE\n"); fflush(stdout);
     }
 
     Resource* resources[DescriptorCount];

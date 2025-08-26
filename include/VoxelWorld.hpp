@@ -1,4 +1,5 @@
 #pragma once
+#include "image.hpp"
 #define FNL_IMPL
 #include "FastNoiseLite.hpp"
 #include <condition_variable>
@@ -64,21 +65,13 @@ public:
   std::condition_variable queueCond;
   bool stopThreads;
 
-  std::vector<VkImage> voxelTexture;
-  std::vector<VkDeviceMemory> voxelTexturesMemory;
-  std::vector<VkImageView> voxelImageView;
+  std::vector<StagedSharedImage> voxelImages;
 
   std::vector<uint16_t> chunkUpdateQueue;
 
   std::vector<VoxelChunk> voxelData;
-  VkSampler voxelTextureSampler;
-  std::vector<VkBuffer> voxelStagingBuffer;
-  std::vector<VkDeviceMemory> voxelStagingBufferMemory;
-  std::vector<VkImage> voxelChunkMapTexture;
-  std::vector<VkDeviceMemory> voxelChunkMapTexturesMemory;
-  std::vector<VkImageView> voxelChunkMapImageView;
-  std::vector<VkBuffer> voxelChunkMapStagingBuffer;
-  std::vector<VkDeviceMemory> voxelChunkMapStagingBufferMemory;
+
+  StagedSharedImage voxelChunkMapImage;
   uint16_t *voxelChunkMapData;
 
   FastNoiseLite noise;

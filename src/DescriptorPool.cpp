@@ -6,7 +6,7 @@
 #include "Engine.hpp"
 
 #define MAX_POOL_SETS 1000
-#define MAX_DESCRIPTOR_COUNT 1000
+#define MAX_DESCRIPTOR_COUNT 2000
 
 template <VkDescriptorType Type>
 struct DescriptorTypeObject
@@ -100,6 +100,7 @@ DescriptorPool::DescriptorPool()
     createInfo.poolSizeCount = poolSizes.size();
     createInfo.pPoolSizes = poolSizes.data();
     createInfo.maxSets = MAX_POOL_SETS;
+    createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
     if (vkCreateDescriptorPool(VoxelEngine::vulkanContext->getDevice(), &createInfo, nullptr, &pool) != VK_SUCCESS)
     {
