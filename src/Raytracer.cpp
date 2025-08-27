@@ -75,8 +75,8 @@ void Raytracer::createRaytracingResources(
 
 void Raytracer::createRaytracingPipeline(
     VkDevice device, std::vector<VkBuffer> &uniformBuffer,
-    StagedSharedImage* voxelImage,
-    StagedSharedImage* voxelChunkMapImage) {
+    StagedSwapImage* voxelImage,
+    StagedSwapImage* voxelChunkMapImage) {
 
     auto& rmiss_shader = VoxelEngine::get_shader<"main_rmiss">();
     auto& rgen_shader = VoxelEngine::get_shader<"main_rgen">();
@@ -89,8 +89,8 @@ void Raytracer::createRaytracingPipeline(
       ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 0, 1>{&raytracingStorageImage},
       ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SHADER_RGEN, 1, 1>{getStorageImage()},
       ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 2, 1>{&raytracingPositionStorageImage},
-      ResourceBinding<StagedSharedImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 3, 512>{voxelImage},
-      ResourceBinding<StagedSharedImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 4, 1>{voxelChunkMapImage},
+      ResourceBinding<StagedSwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 3, 512>{voxelImage},
+      ResourceBinding<StagedSwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 4, 1>{voxelChunkMapImage},
       ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 5, 1>{&raytracingLightStorageImageX},
       ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 6, 1>{&raytracingLightStorageImageY},
       ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 7, 1>{&raytracingLightStorageImageZ},
@@ -102,32 +102,34 @@ void Raytracer::createRaytracingPipeline(
       group, set1
     };
 
-//   VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-//   layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-//   layoutCreateInfo.bindingCount = 9;
-//   layoutCreateInfo.pBindings = bindings;
-//   layoutCreateInfo.flags =
-//       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    
+    
+    raytracingPipeline = something.pipeline;
+    printf("RAY PIPELINE : %d\n", something.pipeline); fflush(stdout);
+    raytracingPipelineLayout = something.pipelineLayout;
+    raytracingDescriptorSetLayout = set1.getLayout();
+    raytracingDescriptorSets = set1.descriptorSets;
+    for (int i = 0; i < 2; i++)
+    {
 
-//   VkDescriptorBindingFlags bindless_flags =
-//       VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT |
-//       VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
-//   VkDescriptorBindingFlags flags[] = {0, 0, bindless_flags, 0, 0, 0, 0, 0, 0};
+      VkDescriptorBufferInfo bufferInfo{};
+      bufferInfo.buffer = uniformBuffer[i];
+      bufferInfo.offset = 0;
+      bufferInfo.range = sizeof(TransformUBO);
+  
+      VkWriteDescriptorSet writeTransformDescriptorSet = {};
+      writeTransformDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      writeTransformDescriptorSet.dstSet = raytracingDescriptorSets[i];
+      writeTransformDescriptorSet.dstBinding = 1;
+      writeTransformDescriptorSet.dstArrayElement = 0;
+      writeTransformDescriptorSet.descriptorType =
+          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      writeTransformDescriptorSet.descriptorCount = 1;
+      writeTransformDescriptorSet.pBufferInfo = &bufferInfo;
 
-//   VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extended_info{
-//       VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
-//       nullptr};
-//   extended_info.bindingCount = 9;
-//   extended_info.pBindingFlags = flags;
-
-//   layoutCreateInfo.pNext = &extended_info;
-
-  raytracingPipeline = something.pipeline;
-  printf("RAY PIPELINE : %d\n", something.pipeline); fflush(stdout);
-  raytracingPipelineLayout = something.pipelineLayout;
-  raytracingDescriptorSetLayout = set1.getLayout();
-  raytracingDescriptorSets = set1.descriptorSets;
-
+      vkUpdateDescriptorSets(VoxelEngine::vulkanContext->getDevice(), 1, &writeTransformDescriptorSet, 0, nullptr);
+    }
+    
 }
 
 void Raytracer::recordRaytracingCommandBuffer(VkCommandBuffer commandBuffer,

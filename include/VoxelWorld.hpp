@@ -65,13 +65,13 @@ public:
   std::condition_variable queueCond;
   bool stopThreads;
 
-  std::vector<StagedSharedImage> voxelImages;
+  std::vector<StagedSwapImage> voxelImages;
 
   std::vector<uint16_t> chunkUpdateQueue;
 
   std::vector<VoxelChunk> voxelData;
 
-  StagedSharedImage voxelChunkMapImage;
+  StagedSwapImage voxelChunkMapImage;
   uint16_t *voxelChunkMapData;
 
   FastNoiseLite noise;

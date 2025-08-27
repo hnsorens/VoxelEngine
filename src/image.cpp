@@ -80,17 +80,17 @@ void ImageImpl::CreateStagingBuffer(uint32_t width, uint32_t height, uint32_t de
     }
 }
 
-void ImageImpl::Write(uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data)
+void ImageImpl::Write(uint32_t size, uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data)
 {
     std::unique_ptr<VulkanContext>& ctx = VoxelEngine::vulkanContext;
     std::unique_ptr<CommandManager>& commandManager = VoxelEngine::commandManager;
 
     VkCommandBuffer commandBuffer = commandManager->beginSingleTimeCommands(ctx);
-    Write(commandBuffer, imageIndex, width, height, depth, stagingBufferMemory, stagingBuffer, image, data);
+    Write(commandBuffer, size, imageIndex, width, height, depth, stagingBufferMemory, stagingBuffer, image, data);
     commandManager->endSingleTimeCommands(ctx, commandBuffer);
 }
 
-void ImageImpl::Write(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data)
+void ImageImpl::Write(VkCommandBuffer commandBuffer, uint32_t size, uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data)
 {
     std::unique_ptr<VulkanContext>& ctx = VoxelEngine::vulkanContext;
     std::unique_ptr<CommandManager>& commandManager = VoxelEngine::commandManager;
@@ -98,8 +98,8 @@ void ImageImpl::Write(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32
     // TODO adjust the size depending on the format
     void *mappedData;
     vkMapMemory(ctx->getDevice(), stagingBufferMemory, 0,
-                width * height * depth, 0, &mappedData);
-    memcpy(mappedData, data, width * height * depth);
+                width * height * depth * size, 0, &mappedData);
+    memcpy(mappedData, data, width * height * depth * size);
     vkUnmapMemory(ctx->getDevice(), stagingBufferMemory);
     VkBufferImageCopy region = {};
     region.bufferOffset = 0;

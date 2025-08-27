@@ -209,13 +209,14 @@ void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,
 
     uint16_t ID = chunkUpdateQueue[chunkUpdateQueue[0]--];
 
-    voxelImages[ID].changeLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0);
-    voxelImages[ID].write(commandBuffer, (char*)voxelData[ID].data, 0);
-    voxelImages[ID].changeLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL, 0);
+
+    voxelImages[ID].changeLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, currentImage);
+    voxelImages[ID].write(commandBuffer, (char*)voxelData[ID].data, currentImage);
+    voxelImages[ID].changeLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL, currentImage);
   }
 
   //TODO I need to change the format sizing in the write for this since its 16 instead of 8
-  voxelChunkMapImage.write(commandBuffer, (char*)voxelChunkMapData, 0);
+  voxelChunkMapImage.write(commandBuffer, (char*)voxelChunkMapData, currentImage);
   voxelChunkMapImage.changeLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL, currentImage);
 }
 void VoxelWorld::chunkWorker() {

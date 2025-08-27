@@ -21,7 +21,7 @@ void DescriptorSet::write(std::unique_ptr<VulkanContext>& ctx, int binding, int 
   writeDescriptorSet.pImageInfo = imageWrite;
 
   vkUpdateDescriptorSets(ctx->getDevice(), 1, &writeDescriptorSet, 0, nullptr);
-  printf("UPDATE\n"); fflush(stdout);
+  // printf("UPDATE\n"); fflush(stdout);
 }
 
 void DescriptorSetBuilder::addDescriptor(int binding, int descriptorCount, VkDescriptorType descriptorType, VkShaderStageFlagBits stageFlags)

@@ -73,7 +73,7 @@ namespace ShaderDetails
     template <typename First, typename... Rest>
     struct find_bindings<std::tuple<First, Rest...>> {
     private:
-        // Helper: true if First is a ShaderBindings<...>
+        // Helper: true if First is a ShaderBindings<...>   
         template <typename T>
         struct is_shader_bindings : std::false_type {};
 

@@ -73,10 +73,10 @@ struct ResourceBinding
         descriptorWrite.descriptorType = type();
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pNext = nullptr;
-        resources[element]->writeDescriptor(descriptorWrite, element);
+        resources[element]->writeDescriptor(descriptorWrite, frame);
 
         vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
-        printf("UPDATE\n"); fflush(stdout);
+        // printf("UPDATE\n"); fflush(stdout);
     }
 
     Resource* resources[DescriptorCount];
