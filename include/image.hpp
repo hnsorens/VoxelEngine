@@ -16,8 +16,8 @@ private:
         VkImageLayout initialLayout, size_t imageCount, VkImage* images, VkImageView* imageViews, VkDeviceMemory* deviceMemories, VkSampler* sampler);
 
     static void CreateStagingBuffer(uint32_t width, uint32_t height, uint32_t depth, VkBuffer* voxelStagingBuffer, VkDeviceMemory* voxelStagingBufferMemory, size_t imageCount);
-    static void Write(uint32_t size, uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data);
-    static void Write(VkCommandBuffer commandBuffer, uint32_t size, uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data);
+    static void Write(uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data);
+    static void Write(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data);
     static void changeLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels);
     static void changeLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels);
 
