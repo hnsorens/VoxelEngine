@@ -15,11 +15,27 @@ private:
         VkMemoryPropertyFlags properties,
         VkImageLayout initialLayout, size_t imageCount, VkImage* images, VkImageView* imageViews, VkDeviceMemory* deviceMemories, VkSampler* sampler);
 
-    static void CreateStagingBuffer(uint32_t width, uint32_t height, uint32_t depth, VkBuffer* voxelStagingBuffer, VkDeviceMemory* voxelStagingBufferMemory, size_t imageCount);
-    static void Write(uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data);
-    static void Write(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data);
+    static void CreateStagingBuffer(uint32_t width, uint32_t height, uint32_t depth, VkFormat format, VkBuffer* voxelStagingBuffer, VkDeviceMemory* voxelStagingBufferMemory, size_t imageCount);
+    static void Write(uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkFormat format, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data);
+    static void Write(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkFormat format, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data);
     static void changeLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels);
     static void changeLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels);
+
+    static size_t formatSize(VkFormat format)
+    {
+        switch (format) {
+            case VK_FORMAT_R32_UINT:
+                return 4;
+            case VK_FORMAT_R16G16B16A16_UNORM:
+                return 8;
+            case VK_FORMAT_R16_UINT:
+                return 2;
+            case VK_FORMAT_R8_UINT:
+                return 1;
+            default:
+                return 1;
+        }
+    }
 
     template <int MaxImageCount>
     friend class ImageBase;
@@ -85,7 +101,7 @@ public:
             VkImageLayout initialLayout) : width(width), height(height), depth(depth), format(format), imageLayout(initialLayout)
     {
         ImageImpl::CreateImages(width, height, depth, format, tiling, usage, properties, initialLayout, MaxImageCount, images, imageViews, deviceMemories, &sampler);   
-        ImageImpl::CreateStagingBuffer(width, height, depth, stagingBuffers, stagingBuffersMemory, MaxImageCount);
+        ImageImpl::CreateStagingBuffer(width, height, depth, format, stagingBuffers, stagingBuffersMemory, MaxImageCount);
     }
 
     void changeLayout(VkImageLayout newLayout, uint32_t index)
@@ -109,12 +125,12 @@ public:
 
     void write(char* data, uint32_t index)
     {
-        ImageImpl::Write(index, width, height, depth, stagingBuffersMemory[index], stagingBuffers[index], images[index], data);
+        ImageImpl::Write(index, width, height, depth, format, stagingBuffersMemory[index], stagingBuffers[index], images[index], data);
     }
 
     void write(VkCommandBuffer commandBuffer, char* data, uint32_t index)
     {
-        ImageImpl::Write(commandBuffer, index, width, height, depth, stagingBuffersMemory[index], stagingBuffers[index], images[index], data);
+        ImageImpl::Write(commandBuffer, index, width, height, depth, format, stagingBuffersMemory[index], stagingBuffers[index], images[index], data);
     }
 
     VkDescriptorImageInfo imageInfos[MaxImageCount];
