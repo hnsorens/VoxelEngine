@@ -12,6 +12,12 @@ static void framebufferResizeCallback(GLFWwindow *window, int width,
   windowManager->framebufferResized = true;
 }
 
+static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+    glfwSetWindowShouldClose(window, GLFW_TRUE);
+  }
+}
+
 WindowManager::WindowManager(int width, int height, const char *title) {
   glfwInit();
 
@@ -23,6 +29,7 @@ WindowManager::WindowManager(int width, int height, const char *title) {
 
   glfwSetWindowUserPointer(window, this);
   glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+  glfwSetKeyCallback(window, keyCallback);
 }
 
 WindowManager::~WindowManager() {

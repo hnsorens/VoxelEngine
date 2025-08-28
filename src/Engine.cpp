@@ -6,6 +6,9 @@
 #include "VoxelWorld.hpp"
 #include <cstdio>
 #include <memory>
+#include <thread>
+#include <chrono>
+#include <iostream> // Added for debug output
 
 // Static member definitions
 std::unique_ptr<WindowManager> VoxelEngine::windowManager;
@@ -64,11 +67,50 @@ void VoxelEngine::initVulkan() {
 }
 
 void VoxelEngine::mainLoop() {
+    const double targetFrameTime = 1.0 / 60.0; // 60 FPS target
+    double lastFrameTime = 0.0;
+    uint64_t frameCount = 0;
+    double lastFPSUpdate = 0.0;
+    
+    std::cout << "Starting main loop. Press ESC to exit." << std::endl;
+    
     while (!windowManager->shouldClose()) {
+        double currentTime = glfwGetTime();
+        double deltaTime = currentTime - lastFrameTime;
+        
+        // Limit frame rate
+        if (deltaTime < targetFrameTime) {
+            double sleepTime = targetFrameTime - deltaTime;
+            if (sleepTime > 0.001) { // Only sleep if more than 1ms
+                std::this_thread::sleep_for(std::chrono::duration<double>(sleepTime));
+            }
+            continue;
+        }
+        
         windowManager->pollEvents();
-        drawFrame();
+        
+        // Check if window is minimized
+        int width, height;
+        windowManager->getFramebufferSize(&width, &height);
+        if (width > 0 && height > 0) {
+            drawFrame();
+            frameCount++;
+        }
+        
+        lastFrameTime = currentTime;
+        
+        // Print FPS every second
+        if (currentTime - lastFPSUpdate >= 1.0) {
+            std::cout << "FPS: " << frameCount << std::endl;
+            frameCount = 0;
+            lastFPSUpdate = currentTime;
+        }
+        
+        // Add a small delay to prevent excessive CPU usage
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
 
+    std::cout << "Shutting down..." << std::endl;
     vkDeviceWaitIdle(vulkanContext->getDevice());
 }
 
@@ -198,14 +240,14 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
   }
 
   void VoxelEngine::createCommandBuffers() {
+    raytracingCommandBuffers.clear(); // Clear the vector first
     raytracingCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
     VkCommandBufferAllocateInfo raytracingAllocInfo{};
     raytracingAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     raytracingAllocInfo.commandPool = commandManager->getCommandPool();
     raytracingAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    raytracingAllocInfo.commandBufferCount =
-        (uint32_t)commandManager->getCommandBuffers().size();
+    raytracingAllocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT; // Use constant directly
 
     if (vkAllocateCommandBuffers(
             vulkanContext->getDevice(), &raytracingAllocInfo,
@@ -333,9 +375,15 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
   }
 
   void VoxelEngine::drawFrame() {
-    vkWaitForFences(vulkanContext->getDevice(), 1,
+    // Wait for the previous frame to finish with a timeout
+    VkResult fenceResult = vkWaitForFences(vulkanContext->getDevice(), 1,
                     &syncManager->getInFlightFences()[currentFrame], VK_TRUE,
-                    UINT64_MAX);
+                    1000000000); // 1 second timeout
+    
+    if (fenceResult == VK_TIMEOUT) {
+        std::cout << "Warning: Frame fence timeout, continuing anyway" << std::endl;
+    }
+    
     camera->update(windowManager, voxelWorld, currentFrame);
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(
@@ -356,15 +404,13 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     vkResetCommandBuffer(commandManager->getCommandBuffers()[currentFrame],
                          /*VkCommandBufferResetFlagBits*/ 0);
     vkResetCommandBuffer(
-        raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) %
-                                 MAX_FRAMES_IN_FLIGHT],
+        raytracingCommandBuffers[currentFrame],
         0);
     recordCommandBuffer(commandManager->getCommandBuffers()[currentFrame],
                         imageIndex);
     recordVoxelCommandBuffer(
-        raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) %
-                                 MAX_FRAMES_IN_FLIGHT],
-        (currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_IN_FLIGHT,
+        raytracingCommandBuffers[currentFrame],
+        currentFrame,
         section);
 
     VkSubmitInfo submitInfo{};
@@ -379,8 +425,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     submitInfo.pWaitDstStageMask = waitStages;
     std::vector<VkCommandBuffer> commands;
     commands.push_back(
-        raytracingCommandBuffers[(currentFrame - 1 + MAX_FRAMES_IN_FLIGHT) %
-                                 MAX_FRAMES_IN_FLIGHT]);
+        raytracingCommandBuffers[currentFrame]);
     commands.push_back(commandManager->getCommandBuffers()[currentFrame]);
 
     submitInfo.commandBufferCount = 2;
@@ -411,8 +456,11 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
         windowManager->framebufferResized) {
       windowManager->framebufferResized = false;
+      std::cout << "Recreating swapchain..." << std::endl;
       vulkanContext->recreateSwapchain(windowManager);
       pipelineManager->recreateFramebuffers(vulkanContext);
+      // Add a small delay to prevent excessive recreation
+      std::this_thread::sleep_for(std::chrono::milliseconds(16));
     } else if (result != VK_SUCCESS) {
       throw std::runtime_error("failed to present swap chain image!");
     }
