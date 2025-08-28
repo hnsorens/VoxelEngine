@@ -21,8 +21,8 @@ public:
 
   void createRaytracingPipeline(
       VkDevice device, std::vector<VkBuffer> &uniformBuffer,
-      StagedSwapImage* voxelImage,
-      StagedSwapImage* voxelChunkMapImage);
+      StagedSharedImage* voxelImage,
+      StagedSharedImage* voxelChunkMapImage);
   void createRaytracingResources(
       std::unique_ptr<class CommandManager> &commandManager,
       std::unique_ptr<class VulkanContext> &vulkanContext);

@@ -53,13 +53,11 @@ struct ResourceBinding
 
     void writeAll(VkDevice device, std::vector<VkDescriptorSet> descriptorSets)
     {
-        for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+        if (ResourceType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) return;
+        for (int i = 0; i < DescriptorCount; i++)
         {
-            for (int i = 0; i < DescriptorCount; i++)
-            {
-                if (ResourceType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-                write(device, descriptorSets[frame], i, frame);
-            }
+            for (int frame = 0; frame < descriptorSets.size(); frame++)
+            write(device, descriptorSets[frame], i, frame);
         }
     }
 

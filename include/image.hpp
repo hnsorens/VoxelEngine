@@ -4,6 +4,7 @@
 #include "VulkanInfo.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <cstdio>
 #include <vulkan/vulkan_core.h>
 
 class ImageImpl
@@ -116,7 +117,7 @@ public:
 
     void writeDescriptor(VkWriteDescriptorSet& descriptorWrite, int frame) override
     {
-        frame = std::min(frame, maxImages);
+        frame = std::min(frame, maxImages-1);
         imageInfos[frame].imageLayout = imageLayout;
         imageInfos[frame].imageView = imageViews[frame];
         imageInfos[frame].sampler = sampler;
