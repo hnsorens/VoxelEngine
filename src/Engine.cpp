@@ -325,6 +325,15 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     vkCmdTraceRaysKHR(commandBuffer, &raygenRegion, &missRegion, &hitRegion,
                       &callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
 
+                      // for (int i = 0; i < 512; i++)
+                      // {
+                      //   for (int i2 = 0; i2 < 128*128*128; i2+=1)
+                      //   {
+
+                      //     printf("%d", voxelWorld->voxelData[i].data[i2]); fflush(stdout);
+                      //   }
+                      // }
+
     voxelWorld->updateVoxels(commandBuffer, vulkanContext, imageIndex);
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {

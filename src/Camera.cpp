@@ -4,6 +4,7 @@
 #include "VulkanContext.hpp"
 #include "VulkanInfo.hpp"
 #include "WindowManager.hpp"
+#include <cstdio>
 #include <cstring>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -74,8 +75,8 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
   cameraPosition.z += cameraVelocity.z * windowManager->getDeltaTime();
   cameraTargetPoint.z += cameraVelocity.z * windowManager->getDeltaTime();
   ;
-
   glm::ivec3 intCameraPosition = glm::ivec3(cameraPosition) * -1;
+
 
 #define voxChunk(chunk, x, y, z)                                               \
   chunk[((z) % 128) * 128 * 128 + ((y) % 128) * 128 + ((x) % 128)]
@@ -95,6 +96,7 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
     }
   }
   // // ceiling
+   
   bool is_ouch = false;
 
   if (is_grounded) {
@@ -105,7 +107,7 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
     cameraVelocity.z -= 20 * 7 * windowManager->getDeltaTime();
     ;
   }
-
+ 
   if (windowManager->isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
     // Hide the cursor and capture mouse movement
 
@@ -205,15 +207,15 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
     windowManager->showCursor();
     firstMouse = true;
   }
-
+ 
   ubo.view = glm::inverse(glm::lookAt(cameraPosition, cameraTargetPoint,
                                       glm::vec3(0.0f, 0.0f, 1.0f)));
-
+ 
   printf("\rPOSITION: %i %i %i\tCHUNK: %i %i %i\tDELTA TIME: %f\to: %i",
          (int)cameraPosition.x, (int)cameraPosition.y, (int)cameraPosition.z,
          chunkPosition.x, chunkPosition.y, chunkPosition.z,
          windowManager->getDeltaTime(), is_ouch);
-
+ 
   for (auto &check : checks) {
     if (check.pos < check.lowerBound) {
       check.pos += check.offset;
@@ -224,7 +226,7 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
                                       check.modValue - check.shift);
     }
   }
-
+ 
   voxelWorld->sortChunks();
 
   // Raycast and print distance
@@ -261,8 +263,9 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
       voxelWorld->chunkUpdateQueue[++voxelWorld->chunkUpdateQueue[0]] = chunkID;
     }
   }
-
+ 
   memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(TransformUBO));
+  printf("end Camera UPdate\n"); fflush(stdout);
 }
 
 void Camera::onMouseMove(double xPos, double yPos) {

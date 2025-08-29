@@ -304,8 +304,6 @@ public:
 
     ShaderResourceSet(std::unique_ptr<VulkanContext>& ctx, Bindings&&... bindings) :
     descriptorSetLayout([&]() {
-        printf("Creating descriptor set layout\n");
-        fflush(stdout);
 
         std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
 
@@ -367,8 +365,6 @@ public:
         return layout;
     }()),
     descriptorSets([&](){
-        printf("Creating descriptor sets\n");
-        fflush(stdout);
         VkDescriptorSetAllocateInfo allocInfo = {};
         std::vector<VkDescriptorSetLayout> descriptorSetLayouts{MAX_FRAMES_IN_FLIGHT, descriptorSetLayout};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -385,8 +381,6 @@ public:
     }()),
     bindings(
         ([&](auto&& b) {
-            printf("Creating bindings\n");
-        fflush(stdout);
             b.writeAll(ctx->getDevice(), descriptorSets);
             return std::move(b);
         }(std::forward<Bindings>(bindings)))...
@@ -507,8 +501,6 @@ public:
         pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
         pipelineLayoutInfo.pushConstantRangeCount = 0;
         pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-
-        printf("Pipeline Layout SIze: %d\n", descriptorSetLayouts.size());
 
         VkPipelineLayout layout;
         if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,
@@ -662,8 +654,6 @@ public:
         pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
         pipelineLayoutInfo.pushConstantRangeCount = 1;
 
-        printf("Pipeline Layout SIze: %d\n", descriptorSetLayouts.size());
-
         VkPipelineLayout layout;
         if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,
                                     &layout) != VK_SUCCESS) {
@@ -678,7 +668,7 @@ public:
         shaderGroups[0].sType =
             VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
         shaderGroups[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        shaderGroups[0].generalShader = 0;
+        shaderGroups[0].generalShader = 1;
         shaderGroups[0].closestHitShader = VK_SHADER_UNUSED_KHR;
         shaderGroups[0].anyHitShader = VK_SHADER_UNUSED_KHR;
         shaderGroups[0].intersectionShader = VK_SHADER_UNUSED_KHR;
@@ -686,7 +676,7 @@ public:
         shaderGroups[1].sType =
             VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
         shaderGroups[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        shaderGroups[1].generalShader = 1;
+        shaderGroups[1].generalShader = 0;
         shaderGroups[1].closestHitShader = VK_SHADER_UNUSED_KHR;
         shaderGroups[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         shaderGroups[1].intersectionShader = VK_SHADER_UNUSED_KHR;

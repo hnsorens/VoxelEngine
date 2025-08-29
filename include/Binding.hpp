@@ -74,7 +74,6 @@ struct ResourceBinding
         resources[element]->writeDescriptor(descriptorWrite, frame);
 
         vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
-        // printf("UPDATE\n"); fflush(stdout);
     }
 
     Resource* resources[DescriptorCount];

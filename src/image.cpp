@@ -48,7 +48,7 @@ void ImageImpl::CreateImages(uint32_t width, uint32_t height, uint32_t depth,
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
             if ((memRequirements.memoryTypeBits & (1 << i)) &&
                 (memProperties.memoryTypes[i].propertyFlags & properties)) {
-            allocInfo.memoryTypeIndex = 1;
+            allocInfo.memoryTypeIndex = i;
             break;
             }
         }

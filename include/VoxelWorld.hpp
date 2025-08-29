@@ -63,7 +63,7 @@ public:
   std::unordered_set<uint16_t> activeChunks;
   std::mutex queueMutex;
   std::condition_variable queueCond;
-  bool stopThreads;
+  bool stopThreads = false;
 
   std::vector<StagedSharedImage> voxelImages;
 

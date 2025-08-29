@@ -66,12 +66,6 @@ public:
                 >(images).resource->imageViews[index]
             ), ...);
         }(std::make_index_sequence<std::tuple_size_v<Attachments>>{});
-        
-        for (auto& s : attachments)
-        {
-            printf("image: %d\n", s);
-            fflush(stdout);
-        }
 
         return std::move(attachments);
     }
@@ -375,7 +369,6 @@ private:
         renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
         renderPassInfo.pDependencies = dependencies.data();
 
-        printf("Finished");
         fflush(stdout);
         if (vkCreateRenderPass(ctx->getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create render pass!");
@@ -384,21 +377,12 @@ private:
         // Create pipelines for each subpass
         (pipelines.create_pipeline(ctx->getDevice(), renderPass), ...);
 
-
-printf("IDK: %d\n", resources.framebufferCount);
-fflush(stdout);
         framebuffers.resize(resources.framebufferCount);
 
         for (size_t i = 0; i < resources.framebufferCount; i++) {
             // VkImageView attachments[] = {swapChainImageViews[i]};
 
             std::vector<VkImageView> attachments = resources.template getAttachments<commonAttachments>(i);
-
-             for (auto& s : attachments)
-        {
-            printf("image: %d\n", s);
-            fflush(stdout);
-        }
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -414,8 +398,6 @@ fflush(stdout);
             throw std::runtime_error("failed to create framebuffer!");
             }
         }
-        printf("Finished framebuffers\n");
-        fflush(stdout);
     }
 
 private:

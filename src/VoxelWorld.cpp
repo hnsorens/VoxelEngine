@@ -4,6 +4,7 @@
 #include "VulkanContext.hpp"
 #include "image.hpp"
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <memory>
 #include <stdexcept>
@@ -113,7 +114,7 @@ void VoxelWorld::requestChunk(uint16_t chunkID, float priority) {
   // std::fill(voxelData[chunkID].data, voxelData[chunkID].data + 128 * 128 *
   // 128, 0);
   std::lock_guard<std::mutex> lock(queueMutex);
-
+// printf("requesting chunk\n");
   // chunkGenerationID[chunkID]++; // Increment generation ID
   if (voxelData[chunkID].inQueue)
     return;
@@ -200,7 +201,7 @@ void VoxelWorld::updateVoxelChunkMap(int modValue, int offset) {
 void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,
                               std::unique_ptr<VulkanContext> &vulkanContext,
                               int currentImage) {
-  voxelChunkMapImage.changeLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, currentImage);
+  voxelChunkMapImage.changeLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0);
 
   for (int i = 0; i < 16; i++) {
     if (chunkUpdateQueue[0] == 0) {
@@ -210,14 +211,15 @@ void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,
     uint16_t ID = chunkUpdateQueue[chunkUpdateQueue[0]--];
 
 
-    voxelImages[ID].changeLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, currentImage);
-    voxelImages[ID].write(commandBuffer, (char*)voxelData[ID].data, currentImage);
-    voxelImages[ID].changeLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL, currentImage);
+    voxelImages[ID].changeLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0);
+    voxelImages[ID].write(commandBuffer, (char*)voxelData[ID].data, 0);
+    voxelImages[ID].changeLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL, 0);
   }
 
   //TODO I need to change the format sizing in the write for this since its 16 instead of 8
-  voxelChunkMapImage.write(commandBuffer, (char*)voxelChunkMapData, currentImage);
-  voxelChunkMapImage.changeLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL, currentImage);
+  // voxelChunkMapImage is a StagedSharedImage with only 1 image, so index must be 0
+  voxelChunkMapImage.write(commandBuffer, (char*)voxelChunkMapData, 0);
+  voxelChunkMapImage.changeLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL, 0);
 }
 void VoxelWorld::chunkWorker() {
   while (!stopThreads) {
@@ -227,10 +229,8 @@ void VoxelWorld::chunkWorker() {
     {
       std::unique_lock<std::mutex> lock(queueMutex);
       queueCond.wait(lock, [&] { return chunkQueue[0] != 0 || stopThreads; });
-
       if (stopThreads)
         return;
-
       if (chunkQueue[0] > 0) {
         chunkID = chunkQueue[chunkQueue[0]--];
       } else {
@@ -238,7 +238,6 @@ void VoxelWorld::chunkWorker() {
       }
     }
     voxelData[chunkID].inQueue = false;
-
     generateChunk(voxelData[chunkID]);
     chunkUpdateQueue[++chunkUpdateQueue[0]] = chunkID;
   }

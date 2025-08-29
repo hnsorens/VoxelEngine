@@ -102,6 +102,34 @@ void Raytracer::createRaytracingPipeline(
       group, set1
     };
     
+    
+    
+    raytracingPipeline = something.pipeline;
+    printf("RAY PIPELINE : %d\n", something.pipeline); fflush(stdout);
+    raytracingPipelineLayout = something.pipelineLayout;
+    raytracingDescriptorSetLayout = set1.getLayout();
+    raytracingDescriptorSets = set1.descriptorSets;
+    for (int i = 0; i < 2; i++)
+    {
+
+      VkDescriptorBufferInfo bufferInfo{};
+      bufferInfo.buffer = uniformBuffer[i];
+      bufferInfo.offset = 0;
+      bufferInfo.range = sizeof(TransformUBO);
+  
+      VkWriteDescriptorSet writeTransformDescriptorSet = {};
+      writeTransformDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      writeTransformDescriptorSet.dstSet = raytracingDescriptorSets[i];
+      writeTransformDescriptorSet.dstBinding = 1;
+      writeTransformDescriptorSet.dstArrayElement = 0;
+      writeTransformDescriptorSet.descriptorType =
+          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      writeTransformDescriptorSet.descriptorCount = 1;
+      writeTransformDescriptorSet.pBufferInfo = &bufferInfo;
+      
+
+      vkUpdateDescriptorSets(VoxelEngine::vulkanContext->getDevice(), 1, &writeTransformDescriptorSet, 0, nullptr);
+    }
 }
 
 void Raytracer::recordRaytracingCommandBuffer(VkCommandBuffer commandBuffer,
