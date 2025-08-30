@@ -23,10 +23,10 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action, i
 
 WindowManager::WindowManager(std::unique_ptr<VulkanContext>& vulkanContext, int width, int height, const char *title) : 
   window([&](){
-    GLFWwindow* window2 = glfwCreateWindow(width, height, "Voxels", nullptr, nullptr);
-    glfwSetWindowUserPointer(window2, this);
-    glfwSetFramebufferSizeCallback(window2, framebufferResizeCallback);
-    glfwSetKeyCallback(window2, keyCallback);
+    GLFWwindow* window = glfwCreateWindow(width, height, "Voxels", nullptr, nullptr);
+    glfwSetWindowUserPointer(window, this);
+    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+    glfwSetKeyCallback(window, keyCallback);
     return window;
   }()),
   surface([&](){
@@ -34,12 +34,12 @@ WindowManager::WindowManager(std::unique_ptr<VulkanContext>& vulkanContext, int 
     if (glfwCreateWindowSurface(vulkanContext->getInstance(), window, nullptr, &surface) != VK_SUCCESS) {
       throw std::runtime_error("failed to create window surface!");
     }
-    vulkanContext->chooseDevice(this);
     return surface;
   }()),
   swapChain([&](){
+    vulkanContext->chooseDevice(this);
     VkSwapchainKHR swapchain;
-    createSwapChain(vulkanContext, &swapchain);
+    createSwapChain(vulkanContext, swapchain);
     return swapchain;
   }()),
   swapchainImages([&](){
@@ -173,7 +173,7 @@ VkExtent2D WindowManager::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capab
   }
 }
 
-void WindowManager::createSwapChain(std::unique_ptr<VulkanContext>& ctx, VkSwapchainKHR* swapchain) {
+void WindowManager::createSwapChain(std::unique_ptr<VulkanContext>& ctx, VkSwapchainKHR& swapChain) {
   SwapChainSupportDetails swapChainSupport =
       querySwapChainSupport(physicalDevice);
 
@@ -232,7 +232,7 @@ void WindowManager::createSwapChain(std::unique_ptr<VulkanContext>& ctx, VkSwapc
 void WindowManager::recreateSwapchain(std::unique_ptr<VulkanContext>& ctx) {
   cleanupSwapChain();
 
-  createSwapChain(ctx, &swapChain);
+  createSwapChain(ctx, swapChain);
 
   swapchainImages = createSwapchainImages();
 }

@@ -397,6 +397,7 @@ private:
                                     &framebuffers[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer!");
             }
+            printf("Created Framebuffer\n");
         }
     }
 

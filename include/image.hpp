@@ -59,9 +59,16 @@ public:
         ImageImpl::CreateImages(width, height, depth, format, tiling, usage, properties, initialLayout, MaxImageCount, images, imageViews, deviceMemories, &sampler);   
     }
 
-    ImageBase(std::vector<VkImage>& images, std::vector<VkImageView>& imageViews)
+    ImageBase(std::vector<VkImage>& attachmentImages, std::vector<VkImageView>& attachmentImageViews)
     {
-
+        for (int i = 0; i < attachmentImages.size(); i++)
+        {
+            images[i] = attachmentImages[i];
+        }
+        for (int i = 0; i < attachmentImageViews.size(); i++)
+        {
+            imageViews[i] = attachmentImageViews[i];
+        }
     }
 
     void writeDescriptor(VkWriteDescriptorSet& descriptorWrite, int frame) override
