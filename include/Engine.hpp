@@ -61,10 +61,6 @@ public:
                     VkDeviceMemory &bufferMemory);
   static void createRaytracingRegions();
   static void createCommandBuffers();
-  struct PushConstant {
-    uint32_t flag;
-    uint32_t frame;
-  };
 
   static void recordVoxelCommandBuffer(VkCommandBuffer commandBuffer,
                                 uint32_t imageIndex, uint8_t section);

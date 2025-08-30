@@ -408,3 +408,90 @@ private:
     friend class PipelineManager;
 
 };
+
+// template <typename... RaytracingPipelines>
+// class RaytracingRenderPass
+// {
+// public:
+//     RaytracingRenderPass(std::unique_ptr<VulkanContext>& ctx, RaytracingPipelines&... pipelines) : pipelines{pipelines...} 
+//     {
+//         vkCmdTraceRaysKHR =
+//             reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(
+//                 ctx->getDevice(), "vkCmdTraceRaysKHR"));
+//     }
+
+//     void record(VkCommandBuffer commandBuffer, uint32_t currentFrame, uint32_t swapchainIndex)
+//     {
+//         VkCommandBufferBeginInfo beginInfo = {};
+//         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+//         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+//         if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+//             throw std::runtime_error("failed to begin recording command buffer!");
+//         }
+
+//         std::apply([&](auto& pipeline)
+//         {
+//             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+//                             pipeline->getPipeline());
+    
+//             vkCmdBindDescriptorSets(
+//                 commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+//                 pipeline->getPipelineLayout(), 0, 1,
+//                 &pipeline->getDescriptorSet(currentFrame), 0, nullptr);
+
+//             PushConstant c;
+//             c.flag = 0;
+//             c.frame = 0;
+//             vkCmdPushConstants(commandBuffer, pipeline->getPipelineLayout(),
+//                             VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 8, &c);
+//             vkCmdTraceRaysKHR(commandBuffer, &raygenRegion, &missRegion, &hitRegion,
+//                             &callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+
+//             VkMemoryBarrier barrier = {};
+//             barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+//             barrier.srcAccessMask =
+//                 VK_ACCESS_SHADER_WRITE_BIT |
+//                 VK_ACCESS_SHADER_READ_BIT; // Ensure writes from the first trace finish
+//             barrier.dstAccessMask =
+//                 VK_ACCESS_SHADER_READ_BIT |
+//                 VK_ACCESS_SHADER_WRITE_BIT; // Ensure the second trace can read them
+//             barrier.pNext = 0;
+
+//             vkCmdPipelineBarrier(
+//             commandBuffer,
+//             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
+//                                                         // rays execution
+//             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination: Second
+//                                                         // trace rays execution
+//             0, 1, &barrier, 0, nullptr, 0, nullptr);
+//         }, pipelines);
+
+//         c.flag = 1;
+//         vkCmdPushConstants(commandBuffer, raytracer->getPipelineLayout(),
+//                         VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, &c);
+
+//         vkCmdTraceRaysKHR(commandBuffer, &raygenRegion, &missRegion, &hitRegion,
+//                         &callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+//         vkCmdPipelineBarrier(
+//             commandBuffer,
+//             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
+//                                                         // rays execution
+//             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination: Second
+//                                                         // trace rays execution
+//             0, 1, &barrier, 0, nullptr, 0, nullptr);
+
+//         c.flag = 2;
+//         vkCmdPushConstants(commandBuffer, raytracer->getPipelineLayout(),
+//                         VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, &c);
+
+//         vkCmdTraceRaysKHR(commandBuffer, &raygenRegion, &missRegion, &hitRegion,
+//                         &callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+
+//         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+//         throw std::runtime_error("failed to record raytracing command buffer!");
+//         }
+//     }
+
+//     PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
+//     std::tuple<RaytracingPipelines&...> pipelines;
+// };

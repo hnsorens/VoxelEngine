@@ -41,6 +41,13 @@ struct ShaderAttachments
     using Options = std::tuple<Attachments...>;
 };
 
+template <typename PushConstantType>
+struct ShaderPushConstant
+{
+    // TODO: verify that all attachments are either ShaderInput, ShaderPreserve, ShaderDepthAttachment, or ShaderColorAttachment
+    using Options = PushConstantType;
+};
+
 namespace ShaderDetails
 {
     template <typename... Shaders>
@@ -114,6 +121,33 @@ namespace ShaderDetails
             typename find_attachments<std::tuple<Rest...>>::type
         >;
     };
+
+    template <typename options>
+    struct find_push_constant;
+
+    template <>
+    struct find_push_constant<std::tuple<>>
+    {
+        using type = ShaderPushConstant<void>;
+    };
+
+    template <typename First, typename... Rest>
+    struct find_push_constant<std::tuple<First, Rest...>> {
+    private:
+        // Helper: true if First is a ShaderBindings<...>   
+        template <typename T>
+        struct is_shader_push_constant : std::false_type {};
+
+        template <typename... Bs>
+        struct is_shader_push_constant<ShaderPushConstant<Bs...>> : std::true_type {};
+
+    public:
+        using type = std::conditional_t<
+            is_shader_push_constant<First>::value,
+            First,
+            typename find_push_constant<std::tuple<Rest...>>::type
+        >;
+    };
 }
 
 template <FixedString ShaderName, FixedString Path, ShaderType Type, typename... ShaderOptions>
@@ -121,6 +155,7 @@ class Shader {
 public:
     using Bindings = ShaderDetails::find_bindings<std::tuple<ShaderOptions...>>::type::Options;
     using Attachments = ShaderDetails::find_attachments<std::tuple<ShaderOptions...>>::type::Options;
+    using PushConstantType = ShaderDetails::find_push_constant<std::tuple<ShaderOptions...>>::type::Options;
     static constexpr FixedString name = ShaderName.value;
     static constexpr FixedString path = Path.value;
 
@@ -239,6 +274,52 @@ namespace ShaderGroupDetails
             std::declval<typename collect_attachments<std::tuple<Rest...>>::value>() 
         ));
     };
+
+    template <typename Shader, typename ShaderCompares>
+    struct validate_push_constant_for_shader;
+
+    template <typename Shader>
+    struct validate_push_constant_for_shader<Shader, std::tuple<>>
+    {
+        static constexpr bool value = true;
+    };
+
+    template <typename Shader, typename First, typename... Rest>
+    struct validate_push_constant_for_shader<Shader, std::tuple<First, Rest...>>
+    {
+        static constexpr bool value = (std::is_same<typename Shader::PushConstantType, typename First::PushConstantType>() || std::is_same<typename Shader::PushConstantType, void>() || std::is_same<typename First::PushConstantType, void>()) &&
+                validate_push_constant_for_shader<Shader, std::tuple<Rest...>>::value;
+    };
+
+    template <typename T>
+    struct validate_shader_push_constant;
+
+    template <>
+    struct validate_shader_push_constant<std::tuple<>>
+    {
+        static constexpr bool value = true;
+    };
+
+    template <typename First, typename... Rest>
+    struct validate_shader_push_constant<std::tuple<First, Rest...>>
+    {
+        static constexpr bool value = validate_push_constant_for_shader<First, std::tuple<Rest...>>::value && validate_shader_push_constant<std::tuple<Rest...>>::value;
+    };
+
+    template <typename T>
+    struct find_push_constant_type;
+
+    template <>
+    struct find_push_constant_type<std::tuple<>>
+    {
+        using value = void;
+    };
+
+    template <typename First, typename... Rest>
+    struct find_push_constant_type<std::tuple<First, Rest...>>
+    {
+        using value = std::conditional_t<std::is_same_v<typename First::PushConstantType, void>, typename find_push_constant_type<std::tuple<Rest...>>::value, typename First::PushConstantType>;
+    };
 }
 
 template <typename... Shaders>
@@ -248,11 +329,14 @@ class ShaderGroup
     //              "Shader types conflict - multiple shaders with the same shader type!");
     static_assert(ShaderGroupDetails::validate_shader_bindings<Shaders...>::value,
                  "Shader bindings conflict - same binding number with different resource type or different binding counts!");
+    static_assert(ShaderGroupDetails::validate_shader_push_constant<std::tuple<Shaders...>>::value,
+                 "Shaders cannot have different push constant types");
 public:
 
     
     using shaders = std::tuple<Shaders...>;
     using Attachments = ShaderGroupDetails::collect_attachments<shaders>::value;
+    using PushConstantType = ShaderGroupDetails::find_push_constant_type<shaders>::value;
     
     // Original constructor
     ShaderGroup(Shaders&... shaders) : 
@@ -645,14 +729,17 @@ public:
         pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
         pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
-        VkPushConstantRange pushConstantRange{};
-        pushConstantRange.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        pushConstantRange.offset = 0;
-        pushConstantRange.size = 8;
-
         VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
-        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-        pipelineLayoutInfo.pushConstantRangeCount = 1;
+
+        if (!std::is_same<typename ShaderGroup::PushConstantType, void>())
+        {
+            VkPushConstantRange pushConstantRange{};
+            pushConstantRange.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+            pushConstantRange.offset = 0;
+            pushConstantRange.size = sizeof(typename ShaderGroup::PushConstantType);
+            pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+            pipelineLayoutInfo.pushConstantRangeCount = 1;
+        }
 
         VkPipelineLayout layout;
         if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,
