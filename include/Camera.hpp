@@ -12,7 +12,7 @@ struct TransformUBO {
 
 class Camera {
 public:
-  Camera(std::unique_ptr<class VulkanContext> &vulkanContext);
+  Camera(std::unique_ptr<class VulkanContext> &vulkanContext, std::unique_ptr<class WindowManager> &window);
   ~Camera();
 
   void update(std::unique_ptr<class WindowManager> &windowManager,

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <vector>
 #include <vulkan/vulkan_core.h>
 
 class ImageImpl
@@ -56,6 +57,11 @@ public:
             VkImageLayout initialLayout) : width(width), height(height), depth(depth), format(format), imageLayout(initialLayout)
     {
         ImageImpl::CreateImages(width, height, depth, format, tiling, usage, properties, initialLayout, MaxImageCount, images, imageViews, deviceMemories, &sampler);   
+    }
+
+    ImageBase(std::vector<VkImage>& images, std::vector<VkImageView>& imageViews)
+    {
+
     }
 
     void writeDescriptor(VkWriteDescriptorSet& descriptorWrite, int frame) override
@@ -203,6 +209,10 @@ public:
             VkMemoryPropertyFlags properties,
             VkImageLayout initialLayout) : 
     ImageBase(width, height, depth, format, tiling, usage, properties, initialLayout) {}
+private:
+    AttachmentImage(std::vector<VkImage>& images, std::vector<VkImageView>& imageViews) : ImageBase(images, imageViews) {}
+
+    friend class WindowManager;
 };
 
 class StagedAttachmentImage : public StagedImageBase<MAX_FRAMEBUFFER_COUNT>

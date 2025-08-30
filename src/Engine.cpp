@@ -4,6 +4,7 @@
 #include "Raytracer.hpp"
 #include "SyncManager.hpp"
 #include "VoxelWorld.hpp"
+#include "WindowManager.hpp"
 #include <cstdio>
 #include <memory>
 #include <thread>
@@ -40,16 +41,17 @@ void VoxelEngine::run() {
 }
 
 void VoxelEngine::initWindow() {
-    windowManager = std::make_unique<WindowManager>(WIDTH, HEIGHT, "Voxel Engine");
+    
 }
 
 void VoxelEngine::initVulkan() {
+    
     vulkanContext = std::make_unique<VulkanContext>();
-    vulkanContext->init(windowManager);
+    windowManager = std::make_unique<WindowManager>(vulkanContext, WIDTH, HEIGHT, "Voxel Engine");
 
     shaders = std::make_unique<GlobalShaderTypes>(vulkanContext);
 
-    camera = std::make_unique<Camera>(vulkanContext);
+    camera = std::make_unique<Camera>(vulkanContext, windowManager);
     commandManager = std::make_unique<CommandManager>(vulkanContext);
 
     createCommandBuffers();
@@ -59,7 +61,7 @@ void VoxelEngine::initVulkan() {
     raytracer = std::make_unique<Raytracer>(commandManager, vulkanContext,
                                             voxelWorld, camera);
     pipelineManager =
-        std::make_unique<PipelineManager>(vulkanContext, raytracer);
+        std::make_unique<PipelineManager>(vulkanContext, raytracer, windowManager);
 
     syncManager = std::make_unique<SyncManager>(vulkanContext);
 
@@ -352,7 +354,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     renderPassInfo.renderPass = pipelineManager->getRenderPass();
     renderPassInfo.framebuffer = pipelineManager->getFrameBuffer(imageIndex);
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = vulkanContext->getSwapChainExtent();
+    renderPassInfo.renderArea.extent = windowManager->getSwapChainExtent();
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
@@ -363,14 +365,14 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)vulkanContext->getSwapChainExtent().width;
-    viewport.height = (float)vulkanContext->getSwapChainExtent().height;
+    viewport.width = (float)windowManager->getSwapChainExtent().width;
+    viewport.height = (float)windowManager->getSwapChainExtent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = vulkanContext->getSwapChainExtent();
+    scissor.extent = windowManager->getSwapChainExtent();
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipelineManager->getGraphicsPipelineLayout(), 0, 1,
@@ -396,13 +398,13 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     camera->update(windowManager, voxelWorld, currentFrame);
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(
-        vulkanContext->getDevice(), vulkanContext->getSwapChain(), UINT64_MAX,
+        vulkanContext->getDevice(), windowManager->getSwapChain(), UINT64_MAX,
         syncManager->getImageAvailableSemaphores()[currentFrame],
         VK_NULL_HANDLE, &imageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-      vulkanContext->recreateSwapchain(windowManager);
-      pipelineManager->recreateFramebuffers(vulkanContext);
+      windowManager->recreateSwapchain(vulkanContext);
+      pipelineManager->recreateFramebuffers(vulkanContext, windowManager);
       return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
       throw std::runtime_error("failed to acquire swap chain image!");
@@ -455,7 +457,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
 
-    VkSwapchainKHR swapChains[] = {vulkanContext->getSwapChain()};
+    VkSwapchainKHR swapChains[] = {windowManager->getSwapChain()};
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
 
@@ -466,8 +468,8 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
         windowManager->framebufferResized) {
       windowManager->framebufferResized = false;
       std::cout << "Recreating swapchain..." << std::endl;
-      vulkanContext->recreateSwapchain(windowManager);
-      pipelineManager->recreateFramebuffers(vulkanContext);
+      windowManager->recreateSwapchain(vulkanContext);
+      pipelineManager->recreateFramebuffers(vulkanContext, windowManager);
       // Add a small delay to prevent excessive recreation
       std::this_thread::sleep_for(std::chrono::milliseconds(16));
     } else if (result != VK_SUCCESS) {
@@ -477,35 +479,4 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     if (currentFrame == 0)
       section = (section + 1) % 16;
-  }
-
-  SwapChainSupportDetails VoxelEngine::querySwapChainSupport(VkPhysicalDevice device) {
-    SwapChainSupportDetails details;
-
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        device, vulkanContext->getSurface(), &details.capabilities);
-
-    uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, vulkanContext->getSurface(),
-                                         &formatCount, nullptr);
-
-    if (formatCount != 0) {
-      details.formats.resize(formatCount);
-      vkGetPhysicalDeviceSurfaceFormatsKHR(device, vulkanContext->getSurface(),
-                                           &formatCount,
-                                           details.formats.data());
-    }
-
-    uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(
-        device, vulkanContext->getSurface(), &presentModeCount, nullptr);
-
-    if (presentModeCount != 0) {
-      details.presentModes.resize(presentModeCount);
-      vkGetPhysicalDeviceSurfacePresentModesKHR(
-          device, vulkanContext->getSurface(), &presentModeCount,
-          details.presentModes.data());
-    }
-
-    return details;
   }

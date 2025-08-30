@@ -11,7 +11,7 @@
 #include <memory>
 #include <stdexcept>
 
-Camera::Camera(std::unique_ptr<VulkanContext> &vulkanContext) {
+Camera::Camera(std::unique_ptr<VulkanContext> &vulkanContext, std::unique_ptr<WindowManager> &window) {
   uniformBuffer.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBufferMemory.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
@@ -55,8 +55,8 @@ Camera::Camera(std::unique_ptr<VulkanContext> &vulkanContext) {
     ubo.view = glm::mat4(1.0);
     ubo.proj =
         glm::perspective(glm::radians(70.0f),
-                         vulkanContext->getSwapChainExtent().width /
-                             (float)vulkanContext->getSwapChainExtent().height,
+                         window->getSwapChainExtent().width /
+                             (float)window->getSwapChainExtent().height,
                          0.1f, 1000.0f);
     ubo.proj[1][1] *= -1;
     ubo.proj = glm::inverse(ubo.proj);
@@ -211,11 +211,6 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
   ubo.view = glm::inverse(glm::lookAt(cameraPosition, cameraTargetPoint,
                                       glm::vec3(0.0f, 0.0f, 1.0f)));
  
-  printf("\rPOSITION: %i %i %i\tCHUNK: %i %i %i\tDELTA TIME: %f\to: %i",
-         (int)cameraPosition.x, (int)cameraPosition.y, (int)cameraPosition.z,
-         chunkPosition.x, chunkPosition.y, chunkPosition.z,
-         windowManager->getDeltaTime(), is_ouch);
- 
   for (auto &check : checks) {
     if (check.pos < check.lowerBound) {
       check.pos += check.offset;
@@ -265,7 +260,6 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
   }
  
   memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(TransformUBO));
-  printf("end Camera UPdate\n"); fflush(stdout);
 }
 
 void Camera::onMouseMove(double xPos, double yPos) {

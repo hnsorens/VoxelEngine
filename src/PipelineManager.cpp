@@ -1,3 +1,4 @@
+#include "WindowManager.hpp"
 #include "shaders.hpp"
 #include "Engine.hpp"
 #include <PipelineManager.hpp>
@@ -13,7 +14,8 @@
 #include "RenderPass.hpp"
 
 PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
-                                 std::unique_ptr<Raytracer> &raytracer) 
+                                 std::unique_ptr<Raytracer> &raytracer,
+                                std::unique_ptr<WindowManager>& window) 
   {
 
     auto& vert_shader = VoxelEngine::get_shader<"main_vert">();
@@ -32,21 +34,11 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
       group, set1
     };
 
-    AttachmentImage swapchainImages{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
-        VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL};
-
-    for (int i = 0; i < vulkanContext->getSwapChainImageViews().size(); i++)
-    {
-      swapchainImages.imageViews[i] = vulkanContext->getSwapChainImageViews()[i];
-    }
-
     RenderPassResourceSet set2{
-      RenderPassResource<"output">{&swapchainImages}
+      RenderPassResource<"output">{&window->getSwapChainImages()}
     };
 
-    auto extent = vulkanContext->getSwapChainExtent();
+    auto extent = window->getSwapChainExtent();
 
     RenderPass renderPass{
       extent.width,
@@ -85,7 +77,7 @@ const VkDescriptorSet &PipelineManager::getDescriptorSet(int i) const {
   return descriptorSet[i];
 }
 
-void PipelineManager::recreateFramebuffers(std::unique_ptr<VulkanContext>& vulkanContext) {
+void PipelineManager::recreateFramebuffers(std::unique_ptr<VulkanContext>& vulkanContext, std::unique_ptr<WindowManager>& window) {
     // Clean up old framebuffers
     for (auto framebuffer : framebuffers) {
         vkDestroyFramebuffer(vulkanContext->getDevice(), framebuffer, nullptr);
@@ -93,19 +85,19 @@ void PipelineManager::recreateFramebuffers(std::unique_ptr<VulkanContext>& vulka
     
     // Create new framebuffers with updated swapchain image views
     // Use the actual number of swapchain images instead of hardcoded 2
-    size_t numImages = vulkanContext->getSwapChainImageViews().size();
+    size_t numImages = window->swapchainImageCount;
     framebuffers.resize(numImages);
     
     for (size_t i = 0; i < numImages; i++) {
-        VkImageView attachments[] = {vulkanContext->getSwapChainImageViews()[i]};
+        VkImageView attachments[] = {window->getSwapChainImages().imageViews[i]};
         
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = renderpass;
         framebufferInfo.attachmentCount = 1;
         framebufferInfo.pAttachments = attachments;
-        framebufferInfo.width = vulkanContext->getSwapChainExtent().width;
-        framebufferInfo.height = vulkanContext->getSwapChainExtent().height;
+        framebufferInfo.width = window->getSwapChainExtent().width;
+        framebufferInfo.height = window->getSwapChainExtent().height;
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(vulkanContext->getDevice(), &framebufferInfo, nullptr,

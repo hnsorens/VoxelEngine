@@ -17,50 +17,29 @@ struct QueueFamilyIndices {
   }
 };
 
-struct SwapChainSupportDetails {
-  VkSurfaceCapabilitiesKHR capabilities;
-  std::vector<VkSurfaceFormatKHR> formats;
-  std::vector<VkPresentModeKHR> presentModes;
-};
-
 class VulkanContext {
 public:
   VulkanContext();
   ~VulkanContext();
 
-  void init(std::unique_ptr<WindowManager> &window);
   void cleanup();
-  void recreateSwapchain(std::unique_ptr<WindowManager> &windowManager);
 
   VkDevice getDevice() const;
-  VkSurfaceKHR getSurface() const;
   VkPhysicalDevice getPhysicalDevice() const;
   VkInstance getInstance() const;
   VkQueue getGraphicsQueue() const;
   VkQueue getPresentQueue() const;
-  VkSwapchainKHR getSwapChain() const;
-  const VkExtent2D &getSwapChainExtent() const;
-  const VkFormat &getSwapChainImageFormat() const;
   const QueueFamilyIndices &getQueueFamilyIndices() const;
-  VkRenderPass getRenderPass() const;
-  const std::vector<VkImage> &getSwapChainImages() const;
-  const std::vector<VkImageView> &getSwapChainImageViews() const;
 
 private:
   bool checkValidationLayerSupport();
   std::vector<const char *> getRequiredExtensions();
   void populateDebugMessengerCreateInfo(
       VkDebugUtilsMessengerCreateInfoEXT &createInfo);
-  bool isDeviceSuitable(VkPhysicalDevice device);
+  bool isDeviceSuitable(VkPhysicalDevice device, class WindowManager* window);
   bool checkDeviceExtensionSupport(VkPhysicalDevice device);
   struct SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-  struct QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-  VkSurfaceFormatKHR chooseSwapSurfaceFormat(
-      const std::vector<VkSurfaceFormatKHR> &availableFormats);
-  VkPresentModeKHR chooseSwapPresentMode(
-      const std::vector<VkPresentModeKHR> &availablePresentModes);
-  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities,
-                              std::unique_ptr<WindowManager> &windowManager);
+  struct QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, class WindowManager* window);
 
   /* Debug Vulkan Functions */
   VkResult CreateDebugUtilsMessengerEXT(
@@ -74,12 +53,10 @@ private:
 
   void createInstance();
   void setupDebugMessenger();
-  void createSurface(GLFWwindow *window);
-  void pickPhysicalDevice();
-  void createLogicalDevice();
-  void createSwapChain(std::unique_ptr<WindowManager> &windowManager);
-  void createImageViews();
-  void cleanupSwapChain();
+  void pickPhysicalDevice(class WindowManager* window);
+  void createLogicalDevice(class WindowManager* window);
+
+  void chooseDevice(WindowManager* window);
 
   VkInstance instance;
   VkDebugUtilsMessengerEXT debugMessenger;
@@ -87,11 +64,7 @@ private:
   VkDevice device;
   VkQueue graphicsQueue;
   VkQueue presentQueue;
-  VkSurfaceKHR surface;
-  VkSwapchainKHR swapChain;
-  std::vector<VkImage> swapChainImages;
-  std::vector<VkImageView> swapChainImageViews;
-  VkFormat swapChainImageFormat;
-  VkExtent2D swapChainExtent;
   QueueFamilyIndices queueFamilyIndices;
+
+  friend class WindowManager;
 };
