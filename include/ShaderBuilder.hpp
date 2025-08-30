@@ -290,36 +290,6 @@ namespace ShaderGroupDetails
         static constexpr bool value = (std::is_same<typename Shader::PushConstantType, typename First::PushConstantType>() || std::is_same<typename Shader::PushConstantType, void>() || std::is_same<typename First::PushConstantType, void>()) &&
                 validate_push_constant_for_shader<Shader, std::tuple<Rest...>>::value;
     };
-
-    template <typename T>
-    struct validate_shader_push_constant;
-
-    template <>
-    struct validate_shader_push_constant<std::tuple<>>
-    {
-        static constexpr bool value = true;
-    };
-
-    template <typename First, typename... Rest>
-    struct validate_shader_push_constant<std::tuple<First, Rest...>>
-    {
-        static constexpr bool value = validate_push_constant_for_shader<First, std::tuple<Rest...>>::value && validate_shader_push_constant<std::tuple<Rest...>>::value;
-    };
-
-    template <typename T>
-    struct find_push_constant_type;
-
-    template <>
-    struct find_push_constant_type<std::tuple<>>
-    {
-        using value = void;
-    };
-
-    template <typename First, typename... Rest>
-    struct find_push_constant_type<std::tuple<First, Rest...>>
-    {
-        using value = std::conditional_t<std::is_same_v<typename First::PushConstantType, void>, typename find_push_constant_type<std::tuple<Rest...>>::value, typename First::PushConstantType>;
-    };
 }
 
 template <typename... Shaders>
@@ -329,18 +299,16 @@ class ShaderGroup
     //              "Shader types conflict - multiple shaders with the same shader type!");
     static_assert(ShaderGroupDetails::validate_shader_bindings<Shaders...>::value,
                  "Shader bindings conflict - same binding number with different resource type or different binding counts!");
-    static_assert(ShaderGroupDetails::validate_shader_push_constant<std::tuple<Shaders...>>::value,
-                 "Shaders cannot have different push constant types");
 public:
 
     
     using shaders = std::tuple<Shaders...>;
     using Attachments = ShaderGroupDetails::collect_attachments<shaders>::value;
-    using PushConstantType = ShaderGroupDetails::find_push_constant_type<shaders>::value;
     
     // Original constructor
     ShaderGroup(Shaders&... shaders) : 
-    m_shaders{shaders.getShaderInfo()...} {}
+    m_shaders{shaders.getShaderInfo()...} 
+    {}
 
     size_t size()
     {
@@ -353,7 +321,6 @@ public:
     }
     
 private:
-
     std::vector<VkPipelineShaderStageCreateInfo> m_shaders;
 };
 
@@ -731,21 +698,34 @@ public:
 
         VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 
-        if (!std::is_same<typename ShaderGroup::PushConstantType, void>())
-        {
-            VkPushConstantRange pushConstantRange{};
-            pushConstantRange.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-            pushConstantRange.offset = 0;
-            pushConstantRange.size = sizeof(typename ShaderGroup::PushConstantType);
-            pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-            pipelineLayoutInfo.pushConstantRangeCount = 1;
-        }
+        std::vector<VkPushConstantRange> ranges;
+        uint32_t currentOffset = 0;
+        ranges.reserve(std::tuple_size<typename ShaderGroup::shaders>());
+        [&] <std::size_t... Is> (std::index_sequence<Is...>) {
+            (( [&] {
+                using ShaderType = std::tuple_element_t<Is, typename ShaderGroup::shaders>;
+                
+                if constexpr (!std::is_same_v<typename ShaderType::PushConstantType, void>) {
+                    VkPushConstantRange range{};
+                    range.stageFlags = ShaderType::get_type();
+                    range.offset = currentOffset;
+                    range.size = sizeof(typename ShaderType::PushConstantType);
+                    
+                    ranges.push_back(range);
+                    currentOffset += range.size;
+                }
+            }() ), ...);
+        }(std::make_index_sequence<std::tuple_size_v<typename ShaderGroup::shaders>>{});
+        
+        pipelineLayoutInfo.pPushConstantRanges = ranges.data();
+        pipelineLayoutInfo.pushConstantRangeCount = ranges.size();
 
         VkPipelineLayout layout;
         if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,
                                     &layout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
+
 
         return layout;
     }())
