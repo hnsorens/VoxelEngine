@@ -21,7 +21,9 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
     auto& vert_shader = VoxelEngine::get_shader<"main_vert">();
     auto& frag_shader = VoxelEngine::get_shader<"main_frag">();
 
+    ShaderPushConstants<> pushConstants;
     ShaderGroup group(
+      pushConstants,
       vert_shader, frag_shader
     );
 

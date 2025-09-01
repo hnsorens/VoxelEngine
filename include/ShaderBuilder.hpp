@@ -292,7 +292,49 @@ namespace ShaderGroupDetails
     };
 }
 
-template <typename... Shaders>
+template <typename T, int ShaderStages>
+struct PushConstant
+{
+    using Structure = T;
+    static constexpr int shaderStages = ShaderStages;
+};
+
+template <typename... PushConstants>
+class ShaderPushConstants
+{
+public:
+    ShaderPushConstants()
+    {
+        
+        uint32_t currentOffset = 0;
+        ranges.reserve(std::tuple_size<std::tuple<PushConstants...>>());
+        [&] <std::size_t... Is> (std::index_sequence<Is...>) {
+            (( [&] {
+                using PushConstant = std::tuple_element_t<Is, std::tuple<PushConstants...>>;
+                VkPushConstantRange range{};
+                range.stageFlags = PushConstant::shaderStages;
+                range.offset = currentOffset;
+                range.size = sizeof(typename PushConstant::Structure);
+                
+                ranges.push_back(range);
+                currentOffset += range.size;
+            }() ), ...);
+        }(std::make_index_sequence<std::tuple_size_v<std::tuple<PushConstants...>>>{});
+    }
+
+private:
+
+    std::vector<VkPushConstantRange> ranges;
+
+    template <typename ShaderGroup, typename... ResourceSets>
+    friend class RaytracingPipeline;
+    template <typename ShaderGroup, typename... ResourceSets>
+    friend class GraphicsPipeline;
+    template <typename ShaderPushConstants, typename... Shaders>
+    friend class ShaderGroup;
+};
+
+template <typename ShaderPushConstants, typename... Shaders>
 class ShaderGroup
 {
     // static_assert(all_shader_types_unique<Shaders...>::value,
@@ -306,7 +348,8 @@ public:
     using Attachments = ShaderGroupDetails::collect_attachments<shaders>::value;
     
     // Original constructor
-    ShaderGroup(Shaders&... shaders) : 
+    ShaderGroup(ShaderPushConstants& pushConstants, Shaders&... shaders) : 
+    pushConstants(pushConstants),
     m_shaders{shaders.getShaderInfo()...} 
     {}
 
@@ -321,7 +364,13 @@ public:
     }
     
 private:
+    ShaderPushConstants& pushConstants;
     std::vector<VkPipelineShaderStageCreateInfo> m_shaders;
+
+    template <typename ShaderGroup, typename... ResourceSets>
+    friend class RaytracingPipeline;
+    template <typename ShaderGroup, typename... ResourceSets>
+    friend class GraphicsPipeline;
 };
 
 namespace ShaderResourceSetDetails
@@ -698,27 +747,8 @@ public:
 
         VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 
-        std::vector<VkPushConstantRange> ranges;
-        uint32_t currentOffset = 0;
-        ranges.reserve(std::tuple_size<typename ShaderGroup::shaders>());
-        [&] <std::size_t... Is> (std::index_sequence<Is...>) {
-            (( [&] {
-                using ShaderType = std::tuple_element_t<Is, typename ShaderGroup::shaders>;
-                
-                if constexpr (!std::is_same_v<typename ShaderType::PushConstantType, void>) {
-                    VkPushConstantRange range{};
-                    range.stageFlags = ShaderType::get_type();
-                    range.offset = currentOffset;
-                    range.size = sizeof(typename ShaderType::PushConstantType);
-                    
-                    ranges.push_back(range);
-                    currentOffset += range.size;
-                }
-            }() ), ...);
-        }(std::make_index_sequence<std::tuple_size_v<typename ShaderGroup::shaders>>{});
-        
-        pipelineLayoutInfo.pPushConstantRanges = ranges.data();
-        pipelineLayoutInfo.pushConstantRangeCount = ranges.size();
+        pipelineLayoutInfo.pPushConstantRanges = m_shaderGroup.pushConstants.ranges.data();
+        pipelineLayoutInfo.pushConstantRangeCount = m_shaderGroup.pushConstants.ranges.size();
 
         VkPipelineLayout layout;
         if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,

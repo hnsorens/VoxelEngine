@@ -81,7 +81,12 @@ void Raytracer::createRaytracingPipeline(
     auto& rmiss_shader = VoxelEngine::get_shader<"main_rmiss">();
     auto& rgen_shader = VoxelEngine::get_shader<"main_rgen">();
 
+    ShaderPushConstants<
+      PushConstant<RaytracingPushConstant, SHADER_RGEN>
+    > raytracingPushConstants;
+
     ShaderGroup group(
+      raytracingPushConstants,
       rmiss_shader, rgen_shader
     );
 

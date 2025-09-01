@@ -5,6 +5,7 @@
 #include "SyncManager.hpp"
 #include "VoxelWorld.hpp"
 #include "WindowManager.hpp"
+#include "shaders.hpp"
 #include <cstdio>
 #include <memory>
 #include <thread>
@@ -280,7 +281,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
         reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(
             vulkanContext->getDevice(), "vkCmdTraceRaysKHR"));
 
-    PushConstant c;
+    RaytracingPushConstant c;
     c.flag = 0;
     c.frame = 0;
     vkCmdPushConstants(commandBuffer, raytracer->getPipelineLayout(),

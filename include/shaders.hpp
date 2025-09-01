@@ -6,7 +6,7 @@
 #include <vulkan/vulkan_core.h>
 #include "Binding.hpp"
 
-  struct PushConstant {
+  struct RaytracingPushConstant {
     uint32_t flag;
     uint32_t frame;
   };
@@ -48,6 +48,6 @@ using GlobalShaderTypes = ShaderTypes<
       ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 7, 1>,
       ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 8, 1>
     >,
-    ShaderPushConstant<PushConstant>
+    ShaderPushConstant<RaytracingPushConstant>
   >
 >;
