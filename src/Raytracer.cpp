@@ -2,6 +2,7 @@
 #include "Camera.hpp"
 #include "CommandManager.hpp"
 #include "PipelineManager.hpp"
+#include "RenderPass.hpp"
 #include "ResourceManager.hpp"
 #include "VoxelWorld.hpp"
 #include "VulkanContext.hpp"
@@ -43,7 +44,22 @@ Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
     raytracingLightStorageImageW{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
         VK_FORMAT_R32_UINT, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL}
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL},
+    group(raytracingPushConstants, VoxelEngine::get_shader<"main_rmiss">(), VoxelEngine::get_shader<"main_rgen">()),
+    set1{
+      vulkanContext,
+      {&raytracingStorageImage},
+      {getStorageImage()},
+      {&raytracingPositionStorageImage},
+      {voxelWorld->voxelImages.data()},
+      {&voxelWorld->voxelChunkMapImage},
+      {&raytracingLightStorageImageX},
+      {&raytracingLightStorageImageY},
+      {&raytracingLightStorageImageZ},
+      {&raytracingLightStorageImageW}
+    },
+    something(vulkanContext, group, set1),
+    renderPass(vulkanContext, {something, data})
 
 {
   createRaytracingResources(commandManager, vulkanContext);
@@ -78,36 +94,40 @@ void Raytracer::createRaytracingPipeline(
     StagedSharedImage* voxelImage,
     StagedSharedImage* voxelChunkMapImage) {
 
-    auto& rmiss_shader = VoxelEngine::get_shader<"main_rmiss">();
-    auto& rgen_shader = VoxelEngine::get_shader<"main_rgen">();
+    // auto& rmiss_shader = VoxelEngine::get_shader<"main_rmiss">();
+    // auto& rgen_shader = VoxelEngine::get_shader<"main_rgen">();
 
-    ShaderPushConstants<
-      PushConstant<RaytracingPushConstant, SHADER_RGEN>
-    > raytracingPushConstants;
+    // RaytracingPushConstants raytracingPushConstants;
 
-    ShaderGroup group(
-      raytracingPushConstants,
-      rmiss_shader, rgen_shader
-    );
+    // RaytracingShaderGroup group(
+    //   raytracingPushConstants,
+    //   rmiss_shader, rgen_shader
+    // );
 
-    ShaderResourceSet set1{VoxelEngine::vulkanContext,
-      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 0, 1>{&raytracingStorageImage},
-      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SHADER_RGEN, 1, 1>{getStorageImage()},
-      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 2, 1>{&raytracingPositionStorageImage},
-      ResourceBinding<StagedSharedImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 3, 512>{voxelImage},
-      ResourceBinding<StagedSharedImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 4, 1>{voxelChunkMapImage},
-      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 5, 1>{&raytracingLightStorageImageX},
-      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 6, 1>{&raytracingLightStorageImageY},
-      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 7, 1>{&raytracingLightStorageImageZ},
-      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 8, 1>{&raytracingLightStorageImageW}
-    };
+    // RaytracingResourceSet set1{VoxelEngine::vulkanContext,
+    //   {&raytracingStorageImage},
+    //   {getStorageImage()},
+    //   {&raytracingPositionStorageImage},
+    //   {voxelImage},
+    //   {voxelChunkMapImage},
+    //   {&raytracingLightStorageImageX},
+    //   {&raytracingLightStorageImageY},
+    //   {&raytracingLightStorageImageZ},
+    //   {&raytracingLightStorageImageW}
+    // };
 
-    RaytracingPipeline something{
-      VoxelEngine::vulkanContext,
-      group, set1
-    };
+    // Pipeline something{
+    //   VoxelEngine::vulkanContext,
+    //   group, set1
+    // };
     
-    
+    // RaytracingPushConstantData* data = new RaytracingPushConstantData;
+    // RaytracingPushConstant* idk = data->get<RaytracingPushConstant>();
+
+    // RaytracingRenderPass_t renderPass(
+    //   VoxelEngine::vulkanContext,
+    //   {something, data}
+    // );
     
     raytracingPipeline = something.pipeline;
     printf("RAY PIPELINE : %d\n", something.pipeline); fflush(stdout);

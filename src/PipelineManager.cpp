@@ -15,40 +15,13 @@
 
 PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
                                  std::unique_ptr<Raytracer> &raytracer,
-                                std::unique_ptr<WindowManager>& window) 
+                                std::unique_ptr<WindowManager>& window) : 
+    group(pushConstants, VoxelEngine::get_shader<"main_vert">(), VoxelEngine::get_shader<"main_frag">()),
+    set1(vulkanContext, {raytracer->getStorageImage()}),
+    something(vulkanContext, group, set1),
+    set2{{&window->getSwapChainImages()}},
+    renderPass{window->getSwapChainExtent().width, window->getSwapChainExtent().height, vulkanContext, set2, something}
   {
-
-    auto& vert_shader = VoxelEngine::get_shader<"main_vert">();
-    auto& frag_shader = VoxelEngine::get_shader<"main_frag">();
-
-    ShaderPushConstants<> pushConstants;
-    ShaderGroup group(
-      pushConstants,
-      vert_shader, frag_shader
-    );
-
-    ShaderResourceSet set1{vulkanContext,
-      ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SHADER_FRAGMENT, 0, 1>{raytracer->getStorageImage()}
-    };
-
-    GraphicsPipeline something{
-      vulkanContext,
-      group, set1
-    };
-
-    RenderPassResourceSet set2{
-      RenderPassResource<"output">{&window->getSwapChainImages()}
-    };
-
-    auto extent = window->getSwapChainExtent();
-
-    RenderPass renderPass{
-      extent.width,
-      extent.height,
-      vulkanContext,
-      set2,
-      something
-    };
 
     printf("pipeline: %d\n", something.pipeline);
     pipeline = something.pipeline;

@@ -1,6 +1,7 @@
 #pragma once
 #include "VoxelWorld.hpp"
 #include "image.hpp"
+#include "shaders.hpp"
 #include <memory>
 #include <vector>
 #include <GLFW/glfw3.h>
@@ -36,12 +37,36 @@ public:
 
 private:
 
+  using RaytracingPushConstants = ShaderPushConstants<PushConstant<RaytracingPushConstant, SHADER_RGEN>>;
+  using RaytracingShaderGroup = ShaderGroup<RaytracingPushConstants, main_rmiss, main_rgen>;
+  using RaytracingResourceSet = ShaderResourceSet<
+    ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 0, 1>,
+    ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SHADER_RGEN, 1, 1>,
+    ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 2, 1>,
+    ResourceBinding<StagedSharedImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 3, 512>,
+    ResourceBinding<StagedSharedImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 4, 1>,
+    ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 5, 1>,
+    ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 6, 1>,
+    ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 7, 1>,
+    ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SHADER_RGEN, 8, 1>
+  >;
+  using Pipeline = RaytracingPipeline<RaytracingShaderGroup, RaytracingResourceSet>;
+  using RaytracingPushConstantData = PushConstantData<RaytracingPushConstant>;
+  using RaytracingRenderPass_t = RaytracingRenderPass<RaytracingRenderPassPipeline<RaytracingPushConstantData, Pipeline>>;
+
   SwapImage raytracingStorageImage;
   SwapImage raytracingPositionStorageImage;
   SwapImage raytracingLightStorageImageX;
   SwapImage raytracingLightStorageImageY;
   SwapImage raytracingLightStorageImageZ;
   SwapImage raytracingLightStorageImageW;
+
+  RaytracingPushConstants raytracingPushConstants;
+  RaytracingShaderGroup group;
+  RaytracingResourceSet set1;
+  Pipeline something;  
+  RaytracingPushConstantData data;
+  RaytracingRenderPass_t renderPass;
 
   VkPipeline raytracingPipeline;
   VkPipelineLayout raytracingPipelineLayout;

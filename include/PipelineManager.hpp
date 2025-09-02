@@ -25,6 +25,21 @@ public:
                                            const std::vector<char> &code);
 
 private:
+
+  using PipelineShaderPushConstant = ShaderPushConstants<>;
+  using PipelineShaderGroup = ShaderGroup<PipelineShaderPushConstant, main_vert, main_frag>;
+  using PipelineShaderResources = ShaderResourceSet<ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SHADER_FRAGMENT, 0, 1>>;
+  using Pipeline = GraphicsPipeline<PipelineShaderGroup, PipelineShaderResources>;
+  using PipelineRenderPassResources = RenderPassResourceSet<RenderPassResource<"output">>;
+  using PipelineRenderPass = RenderPass<PipelineRenderPassResources, Pipeline>;
+
+  PipelineShaderPushConstant pushConstants;
+  PipelineShaderGroup group;
+  PipelineShaderResources set1;
+  Pipeline something;
+  PipelineRenderPassResources set2;
+  PipelineRenderPass renderPass;
+
   VkPipeline pipeline;
   VkPipelineLayout pipelineLayout;
   std::vector<VkDescriptorSet> descriptorSet;

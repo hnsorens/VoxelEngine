@@ -18,6 +18,8 @@
 #include "DescriptorPool.hpp"
 #include "FixedString.hpp"
 
+#define ALIGN_UP(value, alignment)                                             \
+  (((value) + (alignment) - 1) & ~((alignment) - 1))
 
 enum ShaderType
 {
@@ -798,14 +800,97 @@ public:
 
         // Frees all memory in shader group because it cannot be used anymore
         ShaderGroup group = std::move(m_shaderGroup);
-    }
 
-private:
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR
+            raytracingPipelineProperties = {};
+        raytracingPipelineProperties.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+        deviceProperties2.pNext = &raytracingPipelineProperties;
+        vkGetPhysicalDeviceProperties2(ctx->getPhysicalDevice(),
+                                    &deviceProperties2);
+
+        VkDeviceSize handleSize =
+            raytracingPipelineProperties.shaderGroupHandleSize;
+        VkDeviceSize handleSizeAligned = ALIGN_UP(
+            handleSize, raytracingPipelineProperties.shaderGroupBaseAlignment);
+        sbtSize = handleSizeAligned * 2;
+
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sbtSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |
+                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(ctx->getDevice(), &bufferInfo, nullptr, &sbtBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create buffer!");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(ctx->getDevice(), sbtBuffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = ResourceManager::findMemoryType(
+            ctx->getPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        if (vkAllocateMemory(ctx->getDevice(), &allocInfo, nullptr, &sbtMemory) !=
+            VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate buffer memory!");
+        }
+
+        vkBindBufferMemory(ctx->getDevice(), sbtBuffer, sbtMemory, 0);
+
+        std::vector<uint8_t> shaderHandleStorage(sbtSize);
+
+        PFN_vkGetRayTracingShaderGroupHandlesKHR
+            vkGetRayTracingShaderGroupHandlesKHR =
+                reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(
+                    vkGetDeviceProcAddr(ctx->getDevice(),
+                                        "vkGetRayTracingShaderGroupHandlesKHR"));
+        vkGetRayTracingShaderGroupHandlesKHR(ctx->getDevice(),
+                                            pipeline, 0, 2,
+                                            sbtSize, shaderHandleStorage.data());
+
+        void *mappedData;
+        vkMapMemory(ctx->getDevice(), sbtMemory, 0, sbtSize, 0,
+                    &mappedData);
+        memcpy(mappedData, shaderHandleStorage.data(), sbtSize);
+        vkUnmapMemory(ctx->getDevice(), sbtMemory);
+
+        VkBufferDeviceAddressInfo bufferAddressInfo = {};
+        bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        bufferAddressInfo.buffer = sbtBuffer;
+        VkDeviceAddress sbtAddress = vkGetBufferDeviceAddress(
+            ctx->getDevice(), &bufferAddressInfo);
+
+        raygenRegion.deviceAddress = sbtAddress;
+        raygenRegion.stride = handleSizeAligned;
+        raygenRegion.size = handleSizeAligned;
+
+        missRegion.deviceAddress = sbtAddress + handleSizeAligned;
+        missRegion.stride = handleSizeAligned;
+        missRegion.size = handleSizeAligned;
+
+        hitRegion = {};
+        callableRegion = {};
+    }
     
     ShaderGroup m_shaderGroup;
     VkRayTracingPipelineCreateInfoKHR pipelineInfo{};
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline = VK_NULL_HANDLE;
+
+    VkStridedDeviceAddressRegionKHR raygenRegion;
+    VkStridedDeviceAddressRegionKHR missRegion;
+    VkStridedDeviceAddressRegionKHR hitRegion;
+    VkStridedDeviceAddressRegionKHR callableRegion;
+    VkDeviceSize sbtSize;
+    VkBuffer sbtBuffer;
+    VkDeviceMemory sbtMemory;
 
     friend class Raytracer;
 };

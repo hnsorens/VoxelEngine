@@ -11,6 +11,12 @@
 #include "FixedString.hpp"
 #include "image.hpp"
 
+#define RAYTRACE_HEIGHT 1080
+#define RAYTRACE_WIDTH 1920
+
+#define ALIGN_UP(value, alignment)                                             \
+  (((value) + (alignment) - 1) & ~((alignment) - 1))
+
 template <FixedString Name>
 class RenderPassResource
 {
@@ -409,89 +415,144 @@ private:
 
 };
 
-// template <typename... RaytracingPipelines>
-// class RaytracingRenderPass
-// {
-// public:
-//     RaytracingRenderPass(std::unique_ptr<VulkanContext>& ctx, RaytracingPipelines&... pipelines) : pipelines{pipelines...} 
-//     {
-//         vkCmdTraceRaysKHR =
-//             reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(
-//                 ctx->getDevice(), "vkCmdTraceRaysKHR"));
-//     }
+template <typename... Structures>
+struct PushConstantData
+{
+    PushConstantData()
+    {
+        size_t size = (sizeof(Structures) + ...);
+        data = new char(size);
+    }
 
-//     void record(VkCommandBuffer commandBuffer, uint32_t currentFrame, uint32_t swapchainIndex)
-//     {
-//         VkCommandBufferBeginInfo beginInfo = {};
-//         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-//         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-//         if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-//             throw std::runtime_error("failed to begin recording command buffer!");
-//         }
+    ~PushConstantData()
+    {
+        delete data;
+    }
 
-//         std::apply([&](auto& pipeline)
-//         {
-//             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-//                             pipeline->getPipeline());
+    template <typename T>
+    T* get()
+    {
+        return (T*)(data + offset<T>());
+    }
+
+private:
+
+    template <typename T>
+    constexpr size_t offset()
+    {
+        size_t current = 0;
+        ([&](){
+            if constexpr (std::is_same<T, Structures>())
+            {
+                return current;
+            }
+            else {
+                current += sizeof(Structures);
+            }
+        }(), ...);
+
+        static_assert("Type does not exist in Push Constant Data");
+        return 0;
+    }
+
+    char* data;
+};
+
+template <typename PushConstant, typename Pipeline>
+struct RaytracingRenderPassPipeline
+{
+public:
+    RaytracingRenderPassPipeline(Pipeline& pipeline, PushConstant& pushConstants) : pipeline(pipeline), pushConstantData(pushConstants) {}
+private:
+    Pipeline& pipeline;
+    PushConstant& pushConstantData;
+
+    template <typename... RaytracingPipelines>
+    friend class RaytracingRenderPass;
+};
+
+template <typename... RaytracingPipelines>
+class RaytracingRenderPass
+{
+public:
+    RaytracingRenderPass(std::unique_ptr<VulkanContext>& ctx, RaytracingPipelines... pipelines) : pipelines{pipelines...} 
+    {
+        vkCmdTraceRaysKHR =
+            reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(
+                ctx->getDevice(), "vkCmdTraceRaysKHR"));
+    }
+
+    void record(VkCommandBuffer commandBuffer, uint32_t currentFrame, uint32_t swapchainIndex)
+    {
+        VkCommandBufferBeginInfo beginInfo = {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("failed to begin recording command buffer!");
+        }
+
+        std::apply([&](auto pipeline)
+        {
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                            pipeline->getPipeline());
     
-//             vkCmdBindDescriptorSets(
-//                 commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-//                 pipeline->getPipelineLayout(), 0, 1,
-//                 &pipeline->getDescriptorSet(currentFrame), 0, nullptr);
+            vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                pipeline->getPipelineLayout(), 0, 1,
+                &pipeline->getDescriptorSet(currentFrame), 0, nullptr);
 
-//             PushConstant c;
-//             c.flag = 0;
-//             c.frame = 0;
-//             vkCmdPushConstants(commandBuffer, pipeline->getPipelineLayout(),
-//                             VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 8, &c);
-//             vkCmdTraceRaysKHR(commandBuffer, &raygenRegion, &missRegion, &hitRegion,
-//                             &callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+            pipeline.pushConstantData.data.flag = 0;
+            pipeline.pushConstantData.data.frame = 0;
+            vkCmdPushConstants(commandBuffer, pipeline->getPipelineLayout(),
+                            VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 8, &pipeline.pushConstantData->data);
+            vkCmdTraceRaysKHR(commandBuffer, &pipeline.raygenRegion, &pipeline.missRegion, &pipeline.hitRegion,
+                            &pipeline.callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
 
-//             VkMemoryBarrier barrier = {};
-//             barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-//             barrier.srcAccessMask =
-//                 VK_ACCESS_SHADER_WRITE_BIT |
-//                 VK_ACCESS_SHADER_READ_BIT; // Ensure writes from the first trace finish
-//             barrier.dstAccessMask =
-//                 VK_ACCESS_SHADER_READ_BIT |
-//                 VK_ACCESS_SHADER_WRITE_BIT; // Ensure the second trace can read them
-//             barrier.pNext = 0;
+            VkMemoryBarrier barrier = {};
+            barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+            barrier.srcAccessMask =
+                VK_ACCESS_SHADER_WRITE_BIT |
+                VK_ACCESS_SHADER_READ_BIT; // Ensure writes from the first trace finish
+            barrier.dstAccessMask =
+                VK_ACCESS_SHADER_READ_BIT |
+                VK_ACCESS_SHADER_WRITE_BIT; // Ensure the second trace can read them
+            barrier.pNext = 0;
 
-//             vkCmdPipelineBarrier(
-//             commandBuffer,
-//             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
-//                                                         // rays execution
-//             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination: Second
-//                                                         // trace rays execution
-//             0, 1, &barrier, 0, nullptr, 0, nullptr);
-//         }, pipelines);
+            vkCmdPipelineBarrier(
+            commandBuffer,
+            VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
+                                                        // rays execution
+            VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination: Second
+                                                        // trace rays execution
+            0, 1, &barrier, 0, nullptr, 0, nullptr);
 
-//         c.flag = 1;
-//         vkCmdPushConstants(commandBuffer, raytracer->getPipelineLayout(),
-//                         VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, &c);
+            pipeline.pushConstantData.data.flag = 1;
+            vkCmdPushConstants(commandBuffer, pipeline.getPipelineLayout(),
+                            VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, &pipeline.pushConstantData->data);
 
-//         vkCmdTraceRaysKHR(commandBuffer, &raygenRegion, &missRegion, &hitRegion,
-//                         &callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
-//         vkCmdPipelineBarrier(
-//             commandBuffer,
-//             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
-//                                                         // rays execution
-//             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination: Second
-//                                                         // trace rays execution
-//             0, 1, &barrier, 0, nullptr, 0, nullptr);
+            vkCmdTraceRaysKHR(commandBuffer, &pipeline.raygenRegion, &pipeline.missRegion, &pipeline.hitRegion,
+                            &pipeline.callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+            vkCmdPipelineBarrier(
+                commandBuffer,
+                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
+                                                            // rays execution
+                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination: Second
+                                                            // trace rays execution
+                0, 1, &barrier, 0, nullptr, 0, nullptr);
 
-//         c.flag = 2;
-//         vkCmdPushConstants(commandBuffer, raytracer->getPipelineLayout(),
-//                         VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, &c);
+            pipeline.pushConstantData.data.flag = 2;
+            vkCmdPushConstants(commandBuffer, pipeline.getPipelineLayout(),
+                            VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, &pipeline.pushConstantData->data);
 
-//         vkCmdTraceRaysKHR(commandBuffer, &raygenRegion, &missRegion, &hitRegion,
-//                         &callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+            vkCmdTraceRaysKHR(commandBuffer, &pipeline.raygenRegion, &pipeline.missRegion, &pipeline.hitRegion,
+                            &pipeline.callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+        }, pipelines);
 
-//         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-//         throw std::runtime_error("failed to record raytracing command buffer!");
-//         }
-//     }
+        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record raytracing command buffer!");
+        }
+    }
 
-//     PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
-//     std::tuple<RaytracingPipelines&...> pipelines;
-// };
+    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
+    std::tuple<RaytracingPipelines&...> pipelines;
+};
