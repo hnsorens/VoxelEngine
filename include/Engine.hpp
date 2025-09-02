@@ -39,15 +39,6 @@ public:
   static uint32_t currentFrame;
   static uint8_t section;
 
-  // Raytracing
-  static VkStridedDeviceAddressRegionKHR raygenRegion;
-  static VkStridedDeviceAddressRegionKHR missRegion;
-  static VkStridedDeviceAddressRegionKHR hitRegion;
-  static VkStridedDeviceAddressRegionKHR callableRegion;
-  static VkDeviceSize sbtSize;
-  static VkBuffer sbtBuffer;
-  static VkDeviceMemory sbtMemory;
-
   static void initWindow();
   static void initVulkan();
   static void mainLoop();
@@ -59,7 +50,6 @@ public:
                     VkDeviceSize size, VkBufferUsageFlags usage,
                     VkMemoryPropertyFlags properties, VkBuffer &buffer,
                     VkDeviceMemory &bufferMemory);
-  static void createRaytracingRegions();
   static void createCommandBuffers();
 
   static void recordVoxelCommandBuffer(VkCommandBuffer commandBuffer,

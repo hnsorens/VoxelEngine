@@ -24,11 +24,11 @@ PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
   {
 
     printf("pipeline: %d\n", something.pipeline);
-    pipeline = something.pipeline;
-    pipelineLayout = something.pipelineLayout;
-    renderpass = renderPass.renderPass;
-    framebuffers = renderPass.framebuffers;
-    descriptorSet = set1.descriptorSets;
+    // pipeline = something.pipeline;
+    // pipelineLayout = something.pipelineLayout;
+    // renderpass = renderPass.renderPass;
+    // framebuffers = renderPass.framebuffers;
+    // descriptorSet = set1.descriptorSets;
 
         for (auto& s : framebuffers)
         {
@@ -53,33 +53,7 @@ const VkDescriptorSet &PipelineManager::getDescriptorSet(int i) const {
 }
 
 void PipelineManager::recreateFramebuffers(std::unique_ptr<VulkanContext>& vulkanContext, std::unique_ptr<WindowManager>& window) {
-    // Clean up old framebuffers
-    for (auto framebuffer : framebuffers) {
-        vkDestroyFramebuffer(vulkanContext->getDevice(), framebuffer, nullptr);
-    }
-    
-    // Create new framebuffers with updated swapchain image views
-    // Use the actual number of swapchain images instead of hardcoded 2
-    size_t numImages = window->swapchainImageCount;
-    framebuffers.resize(numImages);
-    
-    for (size_t i = 0; i < numImages; i++) {
-        VkImageView attachments[] = {window->getSwapChainImages().imageViews[i]};
-        
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderpass;
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
-        framebufferInfo.width = window->getSwapChainExtent().width;
-        framebufferInfo.height = window->getSwapChainExtent().height;
-        framebufferInfo.layers = 1;
-
-        if (vkCreateFramebuffer(vulkanContext->getDevice(), &framebufferInfo, nullptr,
-                                &framebuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer!");
-        }
-    }
+    renderPass.recreateSwapchain(vulkanContext, window);
 }
 
 

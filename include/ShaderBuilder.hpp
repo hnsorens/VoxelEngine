@@ -1,3 +1,4 @@
+#include "RenderPass.hpp"
 #include "ResourceManager.hpp"
 #include "VulkanContext.hpp"
 // #include "image.hpp"
@@ -491,14 +492,9 @@ public:
 
     VkDescriptorSetLayout getLayout() { return descriptorSetLayout; }
 
-private:
-
     VkDescriptorSetLayout descriptorSetLayout;
     std::vector<VkDescriptorSet> descriptorSets;
     std::tuple<Bindings...> bindings;
-
-    friend class PipelineManager;
-    friend class Raytracer;
 };
 
 
@@ -592,6 +588,7 @@ public:
 
     GraphicsPipeline(std::unique_ptr<VulkanContext>& ctx, ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
     m_shaderGroup(shaderGroup),
+    resources(resources...),
     pipelineLayout([&](){
 
         std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
@@ -715,8 +712,17 @@ public:
         ShaderGroup group = std::move(m_shaderGroup);
     }
 
-private:
+    void bindResources(VkCommandBuffer commandBuffer, int currentFrame)
+    {
+        std::apply([&](auto& resource){
+            vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                pipelineLayout, 0, 1,
+                &resource.descriptorSets[currentFrame], 0, nullptr);
+        }, resources);
+    }
     
+    std::tuple<ShaderResourcesBindings&...> resources;
     ShaderGroup m_shaderGroup;
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     VkPipelineLayout pipelineLayout;
@@ -735,6 +741,7 @@ public:
     using Attachments = ShaderGroup::Attachments;
 
     RaytracingPipeline(std::unique_ptr<VulkanContext>& ctx, ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
+    resources(resources...),
     m_shaderGroup(shaderGroup),
     pipelineLayout([&](){
 
@@ -891,6 +898,18 @@ public:
     VkDeviceSize sbtSize;
     VkBuffer sbtBuffer;
     VkDeviceMemory sbtMemory;
+
+    std::tuple<ShaderResourcesBindings&...> resources;
+
+    void bindResources(VkCommandBuffer commandBuffer, int currentFrame)
+    {
+        std::apply([&](auto& resource){
+            vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                pipelineLayout, 0, 1,
+                &resource.descriptorSets[currentFrame], 0, nullptr);
+        }, resources);
+    }
 
     friend class Raytracer;
 };

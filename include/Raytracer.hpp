@@ -35,7 +35,7 @@ public:
   const VkDescriptorSet &getDescriptorSet(int i) const;
   SwapImage* getStorageImage();
 
-private:
+// private:
 
   using RaytracingPushConstants = ShaderPushConstants<PushConstant<RaytracingPushConstant, SHADER_RGEN>>;
   using RaytracingShaderGroup = ShaderGroup<RaytracingPushConstants, main_rmiss, main_rgen>;

@@ -23,9 +23,6 @@ public:
 
   static VkShaderModule createShaderModule(VkDevice device,
                                            const std::vector<char> &code);
-
-private:
-
   using PipelineShaderPushConstant = ShaderPushConstants<>;
   using PipelineShaderGroup = ShaderGroup<PipelineShaderPushConstant, main_vert, main_frag>;
   using PipelineShaderResources = ShaderResourceSet<ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SHADER_FRAGMENT, 0, 1>>;

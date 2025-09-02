@@ -26,15 +26,6 @@ std::vector<VkCommandBuffer> VoxelEngine::raytracingCommandBuffers;
 uint32_t VoxelEngine::currentFrame = 0;
 uint8_t VoxelEngine::section = 0;
 
-// Raytracing regions
-VkStridedDeviceAddressRegionKHR VoxelEngine::raygenRegion{};
-VkStridedDeviceAddressRegionKHR VoxelEngine::missRegion{};
-VkStridedDeviceAddressRegionKHR VoxelEngine::hitRegion{};
-VkStridedDeviceAddressRegionKHR VoxelEngine::callableRegion{};
-VkDeviceSize VoxelEngine::sbtSize = 0;
-VkBuffer VoxelEngine::sbtBuffer = VK_NULL_HANDLE;
-VkDeviceMemory VoxelEngine::sbtMemory = VK_NULL_HANDLE; 
-
 void VoxelEngine::run() {
     initWindow();
     initVulkan();
@@ -65,8 +56,6 @@ void VoxelEngine::initVulkan() {
         std::make_unique<PipelineManager>(vulkanContext, raytracer, windowManager);
 
     syncManager = std::make_unique<SyncManager>(vulkanContext);
-
-    createRaytracingRegions();
 }
 
 void VoxelEngine::mainLoop() {
@@ -182,66 +171,6 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
   }
 
-  void VoxelEngine::createRaytracingRegions() {
-    VkPhysicalDeviceProperties2 deviceProperties2 = {};
-    deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    VkPhysicalDeviceRayTracingPipelinePropertiesKHR
-        raytracingPipelineProperties = {};
-    raytracingPipelineProperties.sType =
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-    deviceProperties2.pNext = &raytracingPipelineProperties;
-    vkGetPhysicalDeviceProperties2(vulkanContext->getPhysicalDevice(),
-                                   &deviceProperties2);
-
-    VkDeviceSize handleSize =
-        raytracingPipelineProperties.shaderGroupHandleSize;
-    VkDeviceSize handleSizeAligned = ALIGN_UP(
-        handleSize, raytracingPipelineProperties.shaderGroupBaseAlignment);
-    sbtSize = handleSizeAligned * 2;
-
-    createBuffer(vulkanContext->getDevice(), vulkanContext->getPhysicalDevice(),
-                 sbtSize,
-                 VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |
-                     VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 sbtBuffer, sbtMemory);
-
-    std::vector<uint8_t> shaderHandleStorage(sbtSize);
-
-    PFN_vkGetRayTracingShaderGroupHandlesKHR
-        vkGetRayTracingShaderGroupHandlesKHR =
-            reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(
-                vkGetDeviceProcAddr(vulkanContext->getDevice(),
-                                    "vkGetRayTracingShaderGroupHandlesKHR"));
-    vkGetRayTracingShaderGroupHandlesKHR(vulkanContext->getDevice(),
-                                         raytracer->getPipeline(), 0, 2,
-                                         sbtSize, shaderHandleStorage.data());
-
-    void *mappedData;
-    vkMapMemory(vulkanContext->getDevice(), sbtMemory, 0, sbtSize, 0,
-                &mappedData);
-    memcpy(mappedData, shaderHandleStorage.data(), sbtSize);
-    vkUnmapMemory(vulkanContext->getDevice(), sbtMemory);
-
-    VkBufferDeviceAddressInfo bufferAddressInfo = {};
-    bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-    bufferAddressInfo.buffer = sbtBuffer;
-    VkDeviceAddress sbtAddress = vkGetBufferDeviceAddress(
-        vulkanContext->getDevice(), &bufferAddressInfo);
-
-    raygenRegion.deviceAddress = sbtAddress;
-    raygenRegion.stride = handleSizeAligned;
-    raygenRegion.size = handleSizeAligned;
-
-    missRegion.deviceAddress = sbtAddress + handleSizeAligned;
-    missRegion.stride = handleSizeAligned;
-    missRegion.size = handleSizeAligned;
-
-    hitRegion = {};
-    callableRegion = {};
-  }
-
   void VoxelEngine::createCommandBuffers() {
     raytracingCommandBuffers.clear(); // Clear the vector first
     raytracingCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
@@ -256,91 +185,6 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
             vulkanContext->getDevice(), &raytracingAllocInfo,
             raytracingCommandBuffers.data()) != VK_SUCCESS) {
       throw std::runtime_error("failed to allocate command buffers!");
-    }
-  }
-
-
-  void VoxelEngine::recordVoxelCommandBuffer(VkCommandBuffer commandBuffer,
-                                uint32_t imageIndex, uint8_t section) {
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-      throw std::runtime_error("failed to begin recording command buffer!");
-    }
-
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                      raytracer->getPipeline());
-
-    vkCmdBindDescriptorSets(
-        commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-        raytracer->getPipelineLayout(), 0, 1,
-        &raytracer->getDescriptorSet(currentFrame), 0, nullptr);
-
-    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR =
-        reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(
-            vulkanContext->getDevice(), "vkCmdTraceRaysKHR"));
-
-    RaytracingPushConstant c;
-    c.flag = 0;
-    c.frame = 0;
-    vkCmdPushConstants(commandBuffer, raytracer->getPipelineLayout(),
-                       VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 8, &c);
-    vkCmdTraceRaysKHR(commandBuffer, &raygenRegion, &missRegion, &hitRegion,
-                      &callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
-
-    VkMemoryBarrier barrier = {};
-    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-    barrier.srcAccessMask =
-        VK_ACCESS_SHADER_WRITE_BIT |
-        VK_ACCESS_SHADER_READ_BIT; // Ensure writes from the first trace finish
-    barrier.dstAccessMask =
-        VK_ACCESS_SHADER_READ_BIT |
-        VK_ACCESS_SHADER_WRITE_BIT; // Ensure the second trace can read them
-    barrier.pNext = 0;
-
-    vkCmdPipelineBarrier(
-        commandBuffer,
-        VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
-                                                      // rays execution
-        VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination: Second
-                                                      // trace rays execution
-        0, 1, &barrier, 0, nullptr, 0, nullptr);
-
-    c.flag = 1;
-    vkCmdPushConstants(commandBuffer, raytracer->getPipelineLayout(),
-                       VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, &c);
-
-    vkCmdTraceRaysKHR(commandBuffer, &raygenRegion, &missRegion, &hitRegion,
-                      &callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
-    vkCmdPipelineBarrier(
-        commandBuffer,
-        VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
-                                                      // rays execution
-        VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination: Second
-                                                      // trace rays execution
-        0, 1, &barrier, 0, nullptr, 0, nullptr);
-
-    c.flag = 2;
-    vkCmdPushConstants(commandBuffer, raytracer->getPipelineLayout(),
-                       VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, &c);
-
-    vkCmdTraceRaysKHR(commandBuffer, &raygenRegion, &missRegion, &hitRegion,
-                      &callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
-
-                      // for (int i = 0; i < 512; i++)
-                      // {
-                      //   for (int i2 = 0; i2 < 128*128*128; i2+=1)
-                      //   {
-
-                      //     printf("%d", voxelWorld->voxelData[i].data[i2]); fflush(stdout);
-                      //   }
-                      // }
-
-    voxelWorld->updateVoxels(commandBuffer, vulkanContext, imageIndex);
-
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-      throw std::runtime_error("failed to record raytracing command buffer!");
     }
   }
 
@@ -413,17 +257,40 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     vkResetFences(vulkanContext->getDevice(), 1,
                   &syncManager->getInFlightFences()[currentFrame]);
 
-    vkResetCommandBuffer(commandManager->getCommandBuffers()[currentFrame],
-                         /*VkCommandBufferResetFlagBits*/ 0);
-    vkResetCommandBuffer(
-        raytracingCommandBuffers[currentFrame],
-        0);
-    recordCommandBuffer(commandManager->getCommandBuffers()[currentFrame],
-                        imageIndex);
-    recordVoxelCommandBuffer(
-        raytracingCommandBuffers[currentFrame],
-        currentFrame,
-        section);
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    
+    vkResetCommandBuffer(commandManager->getCommandBuffers()[currentFrame], 0);
+    if (vkBeginCommandBuffer(commandManager->getCommandBuffers()[currentFrame], &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("failed to begin recording command buffer!");
+    }
+
+    pipelineManager->renderPass.record(commandManager->getCommandBuffers()[currentFrame], windowManager, currentFrame, imageIndex);
+
+    if (vkEndCommandBuffer(commandManager->getCommandBuffers()[currentFrame]) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record raytracing command buffer!");
+    }
+
+    // recordVoxelCommandBuffer(
+    //     raytracingCommandBuffers[currentFrame],
+    //     currentFrame,
+    //     section);
+    vkResetCommandBuffer(raytracingCommandBuffers[currentFrame], 0);
+    if (vkBeginCommandBuffer(raytracingCommandBuffers[currentFrame], &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("failed to begin recording command buffer!");
+    }
+
+    raytracer->renderPass.record(raytracingCommandBuffers[currentFrame], currentFrame, imageIndex);
+    voxelWorld->updateVoxels(raytracingCommandBuffers[currentFrame], vulkanContext, currentFrame);
+
+    if (vkEndCommandBuffer(raytracingCommandBuffers[currentFrame]) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record raytracing command buffer!");
+    }
+
+
+
+
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
