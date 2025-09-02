@@ -1,12 +1,15 @@
 #pragma once
-#include "VulkanContext.hpp"
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan.h>
 
+namespace VkZero{
+  class VulkanContext;
+};
+
 class SyncManager {
 public:
-  SyncManager(std::unique_ptr<VulkanContext> &vulkanContext);
+  SyncManager(std::unique_ptr<VkZero::VulkanContext> &vulkanContext);
   ~SyncManager();
 
   void createSyncObjects(VkDevice device);

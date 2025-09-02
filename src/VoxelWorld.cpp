@@ -1,8 +1,8 @@
 #include "VoxelWorld.hpp"
 #include "CommandManager.hpp"
-#include "ResourceManager.hpp"
-#include "VulkanContext.hpp"
-#include "image.hpp"
+#include "VkZero/resource_manager.hpp"
+#include "VkZero/context.hpp"
+#include "VkZero/image.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
-VoxelWorld::VoxelWorld(std::unique_ptr<VulkanContext> &vulkanContext,
+VoxelWorld::VoxelWorld(std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
                        std::unique_ptr<CommandManager> &commandManager) : 
     voxelChunkMapImage{8, 8, 8,
         VK_FORMAT_R16_UINT, VK_IMAGE_TILING_OPTIMAL,
@@ -199,7 +199,7 @@ void VoxelWorld::updateVoxelChunkMap(int modValue, int offset) {
   }
 }
 void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,
-                              std::unique_ptr<VulkanContext> &vulkanContext,
+                              std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
                               int currentImage) {
   voxelChunkMapImage.changeLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0);
 

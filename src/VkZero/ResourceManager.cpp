@@ -1,6 +1,6 @@
-#include "ResourceManager.hpp"
+#include "VkZero/resource_manager.hpp"
 #include "CommandManager.hpp"
-#include "VulkanContext.hpp"
+#include "VkZero/context.hpp"
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -9,6 +9,8 @@
 #include <vulkan/vulkan_core.h>
 
 #include <GLFW/glfw3.h>
+
+using namespace VkZero;
 
 void ResourceManager::createBuffer(VkDevice device,
                                    VkPhysicalDevice physicalDevice,

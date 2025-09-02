@@ -1,9 +1,9 @@
 #include "Camera.hpp"
-#include "ResourceManager.hpp"
+#include "VkZero/resource_manager.hpp"
 #include "VoxelWorld.hpp"
-#include "VulkanContext.hpp"
-#include "VulkanInfo.hpp"
-#include "WindowManager.hpp"
+#include "VkZero/context.hpp"
+#include "VkZero/info.hpp"
+#include "VkZero/window.hpp"
 #include <cstdio>
 #include <cstring>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -11,7 +11,7 @@
 #include <memory>
 #include <stdexcept>
 
-Camera::Camera(std::unique_ptr<VulkanContext> &vulkanContext, std::unique_ptr<WindowManager> &window) {
+Camera::Camera(std::unique_ptr<VkZero::VulkanContext> &vulkanContext, std::unique_ptr<VkZero::WindowManager> &window) {
   uniformBuffer.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBufferMemory.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
@@ -36,7 +36,7 @@ Camera::Camera(std::unique_ptr<VulkanContext> &vulkanContext, std::unique_ptr<Wi
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = ResourceManager::findMemoryType(
+    allocInfo.memoryTypeIndex = VkZero::ResourceManager::findMemoryType(
         vulkanContext->getPhysicalDevice(), memRequirements.memoryTypeBits,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -63,7 +63,7 @@ Camera::Camera(std::unique_ptr<VulkanContext> &vulkanContext, std::unique_ptr<Wi
   }
 }
 Camera::~Camera() {}
-void Camera::update(std::unique_ptr<WindowManager> &windowManager,
+void Camera::update(std::unique_ptr<VkZero::WindowManager> &windowManager,
                     std::unique_ptr<VoxelWorld> &voxelWorld, int currentFrame) {
   struct {
     float &pos;

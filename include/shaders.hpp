@@ -1,59 +1,59 @@
 #pragma once
 
 
-#include "RenderPass.hpp"
-#include "ShaderBuilder.hpp"
+#include "VkZero/render_pass.hpp"
+#include "VkZero/shader_builder.hpp"
 #include <vulkan/vulkan_core.h>
-#include "Binding.hpp"
+#include "VkZero/binding.hpp"
 
-  struct RaytracingPushConstant {
-    uint32_t flag;
-    uint32_t frame;
-  };
+struct RaytracingPushConstant {
+  uint32_t flag;
+  uint32_t frame;
+};
 
-using main_vert = Shader<
+using main_vert = VkZero::Shader<
   "main_vert",
   "bin/vert.spv",
-  SHADER_VERTEX
+  VkZero::SHADER_VERTEX
 >;
 
-using main_frag = Shader<
+using main_frag = VkZero::Shader<
   "main_frag",
   "bin/frag.spv",
-  SHADER_FRAGMENT,
-  ShaderBindings<
-    ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, 0, 1>
+  VkZero::SHADER_FRAGMENT,
+  VkZero::ShaderBindings<
+    VkZero::ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, 0, 1>
   >,
-  ShaderAttachments<
-    ColorAttachment<"output", VK_FORMAT_B8G8R8A8_SRGB, 0>
+  VkZero::ShaderAttachments<
+    VkZero::ColorAttachment<"output", VK_FORMAT_B8G8R8A8_SRGB, 0>
   >
 >;
 
-using main_rmiss = Shader<
+using main_rmiss = VkZero::Shader<
   "main_rmiss",
   "bin/rmiss.spv",
-  SHADER_RMISS
+  VkZero::SHADER_RMISS
 >;
 
-using main_rgen = Shader<
+using main_rgen = VkZero::Shader<
   "main_rgen",
   "bin/rgen.spv",
-  SHADER_RGEN,
-  ShaderBindings<
-    ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 0, 1>,
-    ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, 1, 1>,
-    ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 2, 1>,
-    ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 3, 512>,
-    ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 4, 1>,
-    ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 5, 1>,
-    ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 6, 1>,
-    ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 7, 1>,
-    ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 8, 1>
+  VkZero::SHADER_RGEN,
+  VkZero::ShaderBindings<
+    VkZero::ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 0, 1>,
+    VkZero::ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, 1, 1>,
+    VkZero::ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 2, 1>,
+    VkZero::ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 3, 512>,
+    VkZero::ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 4, 1>,
+    VkZero::ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 5, 1>,
+    VkZero::ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 6, 1>,
+    VkZero::ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 7, 1>,
+    VkZero::ShaderBinding<class ShaderImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0, 8, 1>
   >,
-  ShaderPushConstant<RaytracingPushConstant>
+  VkZero::ShaderPushConstant<RaytracingPushConstant>
 >;
 
-using GlobalShaderTypes = ShaderTypes<
+using GlobalShaderTypes = VkZero::ShaderTypes<
   main_vert,
   main_frag,
   main_rmiss,

@@ -1,6 +1,6 @@
-#include "VulkanContext.hpp"
-#include "VulkanInfo.hpp"
-#include "WindowManager.hpp"
+#include "VkZero/context.hpp"
+#include "VkZero/info.hpp"
+#include "VkZero/window.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <cstring>
@@ -12,6 +12,8 @@
 #include <stdexcept>
 #include <string>
 #include <vulkan/vulkan_core.h>
+
+using namespace VkZero;
 
 #ifdef NDEBUG
 const bool enableValidationLayers = true;

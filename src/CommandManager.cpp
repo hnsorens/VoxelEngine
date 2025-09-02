@@ -1,10 +1,10 @@
 #include "CommandManager.hpp"
-#include "VulkanContext.hpp"
-#include "VulkanInfo.hpp"
+#include "VkZero/context.hpp"
+#include "VkZero/info.hpp"
 #include <memory>
 #include <stdexcept>
 
-CommandManager::CommandManager(std::unique_ptr<VulkanContext> &vulkanContext) {
+CommandManager::CommandManager(std::unique_ptr<VkZero::VulkanContext> &vulkanContext) {
   createCommandPool(vulkanContext->getDevice(),
                     vulkanContext->getQueueFamilyIndices());
   allocateCommandBuffers(vulkanContext->getDevice());
@@ -13,7 +13,7 @@ CommandManager::CommandManager(std::unique_ptr<VulkanContext> &vulkanContext) {
 CommandManager::~CommandManager() {}
 
 void CommandManager::createCommandPool(
-    VkDevice device, const QueueFamilyIndices &queueFamilyIndices) {
+    VkDevice device, const VkZero::QueueFamilyIndices &queueFamilyIndices) {
   VkCommandPoolCreateInfo poolInfo{};
   poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
   poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -41,7 +41,7 @@ void CommandManager::allocateCommandBuffers(VkDevice device) {
 }
 
 VkCommandBuffer CommandManager::beginSingleTimeCommands(
-    std::unique_ptr<VulkanContext> &vulkanContext) {
+    std::unique_ptr<VkZero::VulkanContext> &vulkanContext) {
   VkCommandBufferAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -62,7 +62,7 @@ VkCommandBuffer CommandManager::beginSingleTimeCommands(
 }
 
 void CommandManager::endSingleTimeCommands(
-    std::unique_ptr<VulkanContext> &vulkanContext,
+    std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
     VkCommandBuffer commandBuffer) {
   vkEndCommandBuffer(commandBuffer);
 

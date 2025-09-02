@@ -10,12 +10,17 @@ struct TransformUBO {
   glm::mat4 proj;
 };
 
+namespace VkZero
+{
+  class VulkanContext;
+  class WindowManager;
+}
 class Camera {
 public:
-  Camera(std::unique_ptr<class VulkanContext> &vulkanContext, std::unique_ptr<class WindowManager> &window);
+  Camera(std::unique_ptr<VkZero::VulkanContext> &vulkanContext, std::unique_ptr<VkZero::WindowManager> &window);
   ~Camera();
 
-  void update(std::unique_ptr<class WindowManager> &windowManager,
+  void update(std::unique_ptr<VkZero::WindowManager> &windowManager,
               std::unique_ptr<class VoxelWorld> &voxelWorld, int currentFrame);
   void processMouseMovement(float xoffset, float yoffset);
   void processKeyboardInput(int key, float deltaTime);

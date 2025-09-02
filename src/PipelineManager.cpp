@@ -1,21 +1,20 @@
-#include "WindowManager.hpp"
+#include "VkZero/window.hpp"
 #include "shaders.hpp"
 #include "Engine.hpp"
 #include <PipelineManager.hpp>
 #include <Raytracer.hpp>
-#include <ResourceManager.hpp>
-#include <VulkanContext.hpp>
-#include <pipeline.hpp>
+#include <VkZero/resource_manager.hpp>
+#include <VkZero/context.hpp>
 #include <memory>
 #include <stdexcept>
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include "image.hpp"
-#include "RenderPass.hpp"
+#include "VkZero/image.hpp"
+#include "VkZero/render_pass.hpp"
 
-PipelineManager::PipelineManager(std::unique_ptr<VulkanContext> &vulkanContext,
+PipelineManager::PipelineManager(std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
                                  std::unique_ptr<Raytracer> &raytracer,
-                                std::unique_ptr<WindowManager>& window) : 
+                                std::unique_ptr<VkZero::WindowManager>& window) : 
     group(pushConstants, VoxelEngine::get_shader<"main_vert">(), VoxelEngine::get_shader<"main_frag">()),
     set1(vulkanContext, {raytracer->getStorageImage()}),
     something(vulkanContext, group, set1),
@@ -52,7 +51,7 @@ const VkDescriptorSet &PipelineManager::getDescriptorSet(int i) const {
   return descriptorSet[i];
 }
 
-void PipelineManager::recreateFramebuffers(std::unique_ptr<VulkanContext>& vulkanContext, std::unique_ptr<WindowManager>& window) {
+void PipelineManager::recreateFramebuffers(std::unique_ptr<VkZero::VulkanContext>& vulkanContext, std::unique_ptr<VkZero::WindowManager>& window) {
     renderPass.recreateSwapchain(vulkanContext, window);
 }
 

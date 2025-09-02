@@ -1,5 +1,6 @@
 #pragma once
-#include "image.hpp"
+#include "VkZero/image.hpp"
+#include <sys/types.h>
 #define FNL_IMPL
 #include "FastNoiseLite.hpp"
 #include <condition_variable>
@@ -28,15 +29,20 @@
 #define MAT_IS_STONE(mat) ((mat) >= MAT_STONE && (mat) <= MAT_STONE3)
 #define MAT_HAS_COLLISION(mat) ((mat) > MAT_AIR && (mat) < MAT_FLOWER)
 
+namespace VkZero
+{
+  class VulkanContext;
+}
+
 class VoxelWorld {
 public:
   struct VoxelChunk {
-    uint8_t *data;
+    u_int8_t *data;
     glm::ivec3 position;
     bool inQueue;
   };
 
-  VoxelWorld(std::unique_ptr<class VulkanContext> &vulkanContext,
+  VoxelWorld(std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
              std::unique_ptr<class CommandManager> &commandManager);
   ~VoxelWorld();
 
@@ -47,7 +53,7 @@ public:
   void sortChunks();
   void updateVoxelChunkMap(int modValue, int offset);
   void updateVoxels(VkCommandBuffer commandBuffer,
-                    std::unique_ptr<VulkanContext> &vulkanContext,
+                    std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
                     int currentImage);
   void chunkWorker();
   void generateChunk(VoxelChunk &chunk);
@@ -65,13 +71,13 @@ public:
   std::condition_variable queueCond;
   bool stopThreads = false;
 
-  std::vector<StagedSharedImage> voxelImages;
+  std::vector<VkZero::StagedSharedImage> voxelImages;
 
   std::vector<uint16_t> chunkUpdateQueue;
 
   std::vector<VoxelChunk> voxelData;
 
-  StagedSharedImage voxelChunkMapImage;
+  VkZero::StagedSharedImage voxelChunkMapImage;
   uint16_t *voxelChunkMapData;
 
   FastNoiseLite noise;

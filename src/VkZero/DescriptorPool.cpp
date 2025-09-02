@@ -1,12 +1,16 @@
-#include "DescriptorPool.hpp"
+#include "VkZero/descriptor_pool.hpp"
 #include "shaders.hpp"
 #include <tuple>
 #include <utility>
 #include <vulkan/vulkan_core.h>
 #include "Engine.hpp"
 
+using namespace VkZero;
+
 #define MAX_POOL_SETS 1000
 #define MAX_DESCRIPTOR_COUNT 2000
+
+using namespace VkZero;
 
 template <VkDescriptorType Type>
 struct DescriptorTypeObject
@@ -33,7 +37,6 @@ struct get_shader_bindings<std::tuple<First, Rest...>> {
         )
     );
 };
-
 
 template <typename T>
 struct DescriptorTypes;

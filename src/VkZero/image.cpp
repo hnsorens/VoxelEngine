@@ -1,9 +1,11 @@
-#include "image.hpp"
+#include "VkZero/image.hpp"
 #include "CommandManager.hpp"
-#include "ResourceManager.hpp"
+#include "VkZero/resource_manager.hpp"
 #include "Engine.hpp"
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
+
+using namespace VkZero;
 
 void ImageImpl::CreateImages(uint32_t width, uint32_t height, uint32_t depth,
         VkFormat format, VkImageTiling tiling,

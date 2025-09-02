@@ -1,12 +1,14 @@
-#include "WindowManager.hpp"
-#include "VulkanContext.hpp"
-#include "image.hpp"
+#include "VkZero/window.hpp"
+#include "VkZero/context.hpp"
+#include "VkZero/image.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <limits>
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan_core.h>
+
+using namespace VkZero;
 
 static void framebufferResizeCallback(GLFWwindow *window, int width,
                                       int height) {

@@ -1,14 +1,20 @@
 #pragma once
-#include "pipeline.hpp"
+#include "shaders.hpp"
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
+namespace VkZero
+{
+  class VulkanContext;
+  class WindowManager;
+}
+
 class PipelineManager {
 public:
-  PipelineManager(std::unique_ptr<class VulkanContext> &vulkanContext,
-                  std::unique_ptr<class Raytracer> &raytracer, std::unique_ptr<class WindowManager>& window);
+  PipelineManager(std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
+                  std::unique_ptr<class Raytracer> &raytracer, std::unique_ptr<VkZero::WindowManager>& window);
   ~PipelineManager();
 
   void createGraphicsPipeline(VkDevice device, VkRenderPass renderPass,
@@ -19,16 +25,16 @@ public:
   const VkRenderPass &getRenderPass() const;
   const VkFramebuffer getFrameBuffer(int i) const { return framebuffers[i]; }
   
-  void recreateFramebuffers(std::unique_ptr<VulkanContext>& vulkanContext, std::unique_ptr<WindowManager>& window);
+  void recreateFramebuffers(std::unique_ptr<VkZero::VulkanContext>& vulkanContext, std::unique_ptr<VkZero::WindowManager>& window);
 
   static VkShaderModule createShaderModule(VkDevice device,
                                            const std::vector<char> &code);
-  using PipelineShaderPushConstant = ShaderPushConstants<>;
-  using PipelineShaderGroup = ShaderGroup<PipelineShaderPushConstant, main_vert, main_frag>;
-  using PipelineShaderResources = ShaderResourceSet<ResourceBinding<SwapImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SHADER_FRAGMENT, 0, 1>>;
-  using Pipeline = GraphicsPipeline<PipelineShaderGroup, PipelineShaderResources>;
-  using PipelineRenderPassResources = RenderPassResourceSet<RenderPassResource<"output">>;
-  using PipelineRenderPass = RenderPass<PipelineRenderPassResources, Pipeline>;
+  using PipelineShaderPushConstant = VkZero::ShaderPushConstants<>;
+  using PipelineShaderGroup = VkZero::ShaderGroup<PipelineShaderPushConstant, main_vert, main_frag>;
+  using PipelineShaderResources = VkZero::ShaderResourceSet<VkZero::ResourceBinding<VkZero::SwapImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkZero::SHADER_FRAGMENT, 0, 1>>;
+  using Pipeline = VkZero::GraphicsPipeline<PipelineShaderGroup, PipelineShaderResources>;
+  using PipelineRenderPassResources = VkZero::RenderPassResourceSet<VkZero::RenderPassResource<"output">>;
+  using PipelineRenderPass = VkZero::RenderPass<PipelineRenderPassResources, Pipeline>;
 
   PipelineShaderPushConstant pushConstants;
   PipelineShaderGroup group;

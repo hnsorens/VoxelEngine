@@ -1,9 +1,8 @@
-#include "VulkanContext.hpp"
+#include "VkZero/context.hpp"
 #include "shaders.hpp"
 #include <cstdio>
 #include <memory>
 #include <iostream>
-
 
 static float semiRandomFloat(float x, float y, float z);
 
@@ -13,18 +12,22 @@ const uint32_t HEIGHT = 1280 * 4;
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920
 
+namespace VkZero {
+  class VulkanContext;
+  class WindowManager;
+}
 class VoxelEngine {
 public:
   static void run();
 
-  template <FixedString name>
+  template <VkZero::FixedString name>
   static auto& get_shader()
   {
     return shaders->get<name>();
   }
 
-  static std::unique_ptr<class WindowManager> windowManager;
-  static std::unique_ptr<class VulkanContext> vulkanContext;
+  static std::unique_ptr<VkZero::WindowManager> windowManager;
+  static std::unique_ptr<VkZero::VulkanContext> vulkanContext;
   static std::unique_ptr<class SyncManager> syncManager;
   static std::unique_ptr<class CommandManager> commandManager;
   static std::unique_ptr<class PipelineManager> pipelineManager;
@@ -56,7 +59,7 @@ public:
                                 uint32_t imageIndex, uint8_t section);
   static void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
   static void drawFrame();
-  static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+  static VkZero::SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
   static VKAPI_ATTR VkBool32 VKAPI_CALL
   debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

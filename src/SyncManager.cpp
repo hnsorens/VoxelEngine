@@ -1,10 +1,10 @@
 #include "SyncManager.hpp"
-#include "VulkanContext.hpp"
-#include "WindowManager.hpp"
+#include "VkZero/context.hpp"
+#include "VkZero/window.hpp"
 #include <memory>
 #include <stdexcept>
 
-SyncManager::SyncManager(std::unique_ptr<VulkanContext> &vulkanContext) {
+SyncManager::SyncManager(std::unique_ptr<VkZero::VulkanContext> &vulkanContext) {
   createSyncObjects(vulkanContext->getDevice());
 }
 

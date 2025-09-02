@@ -2,11 +2,11 @@
 #include "Camera.hpp"
 #include "CommandManager.hpp"
 #include "PipelineManager.hpp"
-#include "RenderPass.hpp"
-#include "ResourceManager.hpp"
+#include "VkZero/render_pass.hpp"
+#include "VkZero/resource_manager.hpp"
 #include "VoxelWorld.hpp"
-#include "VulkanContext.hpp"
-#include "image.hpp"
+#include "VkZero/context.hpp"
+#include "VkZero/image.hpp"
 #include <memory>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
@@ -14,7 +14,7 @@
 #include "shaders.hpp"
 
 Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
-                     std::unique_ptr<VulkanContext> &vulkanContext,
+                     std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
                      std::unique_ptr<VoxelWorld> &voxelWorld,
                      std::unique_ptr<Camera> &camera) :
     raytracingStorageImage{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
@@ -77,13 +77,13 @@ const VkPipelineLayout &Raytracer::getPipelineLayout() const {
 const VkDescriptorSet &Raytracer::getDescriptorSet(int i) const {
   return raytracingDescriptorSets[i];
 }
-SwapImage* Raytracer::getStorageImage() {
+VkZero::SwapImage* Raytracer::getStorageImage() {
   return &raytracingStorageImage;
 }
 
 void Raytracer::createRaytracingResources(
     std::unique_ptr<CommandManager> &commandManager,
-    std::unique_ptr<VulkanContext> &vulkanContext) {
+    std::unique_ptr<VkZero::VulkanContext> &vulkanContext) {
 
   VkDevice device = vulkanContext->getDevice();
   VkPhysicalDevice physicalDevice = vulkanContext->getPhysicalDevice();
@@ -91,8 +91,8 @@ void Raytracer::createRaytracingResources(
 
 void Raytracer::createRaytracingPipeline(
     VkDevice device, std::vector<VkBuffer> &uniformBuffer,
-    StagedSharedImage* voxelImage,
-    StagedSharedImage* voxelChunkMapImage) {
+    VkZero::StagedSharedImage* voxelImage,
+    VkZero::StagedSharedImage* voxelChunkMapImage) {
 
     // auto& rmiss_shader = VoxelEngine::get_shader<"main_rmiss">();
     // auto& rgen_shader = VoxelEngine::get_shader<"main_rgen">();

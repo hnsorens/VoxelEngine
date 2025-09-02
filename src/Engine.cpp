@@ -4,7 +4,7 @@
 #include "Raytracer.hpp"
 #include "SyncManager.hpp"
 #include "VoxelWorld.hpp"
-#include "WindowManager.hpp"
+#include "VkZero/window.hpp"
 #include "shaders.hpp"
 #include <cstdio>
 #include <memory>
@@ -13,8 +13,8 @@
 #include <iostream> // Added for debug output
 
 // Static member definitions
-std::unique_ptr<WindowManager> VoxelEngine::windowManager;
-std::unique_ptr<VulkanContext> VoxelEngine::vulkanContext;
+std::unique_ptr<VkZero::WindowManager> VoxelEngine::windowManager;
+std::unique_ptr<VkZero::VulkanContext> VoxelEngine::vulkanContext;
 std::unique_ptr<SyncManager> VoxelEngine::syncManager;
 std::unique_ptr<CommandManager> VoxelEngine::commandManager;
 std::unique_ptr<PipelineManager> VoxelEngine::pipelineManager;
@@ -38,8 +38,8 @@ void VoxelEngine::initWindow() {
 
 void VoxelEngine::initVulkan() {
     
-    vulkanContext = std::make_unique<VulkanContext>();
-    windowManager = std::make_unique<WindowManager>(vulkanContext, WIDTH, HEIGHT, "Voxel Engine");
+    vulkanContext = std::make_unique<VkZero::VulkanContext>();
+    windowManager = std::make_unique<VkZero::WindowManager>(vulkanContext, WIDTH, HEIGHT, "Voxel Engine");
 
     shaders = std::make_unique<GlobalShaderTypes>(vulkanContext);
 
@@ -160,7 +160,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = ResourceManager::findMemoryType(
+    allocInfo.memoryTypeIndex = VkZero::ResourceManager::findMemoryType(
         physicalDevice, memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) !=
