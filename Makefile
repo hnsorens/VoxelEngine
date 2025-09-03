@@ -10,5 +10,5 @@ all:
 clean:
 	rm -rf bin/* shaders/*.spv
 
-run: all
+run:
 	./bin/voxels 
