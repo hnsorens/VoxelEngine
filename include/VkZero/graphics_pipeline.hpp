@@ -11,91 +11,156 @@
 
 namespace VkZero
 {
-    // Pipeline validation utilities
+    // ============================================================================
+    // Pipeline Validation Utilities
+    // ============================================================================
+    
+    /**
+     * @brief Checks if a shader binding is invalid (not found or incompatible) in a resource tuple
+     * @tparam Stage The shader stage this binding is used in
+     * @tparam SetIndex The descriptor set index being checked
+     * @tparam ShaderBinding The shader binding type to validate
+     * @tparam ResourceTuple The tuple of resource binding types to search through
+     * @return true if the binding is invalid (not found or incompatible), false if valid
+     * 
+     * A binding is considered invalid if:
+     * - It's not found in the resource tuple, OR
+     * - It has a different binding number, descriptor count, or type, OR
+     * - The resource doesn't support the required shader stage
+     */
     template <int Stage, int SetIndex, typename ShaderBinding, typename ResourceTuple>
-    struct vgp_find_invalid_binding;
+    struct binding_validity_checker;
 
+    // Base case: empty resource tuple means binding is invalid (not found)
     template <int Stage, int SetIndex, typename ShaderBinding>
-    struct vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, std::tuple<>> {
-        static constexpr bool value = true;
+    struct binding_validity_checker<Stage, SetIndex, ShaderBinding, std::tuple<>> {
+        static constexpr bool value = true; // Invalid because not found
     };
 
+    // Recursive case: check first resource and continue if not found
     template <int Stage, int SetIndex, typename ShaderBinding, typename First, typename... Rest>
-    struct vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, std::tuple<First, Rest...>> {
+    struct binding_validity_checker<Stage, SetIndex, ShaderBinding, std::tuple<First, Rest...>> {
         static constexpr bool value =
             (ShaderBinding::get_binding() != First::get_binding() ||
             ShaderBinding::get_descriptor_count() != First::get_descriptor_count() ||
             ShaderBinding::type() != First::type() ||
             (Stage & First::get_stages()) == 0) &&
-            vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, std::tuple<Rest...>>::value;
+            binding_validity_checker<Stage, SetIndex, ShaderBinding, std::tuple<Rest...>>::value;
     };
 
-    // 2. Check a ShaderBinding against all ResourceSets
+    /**
+     * @brief Checks if a shader binding is invalid across all resource sets
+     * @tparam Stage The shader stage this binding is used in
+     * @tparam SetIndex The current descriptor set index being checked
+     * @tparam ShaderBinding The shader binding type to validate
+     * @tparam SetTuple The tuple of resource sets to search through
+     * @return true if the binding is invalid in all sets, false if found in any set
+     */
     template <int Stage, int SetIndex, typename ShaderBinding, typename SetTuple>
-    struct vgp_shader_invalid_resource;
+    struct cross_set_binding_validity_checker;
 
+    // Base case: no sets to check
     template <int Stage, int SetIndex, typename ShaderBinding>
-    struct vgp_shader_invalid_resource<Stage, SetIndex, ShaderBinding, std::tuple<>> {
-        static constexpr bool value = false;
+    struct cross_set_binding_validity_checker<Stage, SetIndex, ShaderBinding, std::tuple<>> {
+        static constexpr bool value = false; // Valid if no sets to check
     };
 
+    // Recursive case: check current set and continue with remaining sets
     template <int Stage, int SetIndex, typename ShaderBinding, typename FirstSet, typename... RestSets>
-    struct vgp_shader_invalid_resource<Stage, SetIndex, ShaderBinding, std::tuple<FirstSet, RestSets...>> {
+    struct cross_set_binding_validity_checker<Stage, SetIndex, ShaderBinding, std::tuple<FirstSet, RestSets...>> {
         static constexpr bool value =
-            vgp_find_invalid_binding<Stage, SetIndex, ShaderBinding, typename FirstSet::BindingResources>::value ||
-            vgp_shader_invalid_resource<Stage, SetIndex + 1, ShaderBinding, std::tuple<RestSets...>>::value;
+            binding_validity_checker<Stage, SetIndex, ShaderBinding, typename FirstSet::BindingResources>::value ||
+            cross_set_binding_validity_checker<Stage, SetIndex + 1, ShaderBinding, std::tuple<RestSets...>>::value;
     };
 
-    // 3. Check all bindings in a shader
+    /**
+     * @brief Checks if any bindings in a shader are invalid
+     * @tparam Stage The shader stage being validated
+     * @tparam Sets The tuple of resource sets to validate against
+     * @tparam ShaderBindingsTuple The tuple of shader bindings to validate
+     * @return true if any binding is invalid, false if all bindings are valid
+     */
     template <int Stage, typename Sets, typename ShaderBindingsTuple>
-    struct vgp_shader_invalid;
+    struct shader_binding_validity_checker;
 
+    // Base case: no bindings to check
     template <int Stage, typename Sets>
-    struct vgp_shader_invalid<Stage, Sets, std::tuple<>> {
-        static constexpr bool value = false;
+    struct shader_binding_validity_checker<Stage, Sets, std::tuple<>> {
+        static constexpr bool value = false; // Valid if no bindings to check
     };
 
+    // Recursive case: check first binding and continue with remaining bindings
     template <int Stage, typename Sets, typename FirstBinding, typename... RestBindings>
-    struct vgp_shader_invalid<Stage, Sets, std::tuple<FirstBinding, RestBindings...>> {
-        // Use the helper to spread Sets into vgp_shader_invalid_resource
+    struct shader_binding_validity_checker<Stage, Sets, std::tuple<FirstBinding, RestBindings...>> {
         static constexpr bool value =
-            vgp_shader_invalid_resource<Stage, 0, FirstBinding, Sets>::value ||
-            vgp_shader_invalid<Stage, Sets, std::tuple<RestBindings...>>::value;
+            cross_set_binding_validity_checker<Stage, 0, FirstBinding, Sets>::value ||
+            shader_binding_validity_checker<Stage, Sets, std::tuple<RestBindings...>>::value;
     };
 
-    // 4. Iterate over all shaders in the ShaderGroup
+    /**
+     * @brief Checks if any shaders in a shader group have invalid bindings
+     * @tparam Sets The tuple of resource sets to validate against
+     * @tparam ShaderTuple The tuple of shader types to validate
+     * @return true if any shader has invalid bindings, false if all shaders are valid
+     */
     template <typename Sets, typename ShaderTuple>
-    struct vgp_invalid;
+    struct shader_group_validity_checker;
 
+    // Base case: no shaders to check
     template <typename Sets>
-    struct vgp_invalid<Sets, std::tuple<>> {
-        static constexpr bool value = false;
+    struct shader_group_validity_checker<Sets, std::tuple<>> {
+        static constexpr bool value = false; // Valid if no shaders to check
     };
 
+    // Recursive case: check first shader and continue with remaining shaders
     template <typename Sets, typename FirstShader, typename... RestShaders>
-    struct vgp_invalid<Sets, std::tuple<FirstShader, RestShaders...>> {
+    struct shader_group_validity_checker<Sets, std::tuple<FirstShader, RestShaders...>> {
         static constexpr bool value =
-            vgp_shader_invalid<FirstShader::get_type(), Sets, typename FirstShader::BindingsList>::value ||
-            vgp_invalid<Sets, std::tuple<RestShaders...>>::value;
+            shader_binding_validity_checker<FirstShader::get_type(), Sets, typename FirstShader::BindingsList>::value ||
+            shader_group_validity_checker<Sets, std::tuple<RestShaders...>>::value;
     };
 
-    // ----------------------------
-    // Step 2: Main struct wrapper
-    // ----------------------------
+    /**
+     * @brief Main validation struct for graphics pipelines
+     * @tparam ShaderGroup The shader group type to validate
+     * @tparam ResourceSets... The resource sets to validate against
+     * @return true if the pipeline is valid, false if invalid
+     * 
+     * A graphics pipeline is valid if all shader bindings can be satisfied
+     * by the provided resource sets.
+     */
     template <typename ShaderGroup, typename... ResourceSets>
-    struct validate_graphics_pipeline {
-        static constexpr bool value = !vgp_invalid<std::tuple<ResourceSets...>, typename ShaderGroup::shaders>::value;
+    struct graphics_pipeline_validator {
+        static constexpr bool value = !shader_group_validity_checker<std::tuple<ResourceSets...>, typename ShaderGroup::shaders>::value;
     };
 
+    /**
+     * @brief Represents a Vulkan graphics pipeline with associated shaders and resources
+     * @tparam ShaderGroup The shader group type for this pipeline
+     * @tparam ShaderResourcesBindings... The resource sets bound to this pipeline
+     * 
+     * This class manages the creation and binding of a Vulkan graphics pipeline,
+     * including vertex input, rasterization, color blending, and other pipeline states.
+     */
     template <typename ShaderGroup, typename... ShaderResourcesBindings>
     class GraphicsPipeline
     {
-        static_assert(validate_graphics_pipeline<ShaderGroup, ShaderResourcesBindings...>::value, "Graphics Pipeline Invalid");
+        // Validate that the pipeline configuration is valid at compile time
+        static_assert(graphics_pipeline_validator<ShaderGroup, ShaderResourcesBindings...>::value, "Graphics Pipeline Invalid");
 
     public:
 
         using Attachments = ShaderGroup::Attachments;
 
+        /**
+         * @brief Constructs a graphics pipeline
+         * @param ctx Vulkan context for device access
+         * @param shaderGroup The shader group containing all shaders for this pipeline
+         * @param resources... The resource sets to bind to this pipeline
+         * 
+         * This constructor creates the pipeline layout and prepares the pipeline
+         * for creation. The actual pipeline is created when create_pipeline() is called.
+         */
         GraphicsPipeline(std::unique_ptr<VulkanContext>& ctx, ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
         m_shaderGroup(shaderGroup),
         resources(resources...),
@@ -129,6 +194,15 @@ namespace VkZero
             pipelineInfo.layout = pipelineLayout;
         }
 
+        /**
+         * @brief Creates the actual Vulkan graphics pipeline
+         * @param device The Vulkan device
+         * @param renderPass The render pass this pipeline will be used with
+         * 
+         * This method sets up all the pipeline state (vertex input, rasterization,
+         * color blending, etc.) and creates the final Vulkan pipeline object.
+         * Can only be called once per pipeline instance.
+         */
         void create_pipeline(VkDevice device, VkRenderPass renderPass)
         {
             if (pipeline)
@@ -222,6 +296,11 @@ namespace VkZero
             ShaderGroup group = std::move(m_shaderGroup);
         }
 
+        /**
+         * @brief Binds the pipeline's resource sets to a command buffer
+         * @param commandBuffer The command buffer to bind resources to
+         * @param currentFrame The current frame index for double/triple buffering
+         */
         void bindResources(VkCommandBuffer commandBuffer, int currentFrame)
         {
             std::apply([&](auto& resource){

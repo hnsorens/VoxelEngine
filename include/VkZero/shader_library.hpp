@@ -35,14 +35,14 @@ namespace VkZero
 
     // ShaderTypes class
     template <typename... Shaders>
-    class ShaderTypes {
+    class ShaderLibrary {
     private:
         std::tuple<Shaders...> shaders;
 
     public:
         using types = std::tuple<Shaders...>;
 
-        ShaderTypes(std::unique_ptr<VulkanContext>& ctx) : shaders(Shaders(ctx)...) {}
+        ShaderLibrary(std::unique_ptr<VulkanContext>& ctx) : shaders(Shaders(ctx)...) {}
 
         template <FixedString Name>
         constexpr auto& get() {

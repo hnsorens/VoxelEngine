@@ -21,7 +21,7 @@ std::unique_ptr<PipelineManager> VoxelEngine::pipelineManager;
 std::unique_ptr<Raytracer> VoxelEngine::raytracer;
 std::unique_ptr<VoxelWorld> VoxelEngine::voxelWorld;
 std::unique_ptr<Camera> VoxelEngine::camera;
-std::unique_ptr<GlobalShaderTypes> VoxelEngine::shaders;
+std::unique_ptr<GlobalShaderLibrary> VoxelEngine::shaders;
 std::vector<VkCommandBuffer> VoxelEngine::raytracingCommandBuffers;
 uint32_t VoxelEngine::currentFrame = 0;
 uint8_t VoxelEngine::section = 0;
@@ -41,7 +41,7 @@ void VoxelEngine::initVulkan() {
     vulkanContext = std::make_unique<VkZero::VulkanContext>();
     windowManager = std::make_unique<VkZero::WindowManager>(vulkanContext, WIDTH, HEIGHT, "Voxel Engine");
 
-    shaders = std::make_unique<GlobalShaderTypes>(vulkanContext);
+    shaders = std::make_unique<GlobalShaderLibrary>(vulkanContext);
 
     camera = std::make_unique<Camera>(vulkanContext, windowManager);
     commandManager = std::make_unique<CommandManager>(vulkanContext);

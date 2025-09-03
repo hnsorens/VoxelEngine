@@ -35,7 +35,7 @@ public:
   static std::unique_ptr<class VoxelWorld> voxelWorld;
   static std::unique_ptr<class Camera> camera;
 
-  static std::unique_ptr<GlobalShaderTypes> shaders;
+  static std::unique_ptr<GlobalShaderLibrary> shaders;
 
   static std::vector<VkCommandBuffer> raytracingCommandBuffers;
 

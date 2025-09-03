@@ -8,4 +8,4 @@
 #include "shader_resource_set.hpp"       // Contains ShaderResourceSetDetails
 #include "graphics_pipeline.hpp"         // Contains pipeline validation
 #include "raytracing_pipeline.hpp"
-#include "shader_types_class.hpp"        // Contains ShaderTypes class
+#include "shader_library.hpp"        // Contains ShaderTypes class

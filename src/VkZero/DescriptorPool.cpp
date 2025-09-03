@@ -87,7 +87,7 @@ DescriptorPool::DescriptorPool()
     std::vector<VkDescriptorPoolSize> poolSizes;
 
 
-    using types = typename unique_types<DescriptorTypes<get_shader_bindings<GlobalShaderTypes::types>::type>::type>::type;
+    using types = typename unique_types<DescriptorTypes<get_shader_bindings<GlobalShaderLibrary::types>::type>::type>::type;
 
     std::apply([&]<typename... Ts>(Ts...){
        ([&](VkDescriptorType type){

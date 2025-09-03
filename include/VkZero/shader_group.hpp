@@ -9,17 +9,31 @@ namespace VkZero
 {
     namespace ShaderGroupDetails
     {
+        /**
+         * @brief Validates that all shader bindings in a shader group are compatible
+         * @tparam Shaders... Variadic template of shader types to validate
+         * @return true if all bindings are compatible, false if conflicts exist
+         * 
+         * This struct ensures that shaders in a group don't have conflicting bindings.
+         * Two bindings conflict if they use the same binding slot but have different
+         * types or descriptor counts.
+         */
         template <typename... Shaders>
-        struct validate_shader_bindings {
+        struct shader_binding_validator {
         private:
-            // Combine all shaders' BindingsList tuple types into one tuple type
+            // Combine all shaders' BindingsList tuple types into one flattened tuple
             using all_bindings_tuple = decltype(std::tuple_cat(
                 std::declval<typename Shaders::BindingsList>()...
             ));
 
-            // Check compatibility of two binding types
+            /**
+             * @brief Checks if two binding types are compatible
+             * @tparam A First binding type
+             * @tparam B Second binding type
+             * @return true if bindings are compatible (different slots or same slot with same type/count)
+             */
             template <typename A, typename B>
-            struct compatible {
+            struct binding_compatibility_checker {
                 static constexpr bool same_slot =
                     (A::get_binding_set() == B::get_binding_set()) &&
                     (A::get_binding()     == B::get_binding());
@@ -30,70 +44,104 @@ namespace VkZero
                 static constexpr bool same_count =
                     (A::get_descriptor_count() == B::get_descriptor_count());
 
+                // Bindings are compatible if they use different slots, or same slot with same type and count
                 static constexpr bool value = !same_slot || (same_type && same_count);
             };
 
-            // Recursive pairwise checker
+            /**
+             * @brief Recursively checks all bindings in a tuple for compatibility
+             * @tparam Ts... Variadic template of binding types to check
+             * @return true if all bindings are compatible with each other
+             */
             template <typename... Ts>
-            struct check_all {
+            struct pairwise_compatibility_checker {
                 static constexpr bool value = true; // Empty pack or single element is fine
             };
 
             template <typename First, typename... Rest>
-            struct check_all<First, Rest...> {
+            struct pairwise_compatibility_checker<First, Rest...> {
                 static constexpr bool value =
-                    ((compatible<First, Rest>::value) && ...) && // Compare First with all Rest
-                    check_all<Rest...>::value;                   // Then recurse
+                    ((binding_compatibility_checker<First, Rest>::value) && ...) && // Compare First with all Rest
+                    pairwise_compatibility_checker<Rest...>::value;                   // Then recurse
             };
 
-            // Turn tuple<Ts...> into check_all<Ts...>::value
+            /**
+             * @brief Converts a tuple of bindings into a compatibility check
+             * @tparam Tuple The tuple of binding types
+             * @return true if all bindings in the tuple are compatible
+             */
             template <typename Tuple>
-            struct tuple_check;
+            struct tuple_compatibility_checker;
 
             template <typename... Ts>
-            struct tuple_check<std::tuple<Ts...>> {
-                static constexpr bool value = check_all<Ts...>::value;
+            struct tuple_compatibility_checker<std::tuple<Ts...>> {
+                static constexpr bool value = pairwise_compatibility_checker<Ts...>::value;
             };
 
         public:
-            static constexpr bool value = tuple_check<all_bindings_tuple>::value;
+            static constexpr bool value = tuple_compatibility_checker<all_bindings_tuple>::value;
         };
 
-        template <typename Attachments>
-        struct collect_attachments;
+        /**
+         * @brief Collects and flattens all attachment types from a tuple of shaders
+         * @tparam ShaderTuple The tuple of shader types to collect attachments from
+         * @return A flattened tuple containing all attachment types from all shaders
+         */
+        template <typename ShaderTuple>
+        struct attachment_collector;
 
+        // Base case: empty tuple
         template <>
-        struct collect_attachments<std::tuple<>>
+        struct attachment_collector<std::tuple<>>
         {
             using value = std::tuple<>;
         };
 
+        // Recursive case: concatenate attachments from first shader with rest
         template <typename First, typename... Rest>
-        struct collect_attachments<std::tuple<First, Rest...>>
+        struct attachment_collector<std::tuple<First, Rest...>>
         {
             using value = decltype(std::tuple_cat(
                 std::declval<typename First::Attachments>(),
-                std::declval<typename collect_attachments<std::tuple<Rest...>>::value>() 
+                std::declval<typename attachment_collector<std::tuple<Rest...>>::value>() 
             ));
         };
 
-        template <typename Shader, typename ShaderCompares>
-        struct validate_push_constant_for_shader;
+        /**
+         * @brief Validates that push constant types are compatible across shaders
+         * @tparam Shader The shader type to validate against
+         * @tparam ShaderTuple The tuple of other shader types to compare with
+         * @return true if all push constant types are compatible
+         * 
+         * Push constants are compatible if they are the same type, or if one is void
+         */
+        template <typename Shader, typename ShaderTuple>
+        struct push_constant_compatibility_validator;
 
+        // Base case: no shaders to compare
         template <typename Shader>
-        struct validate_push_constant_for_shader<Shader, std::tuple<>>
+        struct push_constant_compatibility_validator<Shader, std::tuple<>>
         {
             static constexpr bool value = true;
         };
 
+        // Recursive case: check compatibility with first shader and continue
         template <typename Shader, typename First, typename... Rest>
-        struct validate_push_constant_for_shader<Shader, std::tuple<First, Rest...>>
+        struct push_constant_compatibility_validator<Shader, std::tuple<First, Rest...>>
         {
-            static constexpr bool value = (std::is_same<typename Shader::PushConstantType, typename First::PushConstantType>() || std::is_same<typename Shader::PushConstantType, void>() || std::is_same<typename First::PushConstantType, void>()) &&
-                    validate_push_constant_for_shader<Shader, std::tuple<Rest...>>::value;
+            static constexpr bool value = 
+                (std::is_same<typename Shader::PushConstantType, typename First::PushConstantType>() || 
+                 std::is_same<typename Shader::PushConstantType, void>() || 
+                 std::is_same<typename First::PushConstantType, void>()) &&
+                push_constant_compatibility_validator<Shader, std::tuple<Rest...>>::value;
         };
     }
 
+    /**
+     * @brief Represents a push constant structure for a shader
+     * @tparam T The C++ structure type that represents the push constant data
+     * @tparam ShaderStages The shader stages this push constant is used in (bitfield)
+     */
     template <typename T, int ShaderStages>
     struct PushConstant
     {
@@ -101,6 +149,13 @@ namespace VkZero
         static constexpr int shaderStages = ShaderStages;
     };
 
+    /**
+     * @brief Manages multiple push constant ranges for a shader group
+     * @tparam PushConstants... Variadic template of PushConstant types
+     * 
+     * This class automatically calculates offsets and creates Vulkan push constant ranges
+     * for all the push constants in a shader group.
+     */
     template <typename... PushConstants>
     class ShaderPushConstants
     {
@@ -136,20 +191,27 @@ namespace VkZero
         friend class ShaderGroup;
     };
 
+    /**
+     * @brief Groups multiple shaders together for pipeline creation
+     * @tparam ShaderPushConstants The push constants type for this shader group
+     * @tparam Shaders... Variadic template of shader types to group together
+     * 
+     * A shader group validates that all shaders have compatible bindings and
+     * provides a unified interface for pipeline creation.
+     */
     template <typename ShaderPushConstants, typename... Shaders>
     class ShaderGroup
     {
-        // static_assert(all_shader_types_unique<Shaders...>::value,
-        //              "Shader types conflict - multiple shaders with the same shader type!");
-        static_assert(ShaderGroupDetails::validate_shader_bindings<Shaders...>::value,
+        // Validate that all shader bindings are compatible
+        static_assert(ShaderGroupDetails::shader_binding_validator<Shaders...>::value,
                     "Shader bindings conflict - same binding number with different resource type or different binding counts!");
     public:
 
         
         using shaders = std::tuple<Shaders...>;
-        using Attachments = ShaderGroupDetails::collect_attachments<shaders>::value;
+        using Attachments = ShaderGroupDetails::attachment_collector<shaders>::value;
         
-        // Original constructor
+        // Constructor: takes push constants and shader instances
         ShaderGroup(ShaderPushConstants& pushConstants, Shaders&... shaders) : 
         pushConstants(pushConstants),
         m_shaders{shaders.getShaderInfo()...} 

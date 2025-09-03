@@ -22,101 +22,139 @@ namespace VkZero
 {
     namespace ShaderDetails
     {
+        /**
+         * @brief Checks if any shader bindings have duplicate binding numbers, sets, or counts
+         * @tparam Shaders... Variadic template of shader binding types to check
+         * @return true if duplicates are found, false otherwise
+         */
         template <typename... Shaders>
-        struct has_duplicate_shader_bindings;
+        struct duplicate_binding_checker;
 
+        // Base case: no shaders to check
         template <>
-        struct has_duplicate_shader_bindings<> {
+        struct duplicate_binding_checker<> {
             static constexpr bool value = false;
         };
 
+        // Recursive case: check first shader against all remaining shaders
         template <typename First, typename... Rest>
-        struct has_duplicate_shader_bindings<First, Rest...>
+        struct duplicate_binding_checker<First, Rest...>
         {
             static constexpr bool value = 
-                ((First::get_binding_set() == Rest::get_binding_set() || First::get_binding() == Rest::get_binding() || First::get_binding_count() == Rest::get_binding_count()) || ...) ||
-                has_duplicate_shader_bindings<Rest...>::value;
+                ((First::get_binding_set() == Rest::get_binding_set() || 
+                  First::get_binding() == Rest::get_binding() || 
+                  First::get_binding_count() == Rest::get_binding_count()) || ...) ||
+                duplicate_binding_checker<Rest...>::value;
         };
 
-        template <typename options>
-        struct find_bindings;
+        /**
+         * @brief Searches through a tuple of shader options to find the ShaderBindings type
+         * @tparam OptionsTuple The tuple of shader options to search through
+         * @return The found ShaderBindings type or empty ShaderBindings if none found
+         */
+        template <typename OptionsTuple>
+        struct bindings_extractor;
 
+        // Base case: empty tuple
         template <>
-        struct find_bindings<std::tuple<>>
+        struct bindings_extractor<std::tuple<>>
         {
             using type = ShaderBindings<>;
         };
 
-        // Recursive case: check first element
+        // Recursive case: check first element and continue if not found
         template <typename First, typename... Rest>
-        struct find_bindings<std::tuple<First, Rest...>> {
+        struct bindings_extractor<std::tuple<First, Rest...>> {
         private:
-            // Helper: true if First is a ShaderBindings<...>   
+            /**
+             * @brief Type trait to check if a type is a ShaderBindings template
+             * @tparam T The type to check
+             */
             template <typename T>
-            struct is_shader_bindings : std::false_type {};
+            struct is_bindings_type : std::false_type {};
 
             template <typename... Bs>
-            struct is_shader_bindings<ShaderBindings<Bs...>> : std::true_type {};
+            struct is_bindings_type<ShaderBindings<Bs...>> : std::true_type {};
 
         public:
             using type = std::conditional_t<
-                is_shader_bindings<First>::value,
+                is_bindings_type<First>::value,
                 First,
-                typename find_bindings<std::tuple<Rest...>>::type
+                typename bindings_extractor<std::tuple<Rest...>>::type
             >;
         };
 
-        template <typename options>
-        struct find_attachments;
+        /**
+         * @brief Searches through a tuple of shader options to find the ShaderAttachments type
+         * @tparam OptionsTuple The tuple of shader options to search through
+         * @return The found ShaderAttachments type or empty ShaderAttachments if none found
+         */
+        template <typename OptionsTuple>
+        struct attachments_extractor;
 
+        // Base case: empty tuple
         template <>
-        struct find_attachments<std::tuple<>>
+        struct attachments_extractor<std::tuple<>>
         {
             using type = ShaderAttachments<>;
         };
 
+        // Recursive case: check first element and continue if not found
         template <typename First, typename... Rest>
-        struct find_attachments<std::tuple<First, Rest...>> {
+        struct attachments_extractor<std::tuple<First, Rest...>> {
         private:
-            // Helper: true if First is a ShaderBindings<...>
+            /**
+             * @brief Type trait to check if a type is a ShaderAttachments template
+             * @tparam T The type to check
+             */
             template <typename T>
-            struct is_shader_attachment : std::false_type {};
+            struct is_attachments_type : std::false_type {};
 
             template <typename... Bs>
-            struct is_shader_attachment<ShaderAttachments<Bs...>> : std::true_type {};
+            struct is_attachments_type<ShaderAttachments<Bs...>> : std::true_type {};
 
         public:
             using type = std::conditional_t<
-                is_shader_attachment<First>::value,
+                is_attachments_type<First>::value,
                 First,
-                typename find_attachments<std::tuple<Rest...>>::type
+                typename attachments_extractor<std::tuple<Rest...>>::type
             >;
         };
 
-        template <typename options>
-        struct find_push_constant;
+        /**
+         * @brief Searches through a tuple of shader options to find the ShaderPushConstant type
+         * @tparam OptionsTuple The tuple of shader options to search through
+         * @return The found ShaderPushConstant type or void ShaderPushConstant if none found
+         */
+        template <typename OptionsTuple>
+        struct push_constant_extractor;
 
+        // Base case: empty tuple
         template <>
-        struct find_push_constant<std::tuple<>>
+        struct push_constant_extractor<std::tuple<>>
         {
             using type = ShaderPushConstant<void>;
         };
 
+        // Recursive case: check first element and continue if not found
         template <typename First, typename... Rest>
-        struct find_push_constant<std::tuple<First, Rest...>> {
+        struct push_constant_extractor<std::tuple<First, Rest...>> {
         private:
-            // Helper: true if First is a ShaderBindings<...>   
+            /**
+             * @brief Type trait to check if a type is a ShaderPushConstant template
+             * @tparam T The type to check
+             */
             template <typename T>
-            struct is_shader_push_constant : std::false_type {};
+            struct is_push_constant_type : std::false_type {};
 
             template <typename... Bs>
-            struct is_shader_push_constant<ShaderPushConstant<Bs...>> : std::true_type {};
+            struct is_push_constant_type<ShaderPushConstant<Bs...>> : std::true_type {};
 
         public:
             using type = std::conditional_t<
-                is_shader_push_constant<First>::value,
+                is_push_constant_type<First>::value,
                 First,
-                typename find_push_constant<std::tuple<Rest...>>::type
+                typename push_constant_extractor<std::tuple<Rest...>>::type
             >;
         };
     }
@@ -124,9 +162,9 @@ namespace VkZero
     template <FixedString ShaderName, FixedString Path, ShaderType Type, typename... ShaderOptions>
     class Shader {
     public:
-        using Bindings = ShaderDetails::find_bindings<std::tuple<ShaderOptions...>>::type::Options;
-        using Attachments = ShaderDetails::find_attachments<std::tuple<ShaderOptions...>>::type::Options;
-        using PushConstantType = ShaderDetails::find_push_constant<std::tuple<ShaderOptions...>>::type::Options;
+        using Bindings = ShaderDetails::bindings_extractor<std::tuple<ShaderOptions...>>::type::Options;
+        using Attachments = ShaderDetails::attachments_extractor<std::tuple<ShaderOptions...>>::type::Options;
+        using PushConstantType = ShaderDetails::push_constant_extractor<std::tuple<ShaderOptions...>>::type::Options;
         static constexpr FixedString name = ShaderName.value;
         static constexpr FixedString path = Path.value;
 
@@ -153,7 +191,7 @@ namespace VkZero
     private:
 
         static_assert(std::tuple_size<Attachments>::value > 0 ? Type == SHADER_FRAGMENT : true, "Only fragment shaders can contain attachments");
-        static_assert(!ShaderDetails::has_duplicate_shader_bindings<Bindings>::value, "Shader cannot have duplicate bindings");
+        static_assert(!ShaderDetails::duplicate_binding_checker<Bindings>::value, "Shader cannot have duplicate bindings");
 
         VkShaderModule createShaderModule(VkDevice device,
                                             const std::vector<char> &code) {

@@ -53,7 +53,7 @@ using main_rgen = VkZero::Shader<
   VkZero::ShaderPushConstant<RaytracingPushConstant>
 >;
 
-using GlobalShaderTypes = VkZero::ShaderTypes<
+using GlobalShaderLibrary = VkZero::ShaderLibrary<
   main_vert,
   main_frag,
   main_rmiss,

@@ -12,33 +12,62 @@ namespace VkZero
 {
     namespace ShaderResourceSetDetails
     {
-        template <typename... Shaders>
-        struct has_duplicate_bindings;
+        /**
+         * @brief Checks if any binding types have duplicate binding numbers within a resource set
+         * @tparam Bindings... Variadic template of binding types to check
+         * @return true if duplicates are found, false otherwise
+         * 
+         * This ensures that each binding in a resource set has a unique binding number.
+         * Duplicate binding numbers would cause Vulkan descriptor set creation to fail.
+         */
+        template <typename... Bindings>
+        struct duplicate_binding_number_checker;
 
+        // Base case: no bindings to check
         template <>
-        struct has_duplicate_bindings<> {
+        struct duplicate_binding_number_checker<> {
             static constexpr bool value = false;
         };
 
+        // Recursive case: check first binding against all remaining bindings
         template <typename First, typename... Rest>
-        struct has_duplicate_bindings<First, Rest...>
+        struct duplicate_binding_number_checker<First, Rest...>
         {
             static constexpr bool value = 
                 ((First::get_binding() == Rest::get_binding()) || ...) ||
-                has_duplicate_bindings<Rest...>::value;
+                duplicate_binding_number_checker<Rest...>::value;
         };
     }
 
+    /**
+     * @brief Manages a set of shader resource bindings and their corresponding Vulkan descriptor set
+     * @tparam Bindings... Variadic template of binding types to include in this resource set
+     * 
+     * This class creates and manages a Vulkan descriptor set layout and descriptor sets
+     * for a collection of shader resource bindings. It handles the creation of descriptor
+     * set layouts with proper binding flags and allocates descriptor sets from the global pool.
+     */
     template <typename... Bindings>
     class ShaderResourceSet
     {
-
-        static_assert(!ShaderResourceSetDetails::has_duplicate_bindings<Bindings...>::value, "Shader Resource Set cannot have duplicate bindings!");
+        // Ensure no duplicate binding numbers in this resource set
+        static_assert(!ShaderResourceSetDetails::duplicate_binding_number_checker<Bindings...>::value, 
+                     "Shader Resource Set cannot have duplicate bindings!");
 
     public:
 
         using BindingResources = std::tuple<Bindings...>;
 
+        /**
+         * @brief Constructs a ShaderResourceSet with the given bindings
+         * @param ctx Vulkan context for device access
+         * @param bindings... The binding instances to include in this resource set
+         * 
+         * This constructor:
+         * 1. Creates a descriptor set layout with all the bindings
+         * 2. Allocates descriptor sets from the global descriptor pool
+         * 3. Writes all binding data to the descriptor sets
+         */
         ShaderResourceSet(std::unique_ptr<VulkanContext>& ctx, Bindings&&... bindings) :
         descriptorSetLayout([&]() {
 
@@ -124,6 +153,10 @@ namespace VkZero
         )
         {}
 
+        /**
+         * @brief Gets the Vulkan descriptor set layout for this resource set
+         * @return The VkDescriptorSetLayout handle
+         */
         VkDescriptorSetLayout getLayout() { return descriptorSetLayout; }
 
         VkDescriptorSetLayout descriptorSetLayout;
