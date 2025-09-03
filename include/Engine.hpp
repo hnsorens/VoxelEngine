@@ -6,8 +6,8 @@
 
 static float semiRandomFloat(float x, float y, float z);
 
-const uint32_t WIDTH = 1920 * 4;
-const uint32_t HEIGHT = 1280 * 4;
+const uint32_t WIDTH = 1920;
+const uint32_t HEIGHT = 1280;
 
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920

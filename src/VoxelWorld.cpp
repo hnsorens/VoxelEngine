@@ -27,7 +27,7 @@ VoxelWorld::VoxelWorld(std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL);
   }
 
-  startWorkers(10);
+  startWorkers(30);
   for (int i = 0; i < 512; i++) {
     requestChunk(i, 1.0f);
   }
