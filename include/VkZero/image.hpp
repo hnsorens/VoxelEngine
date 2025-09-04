@@ -73,13 +73,14 @@ namespace VkZero
             }
         }
 
-        void writeDescriptor(VkWriteDescriptorSet& descriptorWrite, int frame) override
+        void writeDescriptor(void* pDescriptorWrite, int frame) override
         {
+            VkWriteDescriptorSet* write = static_cast<VkWriteDescriptorSet*>(pDescriptorWrite);
             frame = std::min(frame, maxImages);
             imageInfos[frame].imageLayout = imageLayout;
             imageInfos[frame].imageView = imageViews[frame];
             imageInfos[frame].sampler = sampler;
-            descriptorWrite.pImageInfo = &imageInfos[frame];
+            write->pImageInfo = &imageInfos[frame];
         }
 
         void changeLayout(VkImageLayout newLayout, uint32_t index)
@@ -130,13 +131,14 @@ namespace VkZero
             ImageImpl::changeLayout(commandBuffer, images[index], format, imageLayout, newLayout, 1);
         }
 
-        void writeDescriptor(VkWriteDescriptorSet& descriptorWrite, int frame) override
+        void writeDescriptor(void* descriptorWrite, int frame) override
         {
+            VkWriteDescriptorSet* write = static_cast<VkWriteDescriptorSet*>(descriptorWrite);
             frame = std::min(frame, maxImages-1);
             imageInfos[frame].imageLayout = imageLayout;
             imageInfos[frame].imageView = imageViews[frame];
             imageInfos[frame].sampler = sampler;
-            descriptorWrite.pImageInfo = &imageInfos[frame];
+            write->pImageInfo = &imageInfos[frame];
         }
 
         void write(char* data, uint32_t index)

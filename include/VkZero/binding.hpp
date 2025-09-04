@@ -62,7 +62,7 @@ namespace VkZero
             descriptorWrite.descriptorType = type();
             descriptorWrite.descriptorCount = 1;
             descriptorWrite.pNext = nullptr;
-            resources[element]->writeDescriptor(descriptorWrite, frame);
+            resources[element]->writeDescriptor(&descriptorWrite, frame);
 
             vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
         }
