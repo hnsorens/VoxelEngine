@@ -270,7 +270,7 @@ AttachmentImage WindowManager::createSwapchainImages() {
         throw std::runtime_error("failed to create image views!");
       }
     }
-    return AttachmentImage(swapChainImages, swapChainImageViews);
+    return AttachmentImage(swapChainImages.data(), swapChainImageViews.data(), swapChainImages.size());
 }
 
 void WindowManager::cleanupSwapChain() {

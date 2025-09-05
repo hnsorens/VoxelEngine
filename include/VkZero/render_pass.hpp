@@ -10,7 +10,7 @@
 #include <vulkan/vulkan_core.h>
 #include "VkZero/fixed_string.hpp"
 #include "VkZero/window.hpp"
-#include "VkZero/image.hpp"
+#include "VkZero/Internal/image_internal.hpp"
 
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920
@@ -72,7 +72,7 @@ namespace VkZero
                             std::tuple_element_t<I, Attachments>::name,
                             std::tuple<Resources...>
                         >()
-                    >(images).resource->imageViews[index]
+                    >(images).resource->images[index]->view
                 ), ...);
             }(std::make_index_sequence<std::tuple_size_v<Attachments>>{});
 
@@ -273,7 +273,7 @@ namespace VkZero
             // framebuffers.resize(numImages);
             
             for (size_t i = 0; i < framebuffers.size(); i++) {
-                VkImageView attachments[] = {window->getSwapChainImages().imageViews[i]};
+                VkImageView attachments[] = {window->getSwapChainImages().images[i]->view};
                 printf("Doibng Cr %d\n", i); fflush(stdout);
                 VkFramebufferCreateInfo framebufferInfo{};
                 framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
