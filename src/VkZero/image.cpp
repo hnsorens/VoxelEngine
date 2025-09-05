@@ -7,27 +7,46 @@
 
 using namespace VkZero;
 
-void ImageImpl::CreateImages(uint32_t width, uint32_t height, uint32_t depth,
-        VkFormat format, VkImageTiling tiling,
+ImageImpl::ImageImpl(uint32_t width, uint32_t height, uint32_t depth,
+        Format format,
         VkImageUsageFlags usage,
         VkMemoryPropertyFlags properties,
-        VkImageLayout initialLayout, size_t imageCount, VkImage* images, VkImageView* imageViews, VkDeviceMemory* deviceMemories, VkSampler* sampler)
+        size_t imageCount, VkImage* images, VkImageView* imageViews, VkDeviceMemory* deviceMemories, VkSampler* sampler)
+{
+    CreateImages(width, height, depth, format, usage, properties, imageCount, images, imageViews, deviceMemories, sampler);
+}
+
+ImageImpl::ImageImpl(uint32_t width, uint32_t height, uint32_t depth,
+        Format format,
+        VkImageUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        size_t imageCount, VkImage* images, VkImageView* imageViews, VkDeviceMemory* deviceMemories, VkSampler* sampler, VkBuffer* stagingBuffers, VkDeviceMemory* stagingBufferDeviceMemory)
+{
+    CreateImages(width, height, depth, format, usage, properties, imageCount, images, imageViews, deviceMemories, sampler);
+    CreateStagingBuffer(width, height, depth, format, stagingBuffers, stagingBufferDeviceMemory, imageCount);
+}
+
+void ImageImpl::CreateImages(uint32_t width, uint32_t height, uint32_t depth,
+        Format format,
+        VkImageUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        size_t imageCount, VkImage* images, VkImageView* imageViews, VkDeviceMemory* deviceMemories, VkSampler* sampler)
 {
     std::unique_ptr<VulkanContext>& ctx = VoxelEngine::vulkanContext;
     for (int i = 0; i < imageCount; i++)
     {
-        // ResourceManager::createImage(ctx->getDevice(), ctx->getPhysicalDevice(), width, height, depth, format, tiling, usage, properties, images[i], deviceMemories[i]);
+        // ResourceManager::createImage(ctx->getDevice(), ctx->getPhysicalDevice(), width, height, depth, format, usage, properties, images[i], deviceMemories[i]);
         VkImageCreateInfo imageCreateInfo = {};
         imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageCreateInfo.imageType = depth > 1 ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
-        imageCreateInfo.format = format;
+        imageCreateInfo.format = (VkFormat)format;
         imageCreateInfo.extent.width = width;
         imageCreateInfo.extent.height = height;
         imageCreateInfo.extent.depth = depth;
         imageCreateInfo.mipLevels = 1;
         imageCreateInfo.arrayLayers = 1;
         imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageCreateInfo.tiling = tiling;
+        imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageCreateInfo.usage = usage;
         imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageCreateInfo.queueFamilyIndexCount = 0;
@@ -67,7 +86,7 @@ void ImageImpl::CreateImages(uint32_t width, uint32_t height, uint32_t depth,
         viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewCreateInfo.image = images[i];
         viewCreateInfo.viewType = depth > 1 ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D;
-        viewCreateInfo.format = format;
+        viewCreateInfo.format = (VkFormat)format;
         viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         viewCreateInfo.subresourceRange.baseMipLevel = 0;
         viewCreateInfo.subresourceRange.levelCount = 1;
@@ -79,7 +98,7 @@ void ImageImpl::CreateImages(uint32_t width, uint32_t height, uint32_t depth,
             throw std::runtime_error("failed to creaet raytracing image view!");
         }
 
-        ResourceManager::transitionImageLayout(VoxelEngine::commandManager, ctx, images[i], format, VK_IMAGE_LAYOUT_UNDEFINED, initialLayout, 1);
+        ResourceManager::transitionImageLayout(VoxelEngine::commandManager, ctx, images[i], (VkFormat)format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
     }
 
     VkSamplerCreateInfo samplerCreateInfo = {};
@@ -105,7 +124,7 @@ void ImageImpl::CreateImages(uint32_t width, uint32_t height, uint32_t depth,
     }
 }
 
-void ImageImpl::CreateStagingBuffer(uint32_t width, uint32_t height, uint32_t depth, VkFormat format, VkBuffer* voxelStagingBuffer, VkDeviceMemory* voxelStagingBufferMemory, size_t imageCount)
+void ImageImpl::CreateStagingBuffer(uint32_t width, uint32_t height, uint32_t depth, Format format, VkBuffer* voxelStagingBuffer, VkDeviceMemory* voxelStagingBufferMemory, size_t imageCount)
 {
     std::unique_ptr<VulkanContext>& ctx = VoxelEngine::vulkanContext;
 
@@ -143,7 +162,7 @@ void ImageImpl::CreateStagingBuffer(uint32_t width, uint32_t height, uint32_t de
     }
 }
 
-void ImageImpl::Write(uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkFormat format, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data)
+void ImageImpl::Write(uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, Format format, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data)
 {
     std::unique_ptr<VulkanContext>& ctx = VoxelEngine::vulkanContext;
     std::unique_ptr<CommandManager>& commandManager = VoxelEngine::commandManager;
@@ -153,7 +172,7 @@ void ImageImpl::Write(uint32_t imageIndex, uint32_t width, uint32_t height, uint
     commandManager->endSingleTimeCommands(ctx, commandBuffer);
 }
 
-void ImageImpl::Write(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, VkFormat format, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data)
+void ImageImpl::Write(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t width, uint32_t height, uint32_t depth, Format format, VkDeviceMemory stagingBufferMemory, VkBuffer stagingBuffer, VkImage image, char* data)
 {
     std::unique_ptr<VulkanContext>& ctx = VoxelEngine::vulkanContext;
     std::unique_ptr<CommandManager>& commandManager = VoxelEngine::commandManager;
@@ -178,7 +197,7 @@ void ImageImpl::Write(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 }
 
-void ImageImpl::changeLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels)
+void ImageImpl::changeLayout(VkImage image, Format format, ImageLayout oldLayout, ImageLayout newLayout, int mipLevels)
 {
     std::unique_ptr<VulkanContext>& ctx = VoxelEngine::vulkanContext;
     std::unique_ptr<CommandManager>& commandManager = VoxelEngine::commandManager;
@@ -188,7 +207,28 @@ void ImageImpl::changeLayout(VkImage image, VkFormat format, VkImageLayout oldLa
     commandManager->endSingleTimeCommands(ctx, commandBuffer);
 }
 
-void ImageImpl::changeLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels)
+void ImageImpl::changeLayout(VkCommandBuffer commandBuffer, VkImage image, Format format, ImageLayout oldLayout, ImageLayout newLayout, int mipLevels)
 {
-    ResourceManager::transitionImageLayout(commandBuffer, image, format, oldLayout, newLayout, mipLevels);
+    ResourceManager::transitionImageLayout(commandBuffer, image, (VkFormat)format, (VkImageLayout)oldLayout, (VkImageLayout)newLayout, mipLevels);
+}
+
+void ImageImpl::WriteDescriptor(VkDevice device, VkDescriptorSet descriptorSet, uint32_t binding, uint32_t element, VkDescriptorType type, VkImageLayout imageLayout, VkImageView imageView, VkSampler sampler)
+{
+    VkWriteDescriptorSet descriptorWrite;
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = descriptorSet;
+    descriptorWrite.dstBinding = binding;
+    descriptorWrite.dstArrayElement = element;
+    descriptorWrite.descriptorType = type;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pNext = nullptr;
+
+    VkDescriptorImageInfo imageInfo;
+    imageInfo.imageLayout = imageLayout;
+    imageInfo.imageView = imageView;
+    imageInfo.sampler = sampler;
+    
+    descriptorWrite.pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 }

@@ -54,17 +54,7 @@ namespace VkZero
 
         void write(VkDevice device, VkDescriptorSet& descriptorSet, int element, int frame)
         {
-            VkWriteDescriptorSet descriptorWrite;
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = descriptorSet;
-            descriptorWrite.dstBinding = get_binding();
-            descriptorWrite.dstArrayElement = element;
-            descriptorWrite.descriptorType = type();
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pNext = nullptr;
-            resources[element]->writeDescriptor(&descriptorWrite, frame);
-
-            vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+            resources[element]->writeDescriptor(device, descriptorSet, get_binding(), element, type(), frame);
         }
 
         Resource* resources[DescriptorCount];

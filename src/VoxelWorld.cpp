@@ -13,18 +13,18 @@
 VoxelWorld::VoxelWorld(std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
                        std::unique_ptr<CommandManager> &commandManager) : 
     voxelChunkMapImage{8, 8, 8,
-        VK_FORMAT_R16_UINT, VK_IMAGE_TILING_OPTIMAL,
+        VkZero::Format::R16Uint,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL} 
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT} 
   {
   chunkPosition = glm::ivec3(0, 0, 0);
   noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
 
   for (int i = 0; i < 512; i++) {
     voxelImages.emplace_back(128, 128, 128,
-      VK_FORMAT_R8_UINT, VK_IMAGE_TILING_OPTIMAL,
+      VkZero::Format::R8Uint,
       VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
-      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_LAYOUT_GENERAL);
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
   }
 
   startWorkers(30);
@@ -201,7 +201,7 @@ void VoxelWorld::updateVoxelChunkMap(int modValue, int offset) {
 void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,
                               std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
                               int currentImage) {
-  voxelChunkMapImage.changeLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0);
+  voxelChunkMapImage.changeLayout(commandBuffer, VkZero::ImageLayout::TransferDstOptimal, 0);
 
   for (int i = 0; i < 16; i++) {
     if (chunkUpdateQueue[0] == 0) {
@@ -210,16 +210,15 @@ void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,
 
     uint16_t ID = chunkUpdateQueue[chunkUpdateQueue[0]--];
 
-
-    voxelImages[ID].changeLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0);
+    voxelImages[ID].changeLayout(commandBuffer, VkZero::ImageLayout::TransferDstOptimal, 0);
     voxelImages[ID].write(commandBuffer, (char*)voxelData[ID].data, 0);
-    voxelImages[ID].changeLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL, 0);
+    voxelImages[ID].changeLayout(commandBuffer, VkZero::ImageLayout::General, 0);
   }
 
   //TODO I need to change the format sizing in the write for this since its 16 instead of 8
   // voxelChunkMapImage is a StagedSharedImage with only 1 image, so index must be 0
   voxelChunkMapImage.write(commandBuffer, (char*)voxelChunkMapData, 0);
-  voxelChunkMapImage.changeLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL, 0);
+  voxelChunkMapImage.changeLayout(commandBuffer, VkZero::ImageLayout::General, 0);
 }
 void VoxelWorld::chunkWorker() {
   while (!stopThreads) {

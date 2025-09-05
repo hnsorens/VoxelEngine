@@ -24,10 +24,10 @@ namespace VkZero
     class RenderPassResource
     {
     public:
-        RenderPassResource(class AttachmentImage* image) : resource{image} {}
+        RenderPassResource(AttachmentImage* image) : resource{image} {}
 
         static constexpr FixedString name = Name.value;
-        class AttachmentImage* resource;
+        AttachmentImage* resource;
     };
 
     namespace RenderPassResourceSetDetails
