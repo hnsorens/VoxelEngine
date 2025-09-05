@@ -196,7 +196,9 @@ namespace VkZero
     {
     public:
 
-        ShaderGroupImpl(std::vector<VkPipelineShaderStageCreateInfo> createInfos, std::vector<VkPushConstantRange>& ranges) : m_shaders{createInfos}, m_ranges(ranges) {}
+        ShaderGroupImpl(std::vector<VkPipelineShaderStageCreateInfo> createInfos, std::vector<VkPushConstantRange>& ranges) : m_shaders{createInfos}, m_ranges(ranges) 
+        {
+        }
         std::vector<VkPipelineShaderStageCreateInfo> m_shaders;
         std::vector<VkPushConstantRange>& m_ranges;
     };
@@ -216,6 +218,6 @@ namespace VkZero
         // Constructor: takes push constants and shader instances
         ShaderGroup(ShaderPushConstants& pushConstants, Shaders&... shaders) : 
         ShaderGroupImpl({shaders.impl->shaderInfo...}, pushConstants.ranges) 
-        {}
+        {  }
     };
 }

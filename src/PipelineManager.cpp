@@ -20,7 +20,6 @@ PipelineManager::PipelineManager(std::unique_ptr<Raytracer> &raytracer,
     renderPass{window->getSwapChainExtent().width, window->getSwapChainExtent().height, set2, something}
   {
 
-    printf("pipeline: %d\n", something.pipeline);
     // pipeline = something.pipeline;
     // pipelineLayout = something.pipelineLayout;
     // renderpass = renderPass.renderPass;
@@ -29,7 +28,6 @@ PipelineManager::PipelineManager(std::unique_ptr<Raytracer> &raytracer,
 
         for (auto& s : framebuffers)
         {
-            printf("frame: %d\n", s);
             fflush(stdout);
         }
 }

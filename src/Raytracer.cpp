@@ -83,10 +83,9 @@ void Raytracer::createRaytracingPipeline(
     VkZero::StagedSharedImage* voxelChunkMapImage) {
 
     raytracingPipeline = something.pipeline;
-    printf("RAY PIPELINE : %d\n", something.pipeline); fflush(stdout);
     raytracingPipelineLayout = something.pipelineLayout;
-    raytracingDescriptorSetLayout = set1.getLayout();
-    raytracingDescriptorSets = set1.descriptorSets;
+    raytracingDescriptorSetLayout = set1.impl->descriptorSetLayout;
+    raytracingDescriptorSets = set1.impl->descriptorSets;
     for (int i = 0; i < 2; i++)
     {
 

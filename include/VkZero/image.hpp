@@ -44,7 +44,7 @@ namespace VkZero
     };
 
     template <int MaxImageCount>
-    class ImageBase : BindResource, Image
+    class ImageBase : public BindResource, Image
     {
     public:
         ImageBase(uint32_t width, uint32_t height, uint32_t depth,
@@ -78,7 +78,7 @@ namespace VkZero
     };
 
     template <int MaxImageCount>
-    class StagedImageBase : BindResource, Image
+    class StagedImageBase : public BindResource, Image
     {
     public:
         StagedImageBase(uint32_t width, uint32_t height, uint32_t depth,

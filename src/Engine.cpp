@@ -46,14 +46,11 @@ void VoxelEngine::initVulkan() {
     commandManager = std::make_unique<CommandManager>();
 
     createCommandBuffers();
-
     voxelWorld = std::make_unique<VoxelWorld>(commandManager);
-
     raytracer = std::make_unique<Raytracer>(commandManager,
                                             voxelWorld, camera);
     pipelineManager =
         std::make_unique<PipelineManager>(raytracer, Window);
-
     syncManager = std::make_unique<SyncManager>();
 }
 

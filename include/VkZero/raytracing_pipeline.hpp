@@ -32,7 +32,7 @@ namespace VkZero
 
             std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
 
-            (descriptorSetLayouts.push_back(resources.getLayout()), ...);
+            (descriptorSetLayouts.push_back(resources.impl->descriptorSetLayout), ...);
 
             VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
             pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -189,7 +189,7 @@ namespace VkZero
                 vkCmdBindDescriptorSets(
                     commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
                     pipelineLayout, 0, 1,
-                    &resource.descriptorSets[currentFrame], 0, nullptr);
+                    &resource.impl->descriptorSets[currentFrame], 0, nullptr);
             }, resources);
         }
 

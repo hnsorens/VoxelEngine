@@ -7,6 +7,7 @@
 
 namespace VkZero
 {
+
     template <typename Resource, VkDescriptorType ResourceType, int BindingSet, int Binding, int DescriptorCount>
     struct ShaderBinding
     {
@@ -18,27 +19,24 @@ namespace VkZero
         static constexpr int get_descriptor_count() { return DescriptorCount; }
     };
 
-    template <typename Resource, VkDescriptorType ResourceType, int Stages, int Binding, int DescriptorCount>
-    struct ResourceBinding
+    struct ResourceBindingBase
     {
-        using resourceType = Resource*;
-        static constexpr int get_stages() { return Stages; }
-        static constexpr VkDescriptorType type() { return ResourceType; }
-        static constexpr int get_binding() { return Binding; }
-        static constexpr int get_descriptor_count() { return DescriptorCount; }
-
-        ResourceBinding(Resource* info)
+    public:
+        ResourceBindingBase(std::vector<BindResource*> resources, VkDescriptorType type, uint32_t descriptorCount, uint32_t binding, VkShaderStageFlags stages) : resources(resources), descriptorCount(descriptorCount), type(type), binding(binding), stages(stages)
         {
-            for (int i = 0; i < DescriptorCount; i++)
-            {
-                resources[i] = &info[i];
-            }
+
         }
+
+        std::vector<BindResource*> resources;
+        VkDescriptorType type;
+        VkShaderStageFlags stages;
+        uint32_t descriptorCount;
+        uint32_t binding;
 
         void writeAll(VkDevice device, std::vector<VkDescriptorSet> descriptorSets)
         {
-            if (ResourceType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) return;
-            for (int i = 0; i < DescriptorCount; i++)
+            if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) return;
+            for (int i = 0; i < descriptorCount; i++)
             {
                 for (int frame = 0; frame < descriptorSets.size(); frame++)
                 write(device, descriptorSets[frame], i, frame);
@@ -47,24 +45,34 @@ namespace VkZero
 
         void write(VkDevice device, VkDescriptorSet& descriptorSet, int element, int frame)
         {
-            resources[element]->writeDescriptor(device, descriptorSet, get_binding(), element, type(), frame);
+            resources[element]->writeDescriptor(device, descriptorSet, binding, element, type, frame);
         }
-
-        Resource* resources[DescriptorCount];
     };
 
+    template <typename Resource, VkDescriptorType ResourceType, int Stages, int Binding, int DescriptorCount>
+    struct ResourceBinding : public ResourceBindingBase
+    {
+        using resourceType = Resource*;
+        static constexpr int get_stages() { return Stages; }
+        static constexpr VkDescriptorType type() { return ResourceType; }
+        static constexpr int get_binding() { return Binding; }
+        static constexpr int get_descriptor_count() { return DescriptorCount; }
 
+        template<std::size_t... Is>
+        static constexpr auto create_init_list(Resource* info, std::index_sequence<Is...>) {
+            return std::initializer_list<BindResource*>{static_cast<BindResource*>(&info[Is])...};
+        }
 
-
-
-
-
-
-
-
-
-
-
+        ResourceBinding(Resource* info) : 
+        ResourceBindingBase([&](){
+            std::vector<BindResource*> bindings;
+            for (int i = 0; i < DescriptorCount; ++i)
+            {
+                bindings.push_back(&info[i]);
+            }
+            return std::move(bindings);
+        }(), ResourceType, DescriptorCount, Binding, Stages) {}
+    };
 
 
 

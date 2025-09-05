@@ -274,7 +274,6 @@ namespace VkZero
             
             for (size_t i = 0; i < framebuffers.size(); i++) {
                 VkImageView attachments[] = {window->getSwapChainImages().images[i]->view};
-                printf("Doibng Cr %d\n", i); fflush(stdout);
                 VkFramebufferCreateInfo framebufferInfo{};
                 framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
                 framebufferInfo.renderPass = renderPass;
@@ -289,7 +288,6 @@ namespace VkZero
                     throw std::runtime_error("failed to create framebuffer!");
                 }
             }
-            printf("Finished REcreation\n"); fflush(stdout);
         }
         
         const std::vector<VkFramebuffer>& getFramebuffers() const { return framebuffers; }
@@ -462,7 +460,6 @@ namespace VkZero
                                         &framebuffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create framebuffer!");
                 }
-                printf("Created Framebuffer\n");
             }
         }
 

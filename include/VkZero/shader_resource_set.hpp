@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VkZero/Internal/core_internal.hpp"
+#include "VkZero/binding.hpp"
 #include "VkZero/descriptor_pool.hpp"
 #include "VkZero/info.hpp"
 #include <vulkan/vulkan_core.h>
@@ -40,52 +41,24 @@ namespace VkZero
         };
     }
 
-    /**
-     * @brief Manages a set of shader resource bindings and their corresponding Vulkan descriptor set
-     * @tparam Bindings... Variadic template of binding types to include in this resource set
-     * 
-     * This class creates and manages a Vulkan descriptor set layout and descriptor sets
-     * for a collection of shader resource bindings. It handles the creation of descriptor
-     * set layouts with proper binding flags and allocates descriptor sets from the global pool.
-     */
-    template <typename... Bindings>
-    class ShaderResourceSet
+    struct ShaderResourceSetImpl_T
     {
-        // Ensure no duplicate binding numbers in this resource set
-        static_assert(!ShaderResourceSetDetails::duplicate_binding_number_checker<Bindings...>::value, 
-                     "Shader Resource Set cannot have duplicate bindings!");
-
     public:
-
-        using BindingResources = std::tuple<Bindings...>;
-
-        /**
-         * @brief Constructs a ShaderResourceSet with the given bindings
-         * @param bindings... The binding instances to include in this resource set
-         * 
-         * This constructor:
-         * 1. Creates a descriptor set layout with all the bindings
-         * 2. Allocates descriptor sets from the global descriptor pool
-         * 3. Writes all binding data to the descriptor sets
-         */
-        ShaderResourceSet(Bindings&&... bindings) :
+        ShaderResourceSetImpl_T(std::vector<ResourceBindingBase*> bindings) :
         descriptorSetLayout([&]() {
 
             std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
 
-            // Fold expression over Bindings...
-            (void(
-                [&] {
-                    using BindingType = Bindings;
-                    VkDescriptorSetLayoutBinding bindInfo{};
-                    bindInfo.binding = BindingType::get_binding();
-                    bindInfo.descriptorCount = BindingType::get_descriptor_count();
-                    bindInfo.descriptorType = BindingType::type();
-                    bindInfo.stageFlags = BindingType::get_stages();
-                    bindInfo.pImmutableSamplers = nullptr;
-                    descriptorBindings.push_back(bindInfo);
-                }()
-            ), ...); // this iterates over each Binding type
+            for (auto& binding : bindings)
+            {
+                VkDescriptorSetLayoutBinding bindInfo{};
+                bindInfo.binding = binding->binding;
+                bindInfo.descriptorCount = binding->descriptorCount;
+                bindInfo.descriptorType = binding->type;
+                bindInfo.stageFlags = binding->stages;
+                bindInfo.pImmutableSamplers = nullptr;
+                descriptorBindings.push_back(bindInfo);
+            }
 
             VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
             descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -101,19 +74,16 @@ namespace VkZero
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
             std::vector<VkDescriptorBindingFlags> flags;
 
-            (void(
-                [&] {
-                    using BindingType = Bindings;
-
-                    if (BindingType::get_descriptor_count() > 1)
-                    {
-                        flags.push_back(bindless_flags);
-                    }
-                    else {
-                        flags.push_back(0);
-                    }
-                }()
-            ), ...); // this iterates over each Binding type
+            for (auto& binding : bindings)
+            {
+                if (binding->descriptorCount > 1)
+                {
+                    flags.push_back(bindless_flags);
+                }
+                else {
+                    flags.push_back(0);
+                }
+            }
 
             VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extended_info{
                 VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
@@ -144,23 +114,60 @@ namespace VkZero
             }
 
             return std::move(descriptorSets);
-        }()),
-        bindings(
-            ([&](auto&& b) {
-                b.writeAll(vkZero_core->device, descriptorSets);
-                return std::move(b);
-            }(std::forward<Bindings>(bindings)))...
-        )
-        {}
+        }())
+        {
+            for (auto& binding : bindings)
+            {
+                binding->writeAll(vkZero_core->device, descriptorSets);
+            }
+        }
 
-        /**
-         * @brief Gets the Vulkan descriptor set layout for this resource set
-         * @return The VkDescriptorSetLayout handle
-         */
-        VkDescriptorSetLayout getLayout() { return descriptorSetLayout; }
-
+        std::vector<ResourceBindingBase*> bindings;
         VkDescriptorSetLayout descriptorSetLayout;
         std::vector<VkDescriptorSet> descriptorSets;
-        std::tuple<Bindings...> bindings;
+    };
+
+    struct ShaderResourceSetBase
+    {
+    public:
+        ShaderResourceSetBase(std::vector<ResourceBindingBase*> bindings)
+        {
+            impl = new ShaderResourceSetImpl_T(bindings);
+        }
+
+        ShaderResourceSetImpl_T* impl;
+    };
+
+    /**
+     * @brief Manages a set of shader resource bindings and their corresponding Vulkan descriptor set
+     * @tparam Bindings... Variadic template of binding types to include in this resource set
+     * 
+     * This class creates and manages a Vulkan descriptor set layout and descriptor sets
+     * for a collection of shader resource bindings. It handles the creation of descriptor
+     * set layouts with proper binding flags and allocates descriptor sets from the global pool.
+     */
+    template <typename... Bindings>
+    class ShaderResourceSet : public ShaderResourceSetBase
+    {
+        // Ensure no duplicate binding numbers in this resource set
+        static_assert(!ShaderResourceSetDetails::duplicate_binding_number_checker<Bindings...>::value, 
+                     "Shader Resource Set cannot have duplicate bindings!");
+
+    public:
+
+        using BindingResources = std::tuple<Bindings...>;
+
+        /**
+         * @brief Constructs a ShaderResourceSet with the given bindings
+         * @param bindings... The binding instances to include in this resource set
+         * 
+         * This constructor:
+         * 1. Creates a descriptor set layout with all the bindings
+         * 2. Allocates descriptor sets from the global descriptor pool
+         * 3. Writes all binding data to the descriptor sets
+         */
+        ShaderResourceSet(Bindings&&... bindings) : ShaderResourceSetBase({&bindings...}) 
+        {
+        }
     };
 }
