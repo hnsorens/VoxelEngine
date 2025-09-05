@@ -4,7 +4,6 @@
 #include <cstring>
 #include <type_traits>
 #include <vector>
-#include <vulkan/vulkan_core.h>
 
 namespace VkZero
 {
@@ -17,11 +16,6 @@ namespace VkZero
         static constexpr int get_binding_set() { return BindingSet; }
         static constexpr int get_binding() { return Binding; }
         static constexpr int get_descriptor_count() { return DescriptorCount; }
-
-        ShaderBinding()
-        {
-
-        }
     };
 
     template <typename Resource, VkDescriptorType ResourceType, int Stages, int Binding, int DescriptorCount>

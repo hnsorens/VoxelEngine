@@ -19,7 +19,7 @@ namespace VkZero
     template <typename ShaderGroup, typename... ShaderResourcesBindings>
     class RaytracingPipeline
     {
-        static_assert(graphics_pipeline_validator<ShaderGroup, ShaderResourcesBindings...>::value, "Graphics Pipeline Invalid");
+        static_assert(PipelineDetails::graphics_pipeline_validator<ShaderGroup, ShaderResourcesBindings...>, "Graphics Pipeline Invalid");
 
     public:
 
