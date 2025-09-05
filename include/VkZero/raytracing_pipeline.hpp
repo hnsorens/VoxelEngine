@@ -41,8 +41,8 @@ namespace VkZero
 
             VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 
-            pipelineLayoutInfo.pPushConstantRanges = m_shaderGroup.pushConstants.ranges.data();
-            pipelineLayoutInfo.pushConstantRangeCount = m_shaderGroup.pushConstants.ranges.size();
+            pipelineLayoutInfo.pPushConstantRanges = m_shaderGroup.m_ranges.data();
+            pipelineLayoutInfo.pushConstantRangeCount = m_shaderGroup.m_ranges.size();
 
             VkPipelineLayout layout;
             if (vkCreatePipelineLayout(vkZero_core->device, &pipelineLayoutInfo, nullptr,
@@ -74,8 +74,8 @@ namespace VkZero
             
             pipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
             // TODO save the shader arrays, so if it goes out of scope the references are still there
-            pipelineInfo.stageCount = m_shaderGroup.size();
-            pipelineInfo.pStages = m_shaderGroup.data();
+            pipelineInfo.stageCount = m_shaderGroup.m_shaders.size();
+            pipelineInfo.pStages = m_shaderGroup.m_shaders.data();
             pipelineInfo.groupCount = 2;
             pipelineInfo.pGroups = shaderGroups;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -89,9 +89,6 @@ namespace VkZero
                                                 &pipeline) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to create raytracing pipeline!");
             }
-
-            // Frees all memory in shader group because it cannot be used anymore
-            ShaderGroup group = std::move(m_shaderGroup);
 
             VkPhysicalDeviceProperties2 deviceProperties2 = {};
             deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -171,7 +168,7 @@ namespace VkZero
             callableRegion = {};
         }
         
-        ShaderGroup m_shaderGroup;
+        ShaderGroupImpl m_shaderGroup;
         VkRayTracingPipelineCreateInfoKHR pipelineInfo{};
         VkPipelineLayout pipelineLayout;
         VkPipeline pipeline = VK_NULL_HANDLE;

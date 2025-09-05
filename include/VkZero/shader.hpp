@@ -158,9 +158,16 @@ namespace VkZero
             >;
         };
     }
+    class ShaderBase
+    {
+    public:
+        ShaderBase(std::string path, VkShaderStageFlagBits type);
+
+        struct ShaderImpl_T* impl;
+    };
 
     template <FixedString ShaderName, FixedString Path, ShaderType Type, typename... ShaderOptions>
-    class Shader {
+    class Shader : public ShaderBase{
     public:
         using Bindings = ShaderDetails::bindings_extractor<std::tuple<ShaderOptions...>>::type::Options;
         using Attachments = ShaderDetails::attachments_extractor<std::tuple<ShaderOptions...>>::type::Options;
@@ -170,46 +177,14 @@ namespace VkZero
 
         using BindingsList = Bindings;
 
-        Shader() 
-        {
-            auto shaderCode = ResourceManager::readFile(std::string{path.value});
-
-            shaderModule = createShaderModule(vkZero_core->device, shaderCode);
-
-            shaderInfo.sType =
-                VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            shaderInfo.stage = (VkShaderStageFlagBits)Type;
-            shaderInfo.module = shaderModule;
-            shaderInfo.pName = "main";
-            shaderInfo.flags = 0;
-        }
-
+        Shader() : ShaderBase(std::string{path.value}, (VkShaderStageFlagBits)Type) {}
         static constexpr ShaderType get_type() { return Type; }
-
-        VkPipelineShaderStageCreateInfo getShaderInfo() { return shaderInfo; }
         
     private:
 
         static_assert(std::tuple_size<Attachments>::value > 0 ? Type == SHADER_FRAGMENT : true, "Only fragment shaders can contain attachments");
         static_assert(!ShaderDetails::duplicate_binding_checker<Bindings>::value, "Shader cannot have duplicate bindings");
 
-        VkShaderModule createShaderModule(VkDevice device,
-                                            const std::vector<char> &code) {
-            VkShaderModuleCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-            createInfo.codeSize = code.size();
-            createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
-            VkShaderModule shaderModule;
-            if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) !=
-                VK_SUCCESS) {
-            throw std::runtime_error("failed to create shader module!");
-            }
-
-            return shaderModule;
-        }
-
-        VkShaderModule shaderModule;
-        VkPipelineShaderStageCreateInfo shaderInfo {};
     };
 }

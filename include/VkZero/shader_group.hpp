@@ -4,6 +4,7 @@
 #include <vulkan/vulkan_core.h>
 #include <vector>
 #include <tuple>
+#include "VkZero/Internal/shader_internal.hpp"
 
 namespace VkZero
 {
@@ -191,16 +192,17 @@ namespace VkZero
         friend class ShaderGroup;
     };
 
-    /**
-     * @brief Groups multiple shaders together for pipeline creation
-     * @tparam ShaderPushConstants The push constants type for this shader group
-     * @tparam Shaders... Variadic template of shader types to group together
-     * 
-     * A shader group validates that all shaders have compatible bindings and
-     * provides a unified interface for pipeline creation.
-     */
+    struct ShaderGroupImpl
+    {
+    public:
+
+        ShaderGroupImpl(std::vector<VkPipelineShaderStageCreateInfo> createInfos, std::vector<VkPushConstantRange> ranges) : m_shaders{createInfos} {}
+        std::vector<VkPipelineShaderStageCreateInfo> m_shaders;
+        std::vector<VkPushConstantRange> m_ranges;
+    };
+
     template <typename ShaderPushConstants, typename... Shaders>
-    class ShaderGroup
+    class ShaderGroup : public ShaderGroupImpl
     {
         // Validate that all shader bindings are compatible
         static_assert(ShaderGroupDetails::shader_binding_validator<Shaders...>::value,
@@ -213,27 +215,7 @@ namespace VkZero
         
         // Constructor: takes push constants and shader instances
         ShaderGroup(ShaderPushConstants& pushConstants, Shaders&... shaders) : 
-        pushConstants(pushConstants),
-        m_shaders{shaders.getShaderInfo()...} 
+        ShaderGroupImpl({shaders.impl->shaderInfo...}, {pushConstants.ranges}) 
         {}
-
-        size_t size()
-        {
-            return m_shaders.size();
-        }
-
-        VkPipelineShaderStageCreateInfo* data()
-        {
-            return m_shaders.data();
-        }
-        
-    private:
-        ShaderPushConstants& pushConstants;
-        std::vector<VkPipelineShaderStageCreateInfo> m_shaders;
-
-        template <typename ShaderGroup, typename... ResourceSets>
-        friend class RaytracingPipeline;
-        template <typename ShaderGroup, typename... ResourceSets>
-        friend class GraphicsPipeline;
     };
 }
