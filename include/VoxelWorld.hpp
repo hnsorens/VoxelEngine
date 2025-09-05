@@ -29,11 +29,6 @@
 #define MAT_IS_STONE(mat) ((mat) >= MAT_STONE && (mat) <= MAT_STONE3)
 #define MAT_HAS_COLLISION(mat) ((mat) > MAT_AIR && (mat) < MAT_FLOWER)
 
-namespace VkZero
-{
-  class VulkanContext;
-}
-
 class VoxelWorld {
 public:
   struct VoxelChunk {
@@ -42,8 +37,7 @@ public:
     bool inQueue;
   };
 
-  VoxelWorld(std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
-             std::unique_ptr<class CommandManager> &commandManager);
+  VoxelWorld(std::unique_ptr<class CommandManager> &commandManager);
   ~VoxelWorld();
 
   void generateTerrain();
@@ -53,7 +47,6 @@ public:
   void sortChunks();
   void updateVoxelChunkMap(int modValue, int offset);
   void updateVoxels(VkCommandBuffer commandBuffer,
-                    std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
                     int currentImage);
   void chunkWorker();
   void generateChunk(VoxelChunk &chunk);

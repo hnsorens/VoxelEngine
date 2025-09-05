@@ -3,6 +3,7 @@
 #include "PipelineManager.hpp"
 #include "Raytracer.hpp"
 #include "SyncManager.hpp"
+#include "VkZero/Internal/core_internal.hpp"
 #include "VoxelWorld.hpp"
 #include "VkZero/Internal/window_internal.hpp"
 #include "shaders.hpp"
@@ -14,7 +15,6 @@
 
 // Static member definitions
 std::unique_ptr<VkZero::Window> VoxelEngine::Window;
-std::unique_ptr<VkZero::VulkanContext> VoxelEngine::vulkanContext;
 std::unique_ptr<SyncManager> VoxelEngine::syncManager;
 std::unique_ptr<CommandManager> VoxelEngine::commandManager;
 std::unique_ptr<PipelineManager> VoxelEngine::pipelineManager;
@@ -37,25 +37,24 @@ void VoxelEngine::initWindow() {
 }
 
 void VoxelEngine::initVulkan() {
-    
-    vulkanContext = std::make_unique<VkZero::VulkanContext>();
-    Window = std::make_unique<VkZero::Window>(vulkanContext, WIDTH, HEIGHT, "Voxel Engine");
+    VkZero::vkZero_core = new VkZero::VkZeroCoreImpl_T();
+    Window = std::make_unique<VkZero::Window>(WIDTH, HEIGHT, "Voxel Engine");
 
-    shaders = std::make_unique<GlobalShaderLibrary>(vulkanContext);
+    shaders = std::make_unique<GlobalShaderLibrary>();
 
-    camera = std::make_unique<Camera>(vulkanContext, Window);
-    commandManager = std::make_unique<CommandManager>(vulkanContext);
+    camera = std::make_unique<Camera>(Window);
+    commandManager = std::make_unique<CommandManager>();
 
     createCommandBuffers();
 
-    voxelWorld = std::make_unique<VoxelWorld>(vulkanContext, commandManager);
+    voxelWorld = std::make_unique<VoxelWorld>(commandManager);
 
-    raytracer = std::make_unique<Raytracer>(commandManager, vulkanContext,
+    raytracer = std::make_unique<Raytracer>(commandManager,
                                             voxelWorld, camera);
     pipelineManager =
-        std::make_unique<PipelineManager>(vulkanContext, raytracer, Window);
+        std::make_unique<PipelineManager>(raytracer, Window);
 
-    syncManager = std::make_unique<SyncManager>(vulkanContext);
+    syncManager = std::make_unique<SyncManager>();
 }
 
 void VoxelEngine::mainLoop() {
@@ -103,7 +102,7 @@ void VoxelEngine::mainLoop() {
     }
 
     std::cout << "Shutting down..." << std::endl;
-    vkDeviceWaitIdle(vulkanContext->getDevice());
+    vkDeviceWaitIdle(VkZero::vkZero_core->device);
 }
 
 
@@ -182,7 +181,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     raytracingAllocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT; // Use constant directly
 
     if (vkAllocateCommandBuffers(
-            vulkanContext->getDevice(), &raytracingAllocInfo,
+            VkZero::vkZero_core->device, &raytracingAllocInfo,
             raytracingCommandBuffers.data()) != VK_SUCCESS) {
       throw std::runtime_error("failed to allocate command buffers!");
     }
@@ -232,7 +231,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
 
   void VoxelEngine::drawFrame() {
     // Wait for the previous frame to finish with a timeout
-    VkResult fenceResult = vkWaitForFences(vulkanContext->getDevice(), 1,
+    VkResult fenceResult = vkWaitForFences(VkZero::vkZero_core->device, 1,
                     &syncManager->getInFlightFences()[currentFrame], VK_TRUE,
                     1000000000); // 1 second timeout
     
@@ -243,18 +242,18 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     camera->update(Window, voxelWorld, currentFrame);
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(
-        vulkanContext->getDevice(), Window->impl->getSwapChain(), UINT64_MAX,
+        VkZero::vkZero_core->device, Window->impl->getSwapChain(), UINT64_MAX,
         syncManager->getImageAvailableSemaphores()[currentFrame],
         VK_NULL_HANDLE, &imageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-      Window->impl->recreateSwapchain(vulkanContext);
-      pipelineManager->recreateFramebuffers(vulkanContext, Window);
+      Window->impl->recreateSwapchain();
+      pipelineManager->recreateFramebuffers(Window);
       return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
       throw std::runtime_error("failed to acquire swap chain image!");
     }
-    vkResetFences(vulkanContext->getDevice(), 1,
+    vkResetFences(VkZero::vkZero_core->device, 1,
                   &syncManager->getInFlightFences()[currentFrame]);
 
     VkCommandBufferBeginInfo beginInfo = {};
@@ -282,7 +281,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     }
 
     raytracer->renderPass.record(raytracingCommandBuffers[currentFrame], currentFrame, imageIndex);
-    voxelWorld->updateVoxels(raytracingCommandBuffers[currentFrame], vulkanContext, currentFrame);
+    voxelWorld->updateVoxels(raytracingCommandBuffers[currentFrame], currentFrame);
 
     if (vkEndCommandBuffer(raytracingCommandBuffers[currentFrame]) != VK_SUCCESS) {
         throw std::runtime_error("failed to record raytracing command buffer!");
@@ -314,7 +313,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(vulkanContext->getGraphicsQueue(), 1, &submitInfo,
+    if (vkQueueSubmit(VkZero::vkZero_core->graphicsQueue, 1, &submitInfo,
                       syncManager->getInFlightFences()[currentFrame]) !=
         VK_SUCCESS) {
       throw std::runtime_error("failed to submit draw command buffer!");
@@ -331,13 +330,13 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
 
     presentInfo.pImageIndices = &imageIndex;
 
-    result = vkQueuePresentKHR(vulkanContext->getPresentQueue(), &presentInfo);
+    result = vkQueuePresentKHR(VkZero::vkZero_core->presentQueue, &presentInfo);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
         Window->impl->framebufferResized) {
       Window->impl->framebufferResized = false;
       std::cout << "Recreating swapchain..." << std::endl;
-      Window->impl->recreateSwapchain(vulkanContext);
-      pipelineManager->recreateFramebuffers(vulkanContext, Window);
+      Window->impl->recreateSwapchain();
+      pipelineManager->recreateFramebuffers(Window);
       // Add a small delay to prevent excessive recreation
       std::this_thread::sleep_for(std::chrono::milliseconds(16));
     } else if (result != VK_SUCCESS) {

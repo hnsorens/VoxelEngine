@@ -7,14 +7,12 @@
 
 namespace VkZero
 {
-  class VulkanContext;
   class Window;
 }
 
 class PipelineManager {
 public:
-  PipelineManager(std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
-                  std::unique_ptr<class Raytracer> &raytracer, std::unique_ptr<VkZero::Window>& window);
+  PipelineManager(std::unique_ptr<class Raytracer> &raytracer, std::unique_ptr<VkZero::Window>& window);
   ~PipelineManager();
 
   void createGraphicsPipeline(VkDevice device, VkRenderPass renderPass,
@@ -25,7 +23,7 @@ public:
   const VkRenderPass &getRenderPass() const;
   const VkFramebuffer getFrameBuffer(int i) const { return framebuffers[i]; }
   
-  void recreateFramebuffers(std::unique_ptr<VkZero::VulkanContext>& vulkanContext, std::unique_ptr<VkZero::Window>& window);
+  void recreateFramebuffers(std::unique_ptr<VkZero::Window>& window);
 
   static VkShaderModule createShaderModule(VkDevice device,
                                            const std::vector<char> &code);

@@ -1,31 +1,29 @@
 #include "CommandManager.hpp"
-#include "VkZero/context.hpp"
+#include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/info.hpp"
 #include <memory>
 #include <stdexcept>
 
-CommandManager::CommandManager(std::unique_ptr<VkZero::VulkanContext> &vulkanContext) {
-  createCommandPool(vulkanContext->getDevice(),
-                    vulkanContext->getQueueFamilyIndices());
-  allocateCommandBuffers(vulkanContext->getDevice());
+CommandManager::CommandManager() {
+  createCommandPool();
+  allocateCommandBuffers();
 }
 
 CommandManager::~CommandManager() {}
 
-void CommandManager::createCommandPool(
-    VkDevice device, const VkZero::QueueFamilyIndices &queueFamilyIndices) {
+void CommandManager::createCommandPool() {
   VkCommandPoolCreateInfo poolInfo{};
   poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
   poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-  poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+  poolInfo.queueFamilyIndex = VkZero::vkZero_core->queueFamilyIndices.graphicsFamily.value();
 
-  if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) !=
+  if (vkCreateCommandPool(VkZero::vkZero_core->device, &poolInfo, nullptr, &commandPool) !=
       VK_SUCCESS) {
     throw std::runtime_error("failed to create command pool!");
   }
 }
 
-void CommandManager::allocateCommandBuffers(VkDevice device) {
+void CommandManager::allocateCommandBuffers() {
   commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
   VkCommandBufferAllocateInfo allocInfo{};
@@ -34,14 +32,13 @@ void CommandManager::allocateCommandBuffers(VkDevice device) {
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
-  if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) !=
+  if (vkAllocateCommandBuffers(VkZero::vkZero_core->device, &allocInfo, commandBuffers.data()) !=
       VK_SUCCESS) {
     throw std::runtime_error("failed to allocate command buffers!");
   }
 }
 
-VkCommandBuffer CommandManager::beginSingleTimeCommands(
-    std::unique_ptr<VkZero::VulkanContext> &vulkanContext) {
+VkCommandBuffer CommandManager::beginSingleTimeCommands() {
   VkCommandBufferAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -49,7 +46,7 @@ VkCommandBuffer CommandManager::beginSingleTimeCommands(
   allocInfo.commandBufferCount = 1;
 
   VkCommandBuffer commandBuffer;
-  vkAllocateCommandBuffers(vulkanContext->getDevice(), &allocInfo,
+  vkAllocateCommandBuffers(VkZero::vkZero_core->device, &allocInfo,
                            &commandBuffer);
 
   VkCommandBufferBeginInfo beginInfo{};
@@ -62,7 +59,6 @@ VkCommandBuffer CommandManager::beginSingleTimeCommands(
 }
 
 void CommandManager::endSingleTimeCommands(
-    std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
     VkCommandBuffer commandBuffer) {
   vkEndCommandBuffer(commandBuffer);
 
@@ -71,11 +67,11 @@ void CommandManager::endSingleTimeCommands(
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &commandBuffer;
 
-  vkQueueSubmit(vulkanContext->getGraphicsQueue(), 1, &submitInfo,
+  vkQueueSubmit(VkZero::vkZero_core->graphicsQueue, 1, &submitInfo,
                 VK_NULL_HANDLE);
-  vkQueueWaitIdle(vulkanContext->getGraphicsQueue());
+  vkQueueWaitIdle(VkZero::vkZero_core->graphicsQueue);
 
-  vkFreeCommandBuffers(vulkanContext->getDevice(), commandPool, 1,
+  vkFreeCommandBuffers(VkZero::vkZero_core->device, commandPool, 1,
                        &commandBuffer);
 }
 

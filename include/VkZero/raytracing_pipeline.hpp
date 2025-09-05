@@ -2,8 +2,7 @@
 
 #include "shader_group.hpp"
 #include "shader_resource_set.hpp"
-#include "graphics_pipeline.hpp"  // For validation utilities
-#include "VkZero/context.hpp"
+#include "graphics_pipeline.hpp"
 #include "VkZero/resource_manager.hpp"
 #include <vulkan/vulkan_core.h>
 #include <vector>
@@ -26,7 +25,7 @@ namespace VkZero
 
         using Attachments = ShaderGroup::Attachments;
 
-        RaytracingPipeline(std::unique_ptr<VulkanContext>& ctx, ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
+        RaytracingPipeline(ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
         resources(resources...),
         m_shaderGroup(shaderGroup),
         pipelineLayout([&](){
@@ -46,7 +45,7 @@ namespace VkZero
             pipelineLayoutInfo.pushConstantRangeCount = m_shaderGroup.pushConstants.ranges.size();
 
             VkPipelineLayout layout;
-            if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,
+            if (vkCreatePipelineLayout(vkZero_core->device, &pipelineLayoutInfo, nullptr,
                                         &layout) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create pipeline layout!");
             }
@@ -84,8 +83,8 @@ namespace VkZero
             pipelineInfo.layout = pipelineLayout;
 
             PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
-            vkGetDeviceProcAddr(ctx->getDevice(), "vkCreateRayTracingPipelinesKHR"));
-            if (vkCreateRayTracingPipelinesKHR(ctx->getDevice(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
+            vkGetDeviceProcAddr(vkZero_core->device, "vkCreateRayTracingPipelinesKHR"));
+            if (vkCreateRayTracingPipelinesKHR(vkZero_core->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
                                                 &pipelineInfo, nullptr,
                                                 &pipeline) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to create raytracing pipeline!");
@@ -101,7 +100,7 @@ namespace VkZero
             raytracingPipelineProperties.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
             deviceProperties2.pNext = &raytracingPipelineProperties;
-            vkGetPhysicalDeviceProperties2(ctx->getPhysicalDevice(),
+            vkGetPhysicalDeviceProperties2(vkZero_core->physicalDevice,
                                         &deviceProperties2);
 
             VkDeviceSize handleSize =
@@ -117,48 +116,48 @@ namespace VkZero
                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-            if (vkCreateBuffer(ctx->getDevice(), &bufferInfo, nullptr, &sbtBuffer) != VK_SUCCESS) {
+            if (vkCreateBuffer(vkZero_core->device, &bufferInfo, nullptr, &sbtBuffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to create buffer!");
             }
 
             VkMemoryRequirements memRequirements;
-            vkGetBufferMemoryRequirements(ctx->getDevice(), sbtBuffer, &memRequirements);
+            vkGetBufferMemoryRequirements(vkZero_core->device, sbtBuffer, &memRequirements);
 
             VkMemoryAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             allocInfo.allocationSize = memRequirements.size;
             allocInfo.memoryTypeIndex = ResourceManager::findMemoryType(
-                ctx->getPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                vkZero_core->physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-            if (vkAllocateMemory(ctx->getDevice(), &allocInfo, nullptr, &sbtMemory) !=
+            if (vkAllocateMemory(vkZero_core->device, &allocInfo, nullptr, &sbtMemory) !=
                 VK_SUCCESS) {
             throw std::runtime_error("failed to allocate buffer memory!");
             }
 
-            vkBindBufferMemory(ctx->getDevice(), sbtBuffer, sbtMemory, 0);
+            vkBindBufferMemory(vkZero_core->device, sbtBuffer, sbtMemory, 0);
 
             std::vector<uint8_t> shaderHandleStorage(sbtSize);
 
             PFN_vkGetRayTracingShaderGroupHandlesKHR
                 vkGetRayTracingShaderGroupHandlesKHR =
                     reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(
-                        vkGetDeviceProcAddr(ctx->getDevice(),
+                        vkGetDeviceProcAddr(vkZero_core->device,
                                             "vkGetRayTracingShaderGroupHandlesKHR"));
-            vkGetRayTracingShaderGroupHandlesKHR(ctx->getDevice(),
+            vkGetRayTracingShaderGroupHandlesKHR(vkZero_core->device,
                                                 pipeline, 0, 2,
                                                 sbtSize, shaderHandleStorage.data());
 
             void *mappedData;
-            vkMapMemory(ctx->getDevice(), sbtMemory, 0, sbtSize, 0,
+            vkMapMemory(vkZero_core->device, sbtMemory, 0, sbtSize, 0,
                         &mappedData);
             memcpy(mappedData, shaderHandleStorage.data(), sbtSize);
-            vkUnmapMemory(ctx->getDevice(), sbtMemory);
+            vkUnmapMemory(vkZero_core->device, sbtMemory);
 
             VkBufferDeviceAddressInfo bufferAddressInfo = {};
             bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
             bufferAddressInfo.buffer = sbtBuffer;
             VkDeviceAddress sbtAddress = vkGetBufferDeviceAddress(
-                ctx->getDevice(), &bufferAddressInfo);
+                vkZero_core->device, &bufferAddressInfo);
 
             raygenRegion.deviceAddress = sbtAddress;
             raygenRegion.stride = handleSizeAligned;

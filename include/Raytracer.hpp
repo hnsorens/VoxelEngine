@@ -12,14 +12,9 @@
 #define RAYTRACE_WIDTH 1920
 #define RAYTRACE_HEIGHT 1080
 
-namespace VkZero
-{
-  class VulkanContext;
-}
 class Raytracer {
 public:
   Raytracer(std::unique_ptr<class CommandManager> &commandManager,
-            std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
             std::unique_ptr<VoxelWorld> &voxelWorld,
             std::unique_ptr<class Camera> &camera);
   ~Raytracer();
@@ -29,8 +24,7 @@ public:
       VkZero::StagedSharedImage* voxelImage,
       VkZero::StagedSharedImage* voxelChunkMapImage);
   void createRaytracingResources(
-      std::unique_ptr<class CommandManager> &commandManager,
-      std::unique_ptr<VkZero::VulkanContext> &vulkanContext);
+      std::unique_ptr<class CommandManager> &commandManager);
   void recordRaytracingCommandBuffer(VkCommandBuffer commandBuffer,
                                      uint32_t imageIndex, uint8_t section);
 

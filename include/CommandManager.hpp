@@ -5,25 +5,22 @@
 
 namespace VkZero
 {
-  class VulkanContext;
   struct QueueFamilyIndices;
 }
 class CommandManager {
 public:
-  CommandManager(std::unique_ptr<VkZero::VulkanContext> &vulkanContext);
+  CommandManager();
   ~CommandManager();
 
   VkCommandBuffer
-  beginSingleTimeCommands(std::unique_ptr<VkZero::VulkanContext> &vulkanContext);
-  void endSingleTimeCommands(std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
-                             VkCommandBuffer commandBuffer);
+  beginSingleTimeCommands();
+  void endSingleTimeCommands(VkCommandBuffer commandBuffer);
   VkCommandPool getCommandPool() const;
   const std::vector<VkCommandBuffer> &getCommandBuffers() const;
 
 private:
-  void createCommandPool(VkDevice device,
-                         const VkZero::QueueFamilyIndices &queueFamilyIndices);
-  void allocateCommandBuffers(VkDevice device);
+  void createCommandPool();
+  void allocateCommandBuffers();
 
   VkCommandPool commandPool;
   std::vector<VkCommandBuffer> commandBuffers;

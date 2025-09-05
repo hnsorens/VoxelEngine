@@ -1,4 +1,4 @@
-#include "VkZero/context.hpp"
+#include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/info.hpp"
 #include "VkZero/Internal/window_internal.hpp"
 #include <GLFW/glfw3.h>
@@ -31,7 +31,7 @@ const std::vector<const char *> deviceExtensions = {
     VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
 };
 
-VulkanContext::VulkanContext() 
+VkZeroCoreImpl_T::VkZeroCoreImpl_T() 
 {
   glfwInit();
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -39,9 +39,9 @@ VulkanContext::VulkanContext()
   setupDebugMessenger();
 }
 
-VulkanContext::~VulkanContext() {}
+VkZeroCoreImpl_T::~VkZeroCoreImpl_T() {}
 
-void VulkanContext::chooseDevice(WindowImpl_T* window)
+void VkZeroCoreImpl_T::chooseDevice(WindowImpl_T* window)
 {
   if (!physicalDevice) pickPhysicalDevice(window);
   if (!device) createLogicalDevice(window);
@@ -49,18 +49,7 @@ void VulkanContext::chooseDevice(WindowImpl_T* window)
   window->physicalDevice = physicalDevice;
 }
 
-void VulkanContext::cleanup() {}
-VkDevice VulkanContext::getDevice() const { return device; }
-VkPhysicalDevice VulkanContext::getPhysicalDevice() const {
-  return physicalDevice;
-}
-VkInstance VulkanContext::getInstance() const { return instance; }
-VkQueue VulkanContext::getGraphicsQueue() const { return graphicsQueue; }
-VkQueue VulkanContext::getPresentQueue() const { return presentQueue; }
-const QueueFamilyIndices &VulkanContext::getQueueFamilyIndices() const {
-  return queueFamilyIndices;
-}
-bool VulkanContext::checkValidationLayerSupport() {
+bool VkZeroCoreImpl_T::checkValidationLayerSupport() {
   uint32_t layerCount;
   vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -85,7 +74,7 @@ bool VulkanContext::checkValidationLayerSupport() {
   return true;
 }
 
-std::vector<const char *> VulkanContext::getRequiredExtensions() {
+std::vector<const char *> VkZeroCoreImpl_T::getRequiredExtensions() {
   uint32_t glfwExtensionCount = 0;
   const char **glfwExtensions;
   glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -110,7 +99,7 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
   return VK_FALSE;
 }
 
-void VulkanContext::populateDebugMessengerCreateInfo(
+void VkZeroCoreImpl_T::populateDebugMessengerCreateInfo(
     VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
   createInfo = {};
   createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -123,7 +112,7 @@ void VulkanContext::populateDebugMessengerCreateInfo(
   createInfo.pfnUserCallback = debugCallback;
 }
 
-VkResult VulkanContext::CreateDebugUtilsMessengerEXT(
+VkResult VkZeroCoreImpl_T::CreateDebugUtilsMessengerEXT(
     VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
     const VkAllocationCallbacks *pAllocator,
     VkDebugUtilsMessengerEXT *pDebugMessenger) {
@@ -136,7 +125,7 @@ VkResult VulkanContext::CreateDebugUtilsMessengerEXT(
   }
 }
 
-void VulkanContext::DestroyDebugUtilsMessengerEXT(
+void VkZeroCoreImpl_T::DestroyDebugUtilsMessengerEXT(
     VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
     const VkAllocationCallbacks *pAllocator) {
   auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
@@ -146,7 +135,7 @@ void VulkanContext::DestroyDebugUtilsMessengerEXT(
   }
 }
 
-void VulkanContext::createInstance() {
+void VkZeroCoreImpl_T::createInstance() {
   if (enableValidationLayers && !checkValidationLayerSupport()) {
     throw std::runtime_error("validation layers requested, but not available!");
   }
@@ -198,7 +187,7 @@ void VulkanContext::createInstance() {
   }
 }
 
-void VulkanContext::setupDebugMessenger() {
+void VkZeroCoreImpl_T::setupDebugMessenger() {
   if (!enableValidationLayers)
     return;
 
@@ -211,7 +200,7 @@ void VulkanContext::setupDebugMessenger() {
   }
 }
 
-bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+bool VkZeroCoreImpl_T::checkDeviceExtensionSupport(VkPhysicalDevice device) {
   uint32_t extensionCount;
   vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
                                        nullptr);
@@ -230,7 +219,7 @@ bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice device) {
   return requiredExtensions.empty();
 }
 
-QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice device, WindowImpl_T* window) {
+QueueFamilyIndices VkZeroCoreImpl_T::findQueueFamilies(VkPhysicalDevice device, WindowImpl_T* window) {
   QueueFamilyIndices indices;
 
   uint32_t queueFamilyCount = 0;
@@ -263,7 +252,7 @@ QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice device, Win
   return indices;
 }
 
-bool VulkanContext::isDeviceSuitable(VkPhysicalDevice device, WindowImpl_T* window) {
+bool VkZeroCoreImpl_T::isDeviceSuitable(VkPhysicalDevice device, WindowImpl_T* window) {
   QueueFamilyIndices indices = findQueueFamilies(device, window);
 
   bool extensionsSupported = checkDeviceExtensionSupport(device);
@@ -278,7 +267,7 @@ bool VulkanContext::isDeviceSuitable(VkPhysicalDevice device, WindowImpl_T* wind
   return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
-void VulkanContext::pickPhysicalDevice(WindowImpl_T* window) {
+void VkZeroCoreImpl_T::pickPhysicalDevice(WindowImpl_T* window) {
   uint32_t deviceCount = 0;
   vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -301,7 +290,7 @@ void VulkanContext::pickPhysicalDevice(WindowImpl_T* window) {
   }
 }
 
-void VulkanContext::createLogicalDevice(WindowImpl_T* window) {
+void VkZeroCoreImpl_T::createLogicalDevice(WindowImpl_T* window) {
   queueFamilyIndices = findQueueFamilies(physicalDevice, window);
 
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -388,3 +377,5 @@ void VulkanContext::createLogicalDevice(WindowImpl_T* window) {
   vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value(), 0, &graphicsQueue);
   vkGetDeviceQueue(device, queueFamilyIndices.presentFamily.value(), 0, &presentQueue);
 }
+
+VkZeroCoreImpl_T* VkZero::vkZero_core = NULL;

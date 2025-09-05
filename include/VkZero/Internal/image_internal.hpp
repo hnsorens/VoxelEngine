@@ -41,8 +41,8 @@ namespace VkZero
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
-    void createSwapChain(std::unique_ptr<class VulkanContext>& ctx, VkSwapchainKHR& swapchain);
-    void recreateSwapchain(std::unique_ptr<class VulkanContext>& ctx);
+    void createSwapChain(VkSwapchainKHR& swapchain);
+    void recreateSwapchain();
     void cleanupSwapChain();
     AttachmentImage createSwapchainImages();
 }

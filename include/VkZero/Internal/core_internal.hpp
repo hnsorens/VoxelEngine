@@ -1,12 +1,12 @@
 #pragma once
 
-#include <memory>
-#include <mutex>
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
-#include "VkZero/info.hpp"
+#define DEFINE_VK_ZERO_CORE extern VkZeroCoreImpl_T* vkZero_core;
 
 namespace VkZero
 {
@@ -18,6 +18,7 @@ namespace VkZero
       return graphicsFamily.has_value() && presentFamily.has_value();
     }
   };
+
   struct VkZeroCoreImpl_T
   {
     static VkZeroCoreImpl_T* getInstance()
@@ -61,4 +62,6 @@ namespace VkZero
     VkQueue presentQueue;
     QueueFamilyIndices queueFamilyIndices;
   };
+
+  DEFINE_VK_ZERO_CORE
 }

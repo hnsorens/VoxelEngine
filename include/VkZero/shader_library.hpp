@@ -2,7 +2,6 @@
 
 #include "shader_types.hpp"
 #include "shader.hpp"
-#include "VkZero/context.hpp"
 #include "VkZero/fixed_string.hpp"
 #include <tuple>
 #include <memory>
@@ -42,7 +41,7 @@ namespace VkZero
     public:
         using types = std::tuple<Shaders...>;
 
-        ShaderLibrary(std::unique_ptr<VulkanContext>& ctx) : shaders(Shaders(ctx)...) {}
+        ShaderLibrary() : shaders(Shaders()...) {}
 
         template <FixedString Name>
         constexpr auto& get() {

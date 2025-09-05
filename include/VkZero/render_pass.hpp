@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VkZero/context.hpp"
+#include "VkZero/Internal/core_internal.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <memory>
@@ -255,15 +255,15 @@ namespace VkZero
 
         static_assert(std::tuple_size<allAttachments>::value > 0, "RenderPass must have at least one attachment.");
 
-        RenderPass(uint32_t width, uint32_t height, std::unique_ptr<VulkanContext>& ctx, Resources& resources, Pipelines&... pipelines) : width{width}, height{height}, pipelines(pipelines...)
+        RenderPass(uint32_t width, uint32_t height, Resources& resources, Pipelines&... pipelines) : width{width}, height{height}, pipelines(pipelines...)
         {
-            createRenderPass(ctx, resources, pipelines...);
+            createRenderPass(resources, pipelines...);
         }
         
-        void recreateSwapchain(std::unique_ptr<VulkanContext>& vulkanContext, std::unique_ptr<Window>& window) {
+        void recreateSwapchain(std::unique_ptr<Window>& window) {
             // Clean up old framebuffers
             for (auto framebuffer : framebuffers) {
-                vkDestroyFramebuffer(vulkanContext->getDevice(), framebuffer, nullptr);
+                vkDestroyFramebuffer(vkZero_core->device, framebuffer, nullptr);
             }
             
             // Recreate the render pass and framebuffers
@@ -284,7 +284,7 @@ namespace VkZero
                 framebufferInfo.height = window->getSwapChainExtent().height;
                 framebufferInfo.layers = 1;
 
-                if (vkCreateFramebuffer(vulkanContext->getDevice(), &framebufferInfo, nullptr,
+                if (vkCreateFramebuffer(vkZero_core->device, &framebufferInfo, nullptr,
                                         &framebuffers[i]) != VK_SUCCESS) {
                     throw std::runtime_error("failed to create framebuffer!");
                 }
@@ -331,7 +331,7 @@ namespace VkZero
         }
         
     private:
-        void createRenderPass(std::unique_ptr<VulkanContext>& ctx, Resources& resources, Pipelines&... pipelines) {
+        void createRenderPass(Resources& resources, Pipelines&... pipelines) {
             // Gather all global attachments
             std::vector<VkAttachmentDescription> attachmentDescriptions;
             tuple_for_each(commonAttachments{}, [&](auto att){
@@ -435,12 +435,12 @@ namespace VkZero
             renderPassInfo.pDependencies = dependencies.data();
 
             fflush(stdout);
-            if (vkCreateRenderPass(ctx->getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+            if (vkCreateRenderPass(vkZero_core->device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to create render pass!");
             }
 
             // Create pipelines for each subpass
-            (pipelines.create_pipeline(ctx->getDevice(), renderPass), ...);
+            (pipelines.create_pipeline(vkZero_core->device, renderPass), ...);
 
             framebuffers.resize(resources.framebufferCount);
 
@@ -458,7 +458,7 @@ namespace VkZero
                 framebufferInfo.height = height;
                 framebufferInfo.layers = 1;
 
-                if (vkCreateFramebuffer(ctx->getDevice(), &framebufferInfo, nullptr,
+                if (vkCreateFramebuffer(vkZero_core->device, &framebufferInfo, nullptr,
                                         &framebuffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create framebuffer!");
                 }
@@ -538,11 +538,11 @@ namespace VkZero
     class RaytracingRenderPass
     {
     public:
-        RaytracingRenderPass(std::unique_ptr<VulkanContext>& ctx, RaytracingPipelines... pipelines) : pipelines{pipelines...} 
+        RaytracingRenderPass(RaytracingPipelines... pipelines) : pipelines{pipelines...} 
         {
             vkCmdTraceRaysKHR =
                 reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(
-                    ctx->getDevice(), "vkCmdTraceRaysKHR"));
+                    vkZero_core->device, "vkCmdTraceRaysKHR"));
         }
 
         void record(VkCommandBuffer commandBuffer, uint32_t currentFrame, uint32_t imageIndex)

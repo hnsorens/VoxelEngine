@@ -105,7 +105,7 @@ DescriptorPool::DescriptorPool()
     createInfo.maxSets = MAX_POOL_SETS;
     createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
-    if (vkCreateDescriptorPool(VoxelEngine::vulkanContext->getDevice(), &createInfo, nullptr, &pool) != VK_SUCCESS)
+    if (vkCreateDescriptorPool(vkZero_core->device, &createInfo, nullptr, &pool) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create raytracing descriptor pool!");
     }

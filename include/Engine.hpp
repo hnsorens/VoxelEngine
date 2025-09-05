@@ -1,4 +1,3 @@
-#include "VkZero/context.hpp"
 #include "shaders.hpp"
 #include <cstdio>
 #include <memory>
@@ -13,7 +12,6 @@ const uint32_t HEIGHT = 1280;
 #define RAYTRACE_WIDTH 1920
 
 namespace VkZero {
-  class VulkanContext;
   class Window;
 }
 class VoxelEngine {
@@ -27,7 +25,6 @@ public:
   }
 
   static std::unique_ptr<VkZero::Window> Window;
-  static std::unique_ptr<VkZero::VulkanContext> vulkanContext;
   static std::unique_ptr<class SyncManager> syncManager;
   static std::unique_ptr<class CommandManager> commandManager;
   static std::unique_ptr<class PipelineManager> pipelineManager;

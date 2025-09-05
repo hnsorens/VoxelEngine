@@ -1,7 +1,6 @@
 #pragma once
 
 #include "VkZero/bind_resource.hpp"
-#include "VkZero/context.hpp"
 #include <cstring>
 #include <type_traits>
 #include <vector>

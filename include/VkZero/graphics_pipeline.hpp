@@ -2,7 +2,6 @@
 
 #include "shader_group.hpp"
 #include "shader_resource_set.hpp"
-#include "VkZero/context.hpp"
 #include <vulkan/vulkan_core.h>
 #include <vector>
 #include <tuple>
@@ -161,7 +160,7 @@ namespace VkZero
          * This constructor creates the pipeline layout and prepares the pipeline
          * for creation. The actual pipeline is created when create_pipeline() is called.
          */
-        GraphicsPipeline(std::unique_ptr<VulkanContext>& ctx, ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
+        GraphicsPipeline(ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
         m_shaderGroup(shaderGroup),
         resources(resources...),
         pipelineLayout([&](){
@@ -177,7 +176,7 @@ namespace VkZero
             pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
             VkPipelineLayout layout;
-            if (vkCreatePipelineLayout(ctx->getDevice(), &pipelineLayoutInfo, nullptr,
+            if (vkCreatePipelineLayout(vkZero_core->device, &pipelineLayoutInfo, nullptr,
                                         &layout) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create pipeline layout!");
             }

@@ -1,7 +1,7 @@
 #include "Camera.hpp"
+#include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/resource_manager.hpp"
 #include "VoxelWorld.hpp"
-#include "VkZero/context.hpp"
 #include "VkZero/info.hpp"
 #include "VkZero/window.hpp"
 #include <cstdio>
@@ -11,7 +11,7 @@
 #include <memory>
 #include <stdexcept>
 
-Camera::Camera(std::unique_ptr<VkZero::VulkanContext> &vulkanContext, std::unique_ptr<VkZero::Window> &window) {
+Camera::Camera(std::unique_ptr<VkZero::Window> &window) {
   uniformBuffer.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBufferMemory.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
@@ -24,32 +24,32 @@ Camera::Camera(std::unique_ptr<VkZero::VulkanContext> &vulkanContext, std::uniqu
     bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(vulkanContext->getDevice(), &bufferInfo, nullptr,
+    if (vkCreateBuffer(VkZero::vkZero_core->device, &bufferInfo, nullptr,
                        &uniformBuffer[i]) != VK_SUCCESS) {
       throw std::runtime_error("failed to create uniform buffer");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(vulkanContext->getDevice(), uniformBuffer[i],
+    vkGetBufferMemoryRequirements(VkZero::vkZero_core->device, uniformBuffer[i],
                                   &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = VkZero::ResourceManager::findMemoryType(
-        vulkanContext->getPhysicalDevice(), memRequirements.memoryTypeBits,
+        VkZero::vkZero_core->physicalDevice, memRequirements.memoryTypeBits,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr,
+    if (vkAllocateMemory(VkZero::vkZero_core->device, &allocInfo, nullptr,
                          &uniformBufferMemory[i]) != VK_SUCCESS) {
       throw std::runtime_error("Failed to allocate uniform buffer memory!");
     }
 
-    vkBindBufferMemory(vulkanContext->getDevice(), uniformBuffer[i],
+    vkBindBufferMemory(VkZero::vkZero_core->device, uniformBuffer[i],
                        uniformBufferMemory[i], 0);
 
-    vkMapMemory(vulkanContext->getDevice(), uniformBufferMemory[i], 0,
+    vkMapMemory(VkZero::vkZero_core->device, uniformBufferMemory[i], 0,
                 sizeof(TransformUBO), 0, &uniformBuffersMapped[i]);
     memcpy(uniformBuffersMapped[i], &ubo, sizeof(TransformUBO));
     ubo.view = glm::mat4(1.0);

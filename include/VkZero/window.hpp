@@ -12,7 +12,7 @@ namespace VkZero
 
   class Window {
   public:
-    Window(std::unique_ptr<class VulkanContext>& vulkanContext, int width, int height, const char *title);
+    Window(int width, int height, const char *title);
     ~Window();
     
     bool isKeyPressed(int key);

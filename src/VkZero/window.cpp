@@ -1,9 +1,10 @@
 #include "VkZero/window.hpp"
+#include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/Internal/window_internal.hpp"
-#include "VkZero/context.hpp"
 #include "VkZero/image.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <cstdio>
 #include <limits>
 #include <memory>
 #include <vector>
@@ -24,12 +25,12 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action, i
   }
 }
 
-Window::Window(std::unique_ptr<VulkanContext>& vulkanContext, int width, int height, const char *title)
+Window::Window(int width, int height, const char *title)
 {
-  impl = new WindowImpl_T(vulkanContext, width, height, title);
+  impl = new WindowImpl_T(width, height, title);
 }
 
-WindowImpl_T::WindowImpl_T(std::unique_ptr<VulkanContext>& vulkanContext, int width, int height, const char *title) :
+WindowImpl_T::WindowImpl_T(int width, int height, const char *title) :
   window([&](){
     GLFWwindow* window = glfwCreateWindow(width, height, "Voxels", nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
@@ -39,15 +40,15 @@ WindowImpl_T::WindowImpl_T(std::unique_ptr<VulkanContext>& vulkanContext, int wi
   }()),
   surface([&](){
     VkSurfaceKHR surface;
-    if (glfwCreateWindowSurface(vulkanContext->getInstance(), window, nullptr, &surface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(vkZero_core->instance, window, nullptr, &surface) != VK_SUCCESS) {
       throw std::runtime_error("failed to create window surface!");
     }
     return surface;
   }()),
   swapChain([&](){
-    vulkanContext->chooseDevice(this);
+    vkZero_core->chooseDevice(this);
     VkSwapchainKHR swapchain;
-    createSwapChain(vulkanContext, swapchain);
+    createSwapChain(swapchain);
     return swapchain;
   }()),
   swapchainImages([&](){
@@ -186,7 +187,7 @@ VkExtent2D WindowImpl_T::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabi
   }
 }
 
-void WindowImpl_T::createSwapChain(std::unique_ptr<VulkanContext>& ctx, VkSwapchainKHR& swapChain) {
+void WindowImpl_T::createSwapChain(VkSwapchainKHR& swapChain) {
   SwapChainSupportDetails swapChainSupport =
       querySwapChainSupport(physicalDevice);
 
@@ -216,7 +217,7 @@ void WindowImpl_T::createSwapChain(std::unique_ptr<VulkanContext>& ctx, VkSwapch
   createInfo.imageArrayLayers = 1;
   createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-  QueueFamilyIndices indices = ctx->queueFamilyIndices;
+  QueueFamilyIndices indices = vkZero_core->queueFamilyIndices;
   uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(),
                                    indices.presentFamily.value()};
 
@@ -242,10 +243,10 @@ void WindowImpl_T::createSwapChain(std::unique_ptr<VulkanContext>& ctx, VkSwapch
   swapChainExtent = extent;
 }
 
-void WindowImpl_T::recreateSwapchain(std::unique_ptr<VulkanContext>& ctx) {
+void WindowImpl_T::recreateSwapchain() {
   cleanupSwapChain();
 
-  createSwapChain(ctx, swapChain);
+  createSwapChain(swapChain);
 
   swapchainImages = createSwapchainImages();
 }

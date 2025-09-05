@@ -12,12 +12,11 @@ struct TransformUBO {
 
 namespace VkZero
 {
-  class VulkanContext;
   class Window;
 }
 class Camera {
 public:
-  Camera(std::unique_ptr<VkZero::VulkanContext> &vulkanContext, std::unique_ptr<VkZero::Window> &window);
+  Camera(std::unique_ptr<VkZero::Window> &window);
   ~Camera();
 
   void update(std::unique_ptr<VkZero::Window> &Window,

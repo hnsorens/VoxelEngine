@@ -1,9 +1,9 @@
 #pragma once
 
+#include "VkZero/Internal/core_internal.hpp"
 #include "shader_types.hpp"
 #include "shader_bindings.hpp"
 #include "VkZero/resource_manager.hpp"
-#include "VkZero/context.hpp"
 #include "VkZero/fixed_string.hpp"
 #include <algorithm>
 #include <cassert>
@@ -170,11 +170,11 @@ namespace VkZero
 
         using BindingsList = Bindings;
 
-        Shader(std::unique_ptr<VulkanContext>& ctx) 
+        Shader() 
         {
             auto shaderCode = ResourceManager::readFile(std::string{path.value});
 
-            shaderModule = createShaderModule(ctx->getDevice(), shaderCode);
+            shaderModule = createShaderModule(vkZero_core->device, shaderCode);
 
             shaderInfo.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

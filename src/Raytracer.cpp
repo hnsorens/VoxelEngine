@@ -5,7 +5,6 @@
 #include "VkZero/render_pass.hpp"
 #include "VkZero/resource_manager.hpp"
 #include "VoxelWorld.hpp"
-#include "VkZero/context.hpp"
 #include "VkZero/image.hpp"
 #include <memory>
 #include <stdexcept>
@@ -14,7 +13,6 @@
 #include "shaders.hpp"
 
 Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
-                     std::unique_ptr<VkZero::VulkanContext> &vulkanContext,
                      std::unique_ptr<VoxelWorld> &voxelWorld,
                      std::unique_ptr<Camera> &camera) :
     raytracingStorageImage{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
@@ -47,7 +45,6 @@ Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT},
     group(raytracingPushConstants, VoxelEngine::get_shader<"main_rmiss">(), VoxelEngine::get_shader<"main_rgen">()),
     set1{
-      vulkanContext,
       {&raytracingStorageImage},
       {getStorageImage()},
       {&raytracingPositionStorageImage},
@@ -58,12 +55,11 @@ Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
       {&raytracingLightStorageImageZ},
       {&raytracingLightStorageImageW}
     },
-    something(vulkanContext, group, set1),
-    renderPass(vulkanContext, {something, data})
+    something(group, set1),
+    renderPass({something, data})
 
 {
-  createRaytracingResources(commandManager, vulkanContext);
-  createRaytracingPipeline(vulkanContext->getDevice(), camera->uniformBuffer,
+  createRaytracingPipeline(VkZero::vkZero_core->device, camera->uniformBuffer,
                            voxelWorld->voxelImages.data(),
                            &voxelWorld->voxelChunkMapImage);
 }
@@ -81,54 +77,11 @@ VkZero::SwapImage* Raytracer::getStorageImage() {
   return &raytracingStorageImage;
 }
 
-void Raytracer::createRaytracingResources(
-    std::unique_ptr<CommandManager> &commandManager,
-    std::unique_ptr<VkZero::VulkanContext> &vulkanContext) {
-
-  VkDevice device = vulkanContext->getDevice();
-  VkPhysicalDevice physicalDevice = vulkanContext->getPhysicalDevice();
-}
-
 void Raytracer::createRaytracingPipeline(
     VkDevice device, std::vector<VkBuffer> &uniformBuffer,
     VkZero::StagedSharedImage* voxelImage,
     VkZero::StagedSharedImage* voxelChunkMapImage) {
 
-    // auto& rmiss_shader = VoxelEngine::get_shader<"main_rmiss">();
-    // auto& rgen_shader = VoxelEngine::get_shader<"main_rgen">();
-
-    // RaytracingPushConstants raytracingPushConstants;
-
-    // RaytracingShaderGroup group(
-    //   raytracingPushConstants,
-    //   rmiss_shader, rgen_shader
-    // );
-
-    // RaytracingResourceSet set1{VoxelEngine::vulkanContext,
-    //   {&raytracingStorageImage},
-    //   {getStorageImage()},
-    //   {&raytracingPositionStorageImage},
-    //   {voxelImage},
-    //   {voxelChunkMapImage},
-    //   {&raytracingLightStorageImageX},
-    //   {&raytracingLightStorageImageY},
-    //   {&raytracingLightStorageImageZ},
-    //   {&raytracingLightStorageImageW}
-    // };
-
-    // Pipeline something{
-    //   VoxelEngine::vulkanContext,
-    //   group, set1
-    // };
-    
-    // RaytracingPushConstantData* data = new RaytracingPushConstantData;
-    // RaytracingPushConstant* idk = data->get<RaytracingPushConstant>();
-
-    // RaytracingRenderPass_t renderPass(
-    //   VoxelEngine::vulkanContext,
-    //   {something, data}
-    // );
-    
     raytracingPipeline = something.pipeline;
     printf("RAY PIPELINE : %d\n", something.pipeline); fflush(stdout);
     raytracingPipelineLayout = something.pipelineLayout;
@@ -153,7 +106,7 @@ void Raytracer::createRaytracingPipeline(
       writeTransformDescriptorSet.pBufferInfo = &bufferInfo;
       
 
-      vkUpdateDescriptorSets(VoxelEngine::vulkanContext->getDevice(), 1, &writeTransformDescriptorSet, 0, nullptr);
+      vkUpdateDescriptorSets(VkZero::vkZero_core->device, 1, &writeTransformDescriptorSet, 0, nullptr);
     }
 }
 

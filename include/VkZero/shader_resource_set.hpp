@@ -1,7 +1,8 @@
 #pragma once
 
-#include "VkZero/context.hpp"
+#include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/descriptor_pool.hpp"
+#include "VkZero/info.hpp"
 #include <vulkan/vulkan_core.h>
 #include <tuple>
 #include <vector>
@@ -60,7 +61,6 @@ namespace VkZero
 
         /**
          * @brief Constructs a ShaderResourceSet with the given bindings
-         * @param ctx Vulkan context for device access
          * @param bindings... The binding instances to include in this resource set
          * 
          * This constructor:
@@ -68,7 +68,7 @@ namespace VkZero
          * 2. Allocates descriptor sets from the global descriptor pool
          * 3. Writes all binding data to the descriptor sets
          */
-        ShaderResourceSet(std::unique_ptr<VulkanContext>& ctx, Bindings&&... bindings) :
+        ShaderResourceSet(Bindings&&... bindings) :
         descriptorSetLayout([&]() {
 
             std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
@@ -124,7 +124,7 @@ namespace VkZero
             descriptorSetLayoutInfo.pNext = &extended_info;
 
             VkDescriptorSetLayout layout;
-            if (vkCreateDescriptorSetLayout(ctx->getDevice(), &descriptorSetLayoutInfo, nullptr, &layout) != VK_SUCCESS) {
+            if (vkCreateDescriptorSetLayout(vkZero_core->device, &descriptorSetLayoutInfo, nullptr, &layout) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create descriptor set layout!");
             }
 
@@ -139,7 +139,7 @@ namespace VkZero
             allocInfo.pSetLayouts = descriptorSetLayouts.data();
 
             std::vector<VkDescriptorSet> descriptorSets(MAX_FRAMES_IN_FLIGHT);
-            if (vkAllocateDescriptorSets(ctx->getDevice(), &allocInfo, descriptorSets.data())) {
+            if (vkAllocateDescriptorSets(vkZero_core->device, &allocInfo, descriptorSets.data())) {
                 throw std::runtime_error("Failed to create raytracing descriptor set!");
             }
 
@@ -147,7 +147,7 @@ namespace VkZero
         }()),
         bindings(
             ([&](auto&& b) {
-                b.writeAll(ctx->getDevice(), descriptorSets);
+                b.writeAll(vkZero_core->device, descriptorSets);
                 return std::move(b);
             }(std::forward<Bindings>(bindings)))...
         )
