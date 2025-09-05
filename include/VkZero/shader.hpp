@@ -184,7 +184,5 @@ namespace VkZero
 
         static_assert(std::tuple_size<Attachments>::value > 0 ? Type == SHADER_FRAGMENT : true, "Only fragment shaders can contain attachments");
         static_assert(!ShaderDetails::duplicate_binding_checker<Bindings>::value, "Shader cannot have duplicate bindings");
-
-
     };
 }
