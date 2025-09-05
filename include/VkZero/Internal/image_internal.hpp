@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VkZero/image.hpp"
+#include <GLFW/glfw3.h>
 
 namespace VkZero
 {
@@ -24,4 +25,24 @@ namespace VkZero
         VkImageLayout imageLayout;
         VkFormat format;
     };
+
+        struct SwapChainSupportDetails {
+      VkSurfaceCapabilitiesKHR capabilities;
+      std::vector<VkSurfaceFormatKHR> formats;
+      std::vector<VkPresentModeKHR> presentModes;
+    };
+
+    void pollEvents();
+    bool shouldClose();
+    void recreateWindow();
+    GLFWwindow *getWindow();
+    VkSwapchainKHR getSwapChain();
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
+    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+    void createSwapChain(std::unique_ptr<class VulkanContext>& ctx, VkSwapchainKHR& swapchain);
+    void recreateSwapchain(std::unique_ptr<class VulkanContext>& ctx);
+    void cleanupSwapChain();
+    AttachmentImage createSwapchainImages();
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "VkZero/window.hpp"
 #include <memory>
 #include <optional>
 #include <vector>
@@ -33,15 +32,14 @@ namespace VkZero
     VkQueue getPresentQueue() const;
     const QueueFamilyIndices &getQueueFamilyIndices() const;
 
-  private:
     bool checkValidationLayerSupport();
     std::vector<const char *> getRequiredExtensions();
     void populateDebugMessengerCreateInfo(
         VkDebugUtilsMessengerCreateInfoEXT &createInfo);
-    bool isDeviceSuitable(VkPhysicalDevice device, class WindowManager* window);
+    bool isDeviceSuitable(VkPhysicalDevice device, struct WindowImpl_T* window);
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
     struct SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-    struct QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, class WindowManager* window);
+    struct QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, struct WindowImpl_T* window);
 
     /* Debug Vulkan Functions */
     VkResult CreateDebugUtilsMessengerEXT(
@@ -55,10 +53,10 @@ namespace VkZero
 
     void createInstance();
     void setupDebugMessenger();
-    void pickPhysicalDevice(class WindowManager* window);
-    void createLogicalDevice(class WindowManager* window);
+    void pickPhysicalDevice(struct WindowImpl_T* window);
+    void createLogicalDevice(struct WindowImpl_T* window);
 
-    void chooseDevice(WindowManager* window);
+    void chooseDevice(struct WindowImpl_T* window);
 
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -68,6 +66,6 @@ namespace VkZero
     VkQueue presentQueue;
     QueueFamilyIndices queueFamilyIndices;
 
-    friend class WindowManager;
+    friend class Window;
   };
 }

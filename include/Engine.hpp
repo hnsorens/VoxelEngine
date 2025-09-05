@@ -14,7 +14,7 @@ const uint32_t HEIGHT = 1280;
 
 namespace VkZero {
   class VulkanContext;
-  class WindowManager;
+  class Window;
 }
 class VoxelEngine {
 public:
@@ -26,7 +26,7 @@ public:
     return shaders->get<name>();
   }
 
-  static std::unique_ptr<VkZero::WindowManager> windowManager;
+  static std::unique_ptr<VkZero::Window> Window;
   static std::unique_ptr<VkZero::VulkanContext> vulkanContext;
   static std::unique_ptr<class SyncManager> syncManager;
   static std::unique_ptr<class CommandManager> commandManager;

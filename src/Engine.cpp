@@ -4,7 +4,7 @@
 #include "Raytracer.hpp"
 #include "SyncManager.hpp"
 #include "VoxelWorld.hpp"
-#include "VkZero/window.hpp"
+#include "VkZero/Internal/window_internal.hpp"
 #include "shaders.hpp"
 #include <cstdio>
 #include <memory>
@@ -13,7 +13,7 @@
 #include <iostream> // Added for debug output
 
 // Static member definitions
-std::unique_ptr<VkZero::WindowManager> VoxelEngine::windowManager;
+std::unique_ptr<VkZero::Window> VoxelEngine::Window;
 std::unique_ptr<VkZero::VulkanContext> VoxelEngine::vulkanContext;
 std::unique_ptr<SyncManager> VoxelEngine::syncManager;
 std::unique_ptr<CommandManager> VoxelEngine::commandManager;
@@ -39,11 +39,11 @@ void VoxelEngine::initWindow() {
 void VoxelEngine::initVulkan() {
     
     vulkanContext = std::make_unique<VkZero::VulkanContext>();
-    windowManager = std::make_unique<VkZero::WindowManager>(vulkanContext, WIDTH, HEIGHT, "Voxel Engine");
+    Window = std::make_unique<VkZero::Window>(vulkanContext, WIDTH, HEIGHT, "Voxel Engine");
 
     shaders = std::make_unique<GlobalShaderLibrary>(vulkanContext);
 
-    camera = std::make_unique<Camera>(vulkanContext, windowManager);
+    camera = std::make_unique<Camera>(vulkanContext, Window);
     commandManager = std::make_unique<CommandManager>(vulkanContext);
 
     createCommandBuffers();
@@ -53,7 +53,7 @@ void VoxelEngine::initVulkan() {
     raytracer = std::make_unique<Raytracer>(commandManager, vulkanContext,
                                             voxelWorld, camera);
     pipelineManager =
-        std::make_unique<PipelineManager>(vulkanContext, raytracer, windowManager);
+        std::make_unique<PipelineManager>(vulkanContext, raytracer, Window);
 
     syncManager = std::make_unique<SyncManager>(vulkanContext);
 }
@@ -66,7 +66,7 @@ void VoxelEngine::mainLoop() {
     
     std::cout << "Starting main loop. Press ESC to exit." << std::endl;
     
-    while (!windowManager->shouldClose()) {
+    while (!Window->impl->shouldClose()) {
         double currentTime = glfwGetTime();
         double deltaTime = currentTime - lastFrameTime;
         
@@ -79,11 +79,11 @@ void VoxelEngine::mainLoop() {
             continue;
         }
         
-        windowManager->pollEvents();
+        Window->impl->pollEvents();
         
         // Check if window is minimized
         int width, height;
-        windowManager->getFramebufferSize(&width, &height);
+        Window->getFramebufferSize(&width, &height);
         if (width > 0 && height > 0) {
             drawFrame();
             frameCount++;
@@ -199,7 +199,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     renderPassInfo.renderPass = pipelineManager->getRenderPass();
     renderPassInfo.framebuffer = pipelineManager->getFrameBuffer(imageIndex);
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = windowManager->getSwapChainExtent();
+    renderPassInfo.renderArea.extent = Window->getSwapChainExtent();
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
@@ -210,14 +210,14 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)windowManager->getSwapChainExtent().width;
-    viewport.height = (float)windowManager->getSwapChainExtent().height;
+    viewport.width = (float)Window->getSwapChainExtent().width;
+    viewport.height = (float)Window->getSwapChainExtent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = windowManager->getSwapChainExtent();
+    scissor.extent = Window->getSwapChainExtent();
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipelineManager->getGraphicsPipelineLayout(), 0, 1,
@@ -240,16 +240,16 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
         std::cout << "Warning: Frame fence timeout, continuing anyway" << std::endl;
     }
     
-    camera->update(windowManager, voxelWorld, currentFrame);
+    camera->update(Window, voxelWorld, currentFrame);
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(
-        vulkanContext->getDevice(), windowManager->getSwapChain(), UINT64_MAX,
+        vulkanContext->getDevice(), Window->impl->getSwapChain(), UINT64_MAX,
         syncManager->getImageAvailableSemaphores()[currentFrame],
         VK_NULL_HANDLE, &imageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-      windowManager->recreateSwapchain(vulkanContext);
-      pipelineManager->recreateFramebuffers(vulkanContext, windowManager);
+      Window->impl->recreateSwapchain(vulkanContext);
+      pipelineManager->recreateFramebuffers(vulkanContext, Window);
       return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
       throw std::runtime_error("failed to acquire swap chain image!");
@@ -266,7 +266,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
         throw std::runtime_error("failed to begin recording command buffer!");
     }
 
-    pipelineManager->renderPass.record(commandManager->getCommandBuffers()[currentFrame], windowManager, currentFrame, imageIndex);
+    pipelineManager->renderPass.record(commandManager->getCommandBuffers()[currentFrame], Window, currentFrame, imageIndex);
 
     if (vkEndCommandBuffer(commandManager->getCommandBuffers()[currentFrame]) != VK_SUCCESS) {
         throw std::runtime_error("failed to record raytracing command buffer!");
@@ -325,7 +325,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
 
-    VkSwapchainKHR swapChains[] = {windowManager->getSwapChain()};
+    VkSwapchainKHR swapChains[] = {Window->impl->getSwapChain()};
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
 
@@ -333,11 +333,11 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
 
     result = vkQueuePresentKHR(vulkanContext->getPresentQueue(), &presentInfo);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-        windowManager->framebufferResized) {
-      windowManager->framebufferResized = false;
+        Window->impl->framebufferResized) {
+      Window->impl->framebufferResized = false;
       std::cout << "Recreating swapchain..." << std::endl;
-      windowManager->recreateSwapchain(vulkanContext);
-      pipelineManager->recreateFramebuffers(vulkanContext, windowManager);
+      Window->impl->recreateSwapchain(vulkanContext);
+      pipelineManager->recreateFramebuffers(vulkanContext, Window);
       // Add a small delay to prevent excessive recreation
       std::this_thread::sleep_for(std::chrono::milliseconds(16));
     } else if (result != VK_SUCCESS) {

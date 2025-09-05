@@ -1,6 +1,6 @@
 #include "VkZero/context.hpp"
 #include "VkZero/info.hpp"
-#include "VkZero/window.hpp"
+#include "VkZero/Internal/window_internal.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <cstring>
@@ -41,7 +41,7 @@ VulkanContext::VulkanContext()
 
 VulkanContext::~VulkanContext() {}
 
-void VulkanContext::chooseDevice(WindowManager* window)
+void VulkanContext::chooseDevice(WindowImpl_T* window)
 {
   if (!physicalDevice) pickPhysicalDevice(window);
   if (!device) createLogicalDevice(window);
@@ -230,7 +230,7 @@ bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice device) {
   return requiredExtensions.empty();
 }
 
-QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice device, WindowManager* window) {
+QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice device, WindowImpl_T* window) {
   QueueFamilyIndices indices;
 
   uint32_t queueFamilyCount = 0;
@@ -263,14 +263,14 @@ QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice device, Win
   return indices;
 }
 
-bool VulkanContext::isDeviceSuitable(VkPhysicalDevice device, WindowManager* window) {
+bool VulkanContext::isDeviceSuitable(VkPhysicalDevice device, WindowImpl_T* window) {
   QueueFamilyIndices indices = findQueueFamilies(device, window);
 
   bool extensionsSupported = checkDeviceExtensionSupport(device);
 
   bool swapChainAdequate = false;
   if (extensionsSupported) {
-    WindowManager::SwapChainSupportDetails swapChainSupport = window->querySwapChainSupport(device);
+    WindowImpl_T::SwapChainSupportDetails swapChainSupport = window->querySwapChainSupport(device);
     swapChainAdequate = !swapChainSupport.formats.empty() &&
                         !swapChainSupport.presentModes.empty();
   }
@@ -278,7 +278,7 @@ bool VulkanContext::isDeviceSuitable(VkPhysicalDevice device, WindowManager* win
   return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
-void VulkanContext::pickPhysicalDevice(WindowManager* window) {
+void VulkanContext::pickPhysicalDevice(WindowImpl_T* window) {
   uint32_t deviceCount = 0;
   vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -301,7 +301,7 @@ void VulkanContext::pickPhysicalDevice(WindowManager* window) {
   }
 }
 
-void VulkanContext::createLogicalDevice(WindowManager* window) {
+void VulkanContext::createLogicalDevice(WindowImpl_T* window) {
   queueFamilyIndices = findQueueFamilies(physicalDevice, window);
 
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;

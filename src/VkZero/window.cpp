@@ -1,4 +1,5 @@
 #include "VkZero/window.hpp"
+#include "VkZero/Internal/window_internal.hpp"
 #include "VkZero/context.hpp"
 #include "VkZero/image.hpp"
 #include <GLFW/glfw3.h>
@@ -12,9 +13,9 @@ using namespace VkZero;
 
 static void framebufferResizeCallback(GLFWwindow *window, int width,
                                       int height) {
-  auto windowManager =
-      reinterpret_cast<WindowManager *>(glfwGetWindowUserPointer(window));
-  windowManager->framebufferResized = true;
+  auto Window =
+      reinterpret_cast<class Window*>(glfwGetWindowUserPointer(window));
+  Window->impl->framebufferResized = true;
 }
 
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -23,7 +24,12 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action, i
   }
 }
 
-WindowManager::WindowManager(std::unique_ptr<VulkanContext>& vulkanContext, int width, int height, const char *title) : 
+Window::Window(std::unique_ptr<VulkanContext>& vulkanContext, int width, int height, const char *title)
+{
+  impl = new WindowImpl_T(vulkanContext, width, height, title);
+}
+
+WindowImpl_T::WindowImpl_T(std::unique_ptr<VulkanContext>& vulkanContext, int width, int height, const char *title) :
   window([&](){
     GLFWwindow* window = glfwCreateWindow(width, height, "Voxels", nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
@@ -49,25 +55,30 @@ WindowManager::WindowManager(std::unique_ptr<VulkanContext>& vulkanContext, int 
   }()) {
 }
 
-WindowManager::~WindowManager() {
-  glfwDestroyWindow(window);
+WindowImpl_T::~WindowImpl_T()
+{
+    glfwDestroyWindow(window);
+}
+
+Window::~Window() {
+  delete impl;
 
   glfwTerminate();
 }
 
-void WindowManager::pollEvents() {
+void WindowImpl_T::pollEvents() {
   deltaTime = glfwGetTime() - lastTime;
   lastTime = glfwGetTime();
   glfwPollEvents();
 }
 
-bool WindowManager::shouldClose() const {
+bool WindowImpl_T::shouldClose() const {
   return glfwWindowShouldClose(window);
 }
 
-GLFWwindow *WindowManager::getWindow() const { return window; }
+GLFWwindow *WindowImpl_T::getWindow() const { return window; }
 
-void WindowManager::recreateWindow() {
+void WindowImpl_T::recreateWindow() {
   int width = 0, height = 0;
   glfwGetFramebufferSize(window, &width, &height);
   while (width == 0 || height == 0) {
@@ -76,33 +87,33 @@ void WindowManager::recreateWindow() {
   }
 }
 
-bool WindowManager::isKeyPressed(int key) {
-  return glfwGetKey(window, key) == GLFW_PRESS;
+bool Window::isKeyPressed(int key) {
+  return glfwGetKey(impl->window, key) == GLFW_PRESS;
 }
 
-bool WindowManager::isMouseButtonPressed(int button) {
-  return glfwGetMouseButton(window, button) == GLFW_PRESS;
+bool Window::isMouseButtonPressed(int button) {
+  return glfwGetMouseButton(impl->window, button) == GLFW_PRESS;
 }
 
-void WindowManager::hideCursor() {
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+void Window::hideCursor() {
+  glfwSetInputMode(impl->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
-double WindowManager::getDeltaTime() const { return deltaTime; }
+double Window::getDeltaTime() const { return impl->deltaTime; }
 
-void WindowManager::getCursorPos(double *currentMouseX, double *currentMouseY) {
-  glfwGetCursorPos(window, currentMouseX, currentMouseY);
+void Window::getCursorPos(double *currentMouseX, double *currentMouseY) {
+  glfwGetCursorPos(impl->window, currentMouseX, currentMouseY);
 }
 
-void WindowManager::showCursor() {
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+void Window::showCursor() {
+  glfwSetInputMode(impl->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
-void WindowManager::getFramebufferSize(int *width, int *height) {
-  glfwGetFramebufferSize(window, width, height);
+void Window::getFramebufferSize(int *width, int *height) {
+  glfwGetFramebufferSize(impl->window, width, height);
 }
 
-WindowManager::SwapChainSupportDetails WindowManager::querySwapChainSupport(VkPhysicalDevice device) {
+WindowImpl_T::SwapChainSupportDetails WindowImpl_T::querySwapChainSupport(VkPhysicalDevice device) {
   SwapChainSupportDetails details;
 
   vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface,
@@ -130,7 +141,7 @@ WindowManager::SwapChainSupportDetails WindowManager::querySwapChainSupport(VkPh
   return details;
 }
 
-VkSurfaceFormatKHR WindowManager::chooseSwapSurfaceFormat(
+VkSurfaceFormatKHR WindowImpl_T::chooseSwapSurfaceFormat(
     const std::vector<VkSurfaceFormatKHR> &availableFormats) {
   for (const auto &availableFormat : availableFormats) {
     if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
@@ -142,7 +153,7 @@ VkSurfaceFormatKHR WindowManager::chooseSwapSurfaceFormat(
   return availableFormats[0];
 }
 
-VkPresentModeKHR WindowManager::chooseSwapPresentMode(
+VkPresentModeKHR WindowImpl_T::chooseSwapPresentMode(
     const std::vector<VkPresentModeKHR> &availablePresentModes) {
   for (const auto &availablePresentMode : availablePresentModes) {
     if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -153,13 +164,13 @@ VkPresentModeKHR WindowManager::chooseSwapPresentMode(
   return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D WindowManager::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+VkExtent2D WindowImpl_T::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
   if (capabilities.currentExtent.width !=
       std::numeric_limits<uint32_t>::max()) {
     return capabilities.currentExtent;
   } else {
     int width, height;
-    getFramebufferSize(&width, &height);
+    glfwGetFramebufferSize(window, &width, &height);
 
     VkExtent2D actualExtent = {static_cast<uint32_t>(width),
                                static_cast<uint32_t>(height)};
@@ -175,7 +186,7 @@ VkExtent2D WindowManager::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capab
   }
 }
 
-void WindowManager::createSwapChain(std::unique_ptr<VulkanContext>& ctx, VkSwapchainKHR& swapChain) {
+void WindowImpl_T::createSwapChain(std::unique_ptr<VulkanContext>& ctx, VkSwapchainKHR& swapChain) {
   SwapChainSupportDetails swapChainSupport =
       querySwapChainSupport(physicalDevice);
 
@@ -231,7 +242,7 @@ void WindowManager::createSwapChain(std::unique_ptr<VulkanContext>& ctx, VkSwapc
   swapChainExtent = extent;
 }
 
-void WindowManager::recreateSwapchain(std::unique_ptr<VulkanContext>& ctx) {
+void WindowImpl_T::recreateSwapchain(std::unique_ptr<VulkanContext>& ctx) {
   cleanupSwapChain();
 
   createSwapChain(ctx, swapChain);
@@ -239,7 +250,7 @@ void WindowManager::recreateSwapchain(std::unique_ptr<VulkanContext>& ctx) {
   swapchainImages = createSwapchainImages();
 }
 
-AttachmentImage WindowManager::createSwapchainImages() {
+AttachmentImage WindowImpl_T::createSwapchainImages() {
   std::vector<VkImage> swapChainImages;
     vkGetSwapchainImagesKHR(device, swapChain, &swapchainImageCount, nullptr);
     swapChainImages.resize(swapchainImageCount);
@@ -273,23 +284,23 @@ AttachmentImage WindowManager::createSwapchainImages() {
     return AttachmentImage(swapChainImages.data(), swapChainImageViews.data(), swapChainImages.size());
 }
 
-void WindowManager::cleanupSwapChain() {
+void WindowImpl_T::cleanupSwapChain() {
   vkDeviceWaitIdle(device);
 
   vkDestroySwapchainKHR(device, swapChain, nullptr);
 }
 
-VkExtent2D WindowManager::getSwapChainExtent()
+VkExtent2D Window::getSwapChainExtent()
 {
-  return swapChainExtent;
+  return impl->swapChainExtent;
 }
 
-VkSwapchainKHR WindowManager::getSwapChain()
+VkSwapchainKHR WindowImpl_T::getSwapChain()
 {
   return swapChain;
 }
 
-AttachmentImage& WindowManager::getSwapChainImages()
+AttachmentImage& Window::getSwapChainImages()
 {
-  return swapchainImages;
+  return impl->swapchainImages;
 }

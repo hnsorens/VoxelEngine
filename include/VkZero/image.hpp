@@ -402,8 +402,6 @@ namespace VkZero
         ImageData images[MaxImageCount];
         StagingData staging[MaxImageCount];
 
-        uint32_t width, height, depth;
-
         static constexpr int maxImages = MaxImageCount;
     };
 

@@ -13,14 +13,14 @@ struct TransformUBO {
 namespace VkZero
 {
   class VulkanContext;
-  class WindowManager;
+  class Window;
 }
 class Camera {
 public:
-  Camera(std::unique_ptr<VkZero::VulkanContext> &vulkanContext, std::unique_ptr<VkZero::WindowManager> &window);
+  Camera(std::unique_ptr<VkZero::VulkanContext> &vulkanContext, std::unique_ptr<VkZero::Window> &window);
   ~Camera();
 
-  void update(std::unique_ptr<VkZero::WindowManager> &windowManager,
+  void update(std::unique_ptr<VkZero::Window> &Window,
               std::unique_ptr<class VoxelWorld> &voxelWorld, int currentFrame);
   void processMouseMovement(float xoffset, float yoffset);
   void processKeyboardInput(int key, float deltaTime);

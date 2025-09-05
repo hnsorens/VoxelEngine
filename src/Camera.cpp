@@ -11,7 +11,7 @@
 #include <memory>
 #include <stdexcept>
 
-Camera::Camera(std::unique_ptr<VkZero::VulkanContext> &vulkanContext, std::unique_ptr<VkZero::WindowManager> &window) {
+Camera::Camera(std::unique_ptr<VkZero::VulkanContext> &vulkanContext, std::unique_ptr<VkZero::Window> &window) {
   uniformBuffer.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBufferMemory.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
@@ -63,7 +63,7 @@ Camera::Camera(std::unique_ptr<VkZero::VulkanContext> &vulkanContext, std::uniqu
   }
 }
 Camera::~Camera() {}
-void Camera::update(std::unique_ptr<VkZero::WindowManager> &windowManager,
+void Camera::update(std::unique_ptr<VkZero::Window> &Window,
                     std::unique_ptr<VoxelWorld> &voxelWorld, int currentFrame) {
   struct {
     float &pos;
@@ -72,8 +72,8 @@ void Camera::update(std::unique_ptr<VkZero::WindowManager> &windowManager,
                 {cameraPosition.y, -640, -340, 128, 64, 8},
                 {cameraPosition.z, -640, -340, 128, 512, 64}};
 
-  cameraPosition.z += cameraVelocity.z * windowManager->getDeltaTime();
-  cameraTargetPoint.z += cameraVelocity.z * windowManager->getDeltaTime();
+  cameraPosition.z += cameraVelocity.z * Window->getDeltaTime();
+  cameraTargetPoint.z += cameraVelocity.z * Window->getDeltaTime();
   ;
   glm::ivec3 intCameraPosition = glm::ivec3(cameraPosition) * -1;
 
@@ -104,40 +104,40 @@ void Camera::update(std::unique_ptr<VkZero::WindowManager> &windowManager,
   } else if (is_ouch) {
     cameraVelocity.z = -fabsf(cameraVelocity.z) * 0.8;
   } else {
-    cameraVelocity.z -= 20 * 7 * windowManager->getDeltaTime();
+    cameraVelocity.z -= 20 * 7 * Window->getDeltaTime();
     ;
   }
  
-  if (windowManager->isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+  if (Window->isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
     // Hide the cursor and capture mouse movement
 
-    windowManager->hideCursor();
+    Window->hideCursor();
 
     float deltaTime = 0.1f;
 
     movementSpeed =
-        windowManager->isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
+        Window->isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
     bool reset = false;
-    if (windowManager->isKeyPressed(GLFW_KEY_S)) {
+    if (Window->isKeyPressed(GLFW_KEY_S)) {
       reset = true;
       cameraPosition += movementSpeed * deltaTime *
                         glm::normalize(cameraTargetPoint - cameraPosition) *
                         glm::vec3(1, 1, 0);
     }
-    if (windowManager->isKeyPressed(GLFW_KEY_W)) {
+    if (Window->isKeyPressed(GLFW_KEY_W)) {
       reset = true;
       cameraPosition -= movementSpeed * deltaTime *
                         glm::normalize(cameraTargetPoint - cameraPosition) *
                         glm::vec3(1, 1, 0);
     }
-    if (windowManager->isKeyPressed(GLFW_KEY_D)) {
+    if (Window->isKeyPressed(GLFW_KEY_D)) {
       reset = true;
       cameraPosition -=
           glm::normalize(glm::cross(cameraTargetPoint - cameraPosition,
                                     glm::vec3(0.0f, 0.0f, 1.0f))) *
           movementSpeed * deltaTime * glm::vec3(1, 1, 0);
     }
-    if (windowManager->isKeyPressed(GLFW_KEY_A)) {
+    if (Window->isKeyPressed(GLFW_KEY_A)) {
       reset = true;
       cameraPosition +=
           glm::normalize(glm::cross(cameraTargetPoint - cameraPosition,
@@ -146,11 +146,11 @@ void Camera::update(std::unique_ptr<VkZero::WindowManager> &windowManager,
     }
 
     // Q and E for vertical movement
-    if (windowManager->isKeyPressed(GLFW_KEY_Q)) {
+    if (Window->isKeyPressed(GLFW_KEY_Q)) {
       cameraPosition.z -= movementSpeed * 2 * deltaTime;
     }
-    if ((windowManager->isKeyPressed(GLFW_KEY_SPACE) ||
-         windowManager->isKeyPressed(GLFW_KEY_E)) &&
+    if ((Window->isKeyPressed(GLFW_KEY_SPACE) ||
+         Window->isKeyPressed(GLFW_KEY_E)) &&
         is_grounded) {
       cameraVelocity.z += 600 * deltaTime;
     }
@@ -160,7 +160,7 @@ void Camera::update(std::unique_ptr<VkZero::WindowManager> &windowManager,
     }
 
     double currentMouseX, currentMouseY;
-    windowManager->getCursorPos(&currentMouseX, &currentMouseY);
+    Window->getCursorPos(&currentMouseX, &currentMouseY);
 
     if (firstMouse) {
       lastMouseX = static_cast<float>(currentMouseX);
@@ -204,7 +204,7 @@ void Camera::update(std::unique_ptr<VkZero::WindowManager> &windowManager,
     cameraTargetPoint = cameraPosition + direction;
   } else {
     // Release the cursor and reset first mouse flag
-    windowManager->showCursor();
+    Window->showCursor();
     firstMouse = true;
   }
  
@@ -225,7 +225,7 @@ void Camera::update(std::unique_ptr<VkZero::WindowManager> &windowManager,
   voxelWorld->sortChunks();
 
   // Raycast and print distance
-  if (windowManager->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
+  if (Window->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
     bool hit = false;
     glm::ivec3 hitPosition =
         rayCast(voxelWorld, -cameraPosition, cameraTargetPoint - cameraPosition,

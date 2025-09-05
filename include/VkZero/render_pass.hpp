@@ -260,7 +260,7 @@ namespace VkZero
             createRenderPass(ctx, resources, pipelines...);
         }
         
-        void recreateSwapchain(std::unique_ptr<VulkanContext>& vulkanContext, std::unique_ptr<WindowManager>& window) {
+        void recreateSwapchain(std::unique_ptr<VulkanContext>& vulkanContext, std::unique_ptr<Window>& window) {
             // Clean up old framebuffers
             for (auto framebuffer : framebuffers) {
                 vkDestroyFramebuffer(vulkanContext->getDevice(), framebuffer, nullptr);
@@ -295,14 +295,14 @@ namespace VkZero
         const std::vector<VkFramebuffer>& getFramebuffers() const { return framebuffers; }
         VkRenderPass getRenderPass() const { return renderPass; }
 
-        void record(VkCommandBuffer commandBuffer, std::unique_ptr<WindowManager>& windowManager, uint32_t currentFrame, uint32_t imageIndex)
+        void record(VkCommandBuffer commandBuffer, std::unique_ptr<Window>& Window, uint32_t currentFrame, uint32_t imageIndex)
         {
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             renderPassInfo.renderPass = renderPass;
             renderPassInfo.framebuffer = framebuffers[imageIndex];
             renderPassInfo.renderArea.offset = {0, 0};
-            renderPassInfo.renderArea.extent = windowManager->getSwapChainExtent();
+            renderPassInfo.renderArea.extent = Window->getSwapChainExtent();
             VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
             renderPassInfo.clearValueCount = 1;
             renderPassInfo.pClearValues = &clearColor;
@@ -315,14 +315,14 @@ namespace VkZero
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.y = 0.0f;
-                viewport.width = (float)windowManager->getSwapChainExtent().width;
-                viewport.height = (float)windowManager->getSwapChainExtent().height;
+                viewport.width = (float)Window->getSwapChainExtent().width;
+                viewport.height = (float)Window->getSwapChainExtent().height;
                 viewport.minDepth = 0.0f;
                 viewport.maxDepth = 1.0f;
                 vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                 VkRect2D scissor{};
                 scissor.offset = {0, 0};
-                scissor.extent = windowManager->getSwapChainExtent();
+                scissor.extent = Window->getSwapChainExtent();
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
                 pipeline.bindResources(commandBuffer, currentFrame);
                 vkCmdDraw(commandBuffer, 6, 1, 0, 0);
