@@ -1,6 +1,7 @@
 # Makefile for VoxelEngine
 
 all:
+	ctags -R
 	glslc --target-spv=spv1.4 -fshader-stage=rgen shaders/rgen.glsl -o bin/rgen.spv
 	glslc --target-spv=spv1.4 -fshader-stage=rmiss shaders/rmiss.glsl -o bin/rmiss.spv
 	glslc --target-spv=spv1.4 -fshader-stage=frag shaders/frag.glsl -o bin/frag.spv

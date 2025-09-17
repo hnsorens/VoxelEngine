@@ -14,9 +14,9 @@ using namespace VkZero;
 
 static void framebufferResizeCallback(GLFWwindow *window, int width,
                                       int height) {
-  auto Window =
-      reinterpret_cast<class Window*>(glfwGetWindowUserPointer(window));
-  Window->impl->framebufferResized = true;
+  auto impl =
+      reinterpret_cast<WindowImpl_T*>(glfwGetWindowUserPointer(window));
+  impl->framebufferResized = true;
 }
 
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {

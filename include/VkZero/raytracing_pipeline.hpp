@@ -26,8 +26,7 @@ namespace VkZero
         using Attachments = ShaderGroup::Attachments;
 
         RaytracingPipeline(ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
-        resources(resources...),
-        m_shaderGroup(shaderGroup),
+        resources(resources...), m_shaderGroup(shaderGroup.impl),
         pipelineLayout([&](){
 
             std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
@@ -41,8 +40,8 @@ namespace VkZero
 
             VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 
-            pipelineLayoutInfo.pPushConstantRanges = m_shaderGroup.m_ranges.data();
-            pipelineLayoutInfo.pushConstantRangeCount = m_shaderGroup.m_ranges.size();
+            pipelineLayoutInfo.pPushConstantRanges = m_shaderGroup->m_ranges.data();
+            pipelineLayoutInfo.pushConstantRangeCount = m_shaderGroup->m_ranges.size();
 
             VkPipelineLayout layout;
             if (vkCreatePipelineLayout(vkZero_core->device, &pipelineLayoutInfo, nullptr,
@@ -74,8 +73,8 @@ namespace VkZero
             
             pipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
             // TODO save the shader arrays, so if it goes out of scope the references are still there
-            pipelineInfo.stageCount = m_shaderGroup.m_shaders.size();
-            pipelineInfo.pStages = m_shaderGroup.m_shaders.data();
+            pipelineInfo.stageCount = m_shaderGroup->m_shaders.size();
+            pipelineInfo.pStages = m_shaderGroup->m_shaders.data();
             pipelineInfo.groupCount = 2;
             pipelineInfo.pGroups = shaderGroups;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -168,7 +167,7 @@ namespace VkZero
             callableRegion = {};
         }
         
-        ShaderGroupImpl m_shaderGroup;
+        ShaderGroupImpl* m_shaderGroup;
         VkRayTracingPipelineCreateInfoKHR pipelineInfo{};
         VkPipelineLayout pipelineLayout;
         VkPipeline pipeline = VK_NULL_HANDLE;

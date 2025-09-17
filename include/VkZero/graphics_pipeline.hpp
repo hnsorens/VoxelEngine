@@ -7,6 +7,7 @@
 #include <tuple>
 #include <memory>
 #include <stdexcept>
+#include "VkZero/Internal/shader_group_internal.hpp"
 
 namespace VkZero
 {
@@ -77,7 +78,7 @@ namespace VkZero
          * for creation. The actual pipeline is created when create_pipeline() is called.
          */
         GraphicsPipeline(ShaderGroup& shaderGroup, ShaderResourcesBindings&... resources) :
-        m_shaderGroup(shaderGroup),
+        m_shaderGroup(shaderGroup.impl),
         resources(resources...),
         pipelineLayout([&](){
 
@@ -102,8 +103,8 @@ namespace VkZero
         {
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             // TODO save the shader arrays, so if it goes out of scope the references are still there
-            pipelineInfo.stageCount = m_shaderGroup.m_shaders.size();
-            pipelineInfo.pStages = m_shaderGroup.m_shaders.data();
+            pipelineInfo.stageCount = m_shaderGroup->m_shaders.size();
+            pipelineInfo.pStages = m_shaderGroup->m_shaders.data();
             pipelineInfo.subpass = 0;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
             pipelineInfo.layout = pipelineLayout;
@@ -224,7 +225,7 @@ namespace VkZero
         }
         
         std::tuple<ShaderResourcesBindings&...> resources;
-        ShaderGroupImpl m_shaderGroup;
+        ShaderGroupImpl* m_shaderGroup;
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         VkPipelineLayout pipelineLayout;
         VkPipeline pipeline = VK_NULL_HANDLE;
