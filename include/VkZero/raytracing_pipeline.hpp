@@ -10,6 +10,7 @@
 #include <memory>
 #include <stdexcept>
 #include <cstring>
+#include "VkZero/Internal/shader_resource_set_internal.hpp"
 
 #define ALIGN_UP(value, alignment)                                             \
   (((value) + (alignment) - 1) & ~((alignment) - 1))
