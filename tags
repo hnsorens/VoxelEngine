@@ -695,10 +695,10 @@ RenderPassResourceSetDetails	include/VkZero/render_pass.hpp	/^    namespace Rend
 RenderingLocalRead	include/VkZero/types.hpp	/^        RenderingLocalRead = 1000232000,$/;"	e	enum:VkZero::ImageLayout
 ResourceBinding	include/VkZero/binding.hpp	/^  ResourceBinding(Resource *info)$/;"	f	struct:VkZero::ResourceBinding
 ResourceBinding	include/VkZero/binding.hpp	/^struct ResourceBinding : public ResourceBindingBase {$/;"	s	namespace:VkZero
-ResourceBindingBase	include/VkZero/binding.hpp	/^  ResourceBindingBase(std::vector<BindResource *> resources,$/;"	f	struct:VkZero::ResourceBindingBase
 ResourceBindingBase	include/VkZero/binding.hpp	/^struct ResourceBindingBase {$/;"	s	namespace:VkZero
-ResourceBindingImpl_T	include/VkZero/binding.hpp	/^  ResourceBindingImpl_T(std::vector<BindResource*> resources,$/;"	f	struct:VkZero::ResourceBindingImpl_T
-ResourceBindingImpl_T	include/VkZero/binding.hpp	/^struct ResourceBindingImpl_T$/;"	s	namespace:VkZero
+ResourceBindingBase	src/VkZero/binding.cpp	/^ResourceBindingBase::ResourceBindingBase(std::vector<BindResource *> resources,$/;"	f	class:ResourceBindingBase
+ResourceBindingImpl_T	include/VkZero/Internal/binding_internal.hpp	/^struct ResourceBindingImpl_T {$/;"	s	namespace:VkZero
+ResourceBindingImpl_T	src/VkZero/binding.cpp	/^ResourceBindingImpl_T::ResourceBindingImpl_T(std::vector<BindResource*> resources,$/;"	f	class:ResourceBindingImpl_T
 ResourceManager	include/VkZero/resource_manager.hpp	/^  class ResourceManager {$/;"	c	namespace:VkZero
 RotationType3D	include/FastNoiseLite.hpp	/^  enum RotationType3D {$/;"	g	class:FastNoiseLite
 RotationType3D_ImproveXYPlanes	include/FastNoiseLite.hpp	/^    RotationType3D_ImproveXYPlanes,$/;"	e	enum:FastNoiseLite::RotationType3D
@@ -827,6 +827,7 @@ VkZero	include/Camera.hpp	/^namespace VkZero$/;"	n
 VkZero	include/CommandManager.hpp	/^namespace VkZero$/;"	n
 VkZero	include/Engine.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/PipelineManager.hpp	/^namespace VkZero$/;"	n
+VkZero	include/VkZero/Internal/binding_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/core_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/image_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/shader_group_internal.hpp	/^namespace VkZero {$/;"	n
@@ -923,7 +924,8 @@ attachments_extractor	include/VkZero/shader.hpp	/^        struct attachments_ext
 beginSingleTimeCommands	src/CommandManager.cpp	/^VkCommandBuffer CommandManager::beginSingleTimeCommands() {$/;"	f	class:CommandManager	typeref:typename:VkCommandBuffer
 bindResources	include/VkZero/graphics_pipeline.hpp	/^        void bindResources(VkCommandBuffer commandBuffer, int currentFrame)$/;"	f	class:VkZero::GraphicsPipeline	typeref:typename:void
 bindResources	include/VkZero/raytracing_pipeline.hpp	/^        void bindResources(VkCommandBuffer commandBuffer, int currentFrame)$/;"	f	class:VkZero::RaytracingPipeline	typeref:typename:void
-binding	include/VkZero/binding.hpp	/^  uint32_t binding;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:uint32_t
+binding	include/VkZero/Internal/binding_internal.hpp	/^  uint32_t binding;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:uint32_t
+binding	src/VkZero/binding.cpp	/^  uint32_t binding;$/;"	v	typeref:typename:uint32_t
 binding_compatibility_checker	include/VkZero/shader_group.hpp	/^  template <typename A, typename B> struct binding_compatibility_checker {$/;"	s	struct:VkZero::ShaderGroupDetails::shader_binding_validator
 bindings	include/VkZero/Internal/shader_resource_set_internal.hpp	/^  std::vector<ResourceBindingBase *> bindings;$/;"	m	struct:VkZero::ShaderResourceSetImpl_T	typeref:typename:std::vector<ResourceBindingBase * >
 bindings_extractor	include/VkZero/shader.hpp	/^        struct bindings_extractor<std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero::ShaderDetails
@@ -989,7 +991,8 @@ debugMessenger	include/VkZero/Internal/core_internal.hpp	/^    VkDebugUtilsMesse
 debugMessenger	include/VkZero/context.hpp	/^    VkDebugUtilsMessengerEXT debugMessenger;$/;"	m	struct:VkZero::VkZeroCoreImpl_T	typeref:typename:VkDebugUtilsMessengerEXT
 deltaTime	include/VkZero/Internal/window_internal.hpp	/^        double deltaTime = 0;$/;"	m	struct:VkZero::WindowImpl_T	typeref:typename:double
 depth	include/VkZero/Internal/image_internal.hpp	/^        uint32_t width, height, depth;$/;"	m	struct:VkZero::ImageImpl_T	typeref:typename:uint32_t
-descriptorCount	include/VkZero/binding.hpp	/^  uint32_t descriptorCount;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:uint32_t
+descriptorCount	include/VkZero/Internal/binding_internal.hpp	/^  uint32_t descriptorCount;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:uint32_t
+descriptorCount	src/VkZero/binding.cpp	/^  uint32_t descriptorCount;$/;"	v	typeref:typename:uint32_t
 descriptorSet	include/PipelineManager.hpp	/^  std::vector<VkDescriptorSet> descriptorSet;$/;"	m	class:PipelineManager	typeref:typename:std::vector<VkDescriptorSet>
 descriptorSetLayout	include/VkZero/Internal/shader_resource_set_internal.hpp	/^  VkDescriptorSetLayout descriptorSetLayout;$/;"	m	struct:VkZero::ShaderResourceSetImpl_T	typeref:typename:VkDescriptorSetLayout
 descriptorSets	include/VkZero/Internal/shader_resource_set_internal.hpp	/^  std::vector<VkDescriptorSet> descriptorSets;$/;"	m	struct:VkZero::ShaderResourceSetImpl_T	typeref:typename:std::vector<VkDescriptorSet>
@@ -1317,9 +1320,10 @@ requestChunk	src/VoxelWorld.cpp	/^void VoxelWorld::requestChunk(uint16_t chunkID
 resource	include/VkZero/render_pass.hpp	/^        AttachmentImage* resource;$/;"	m	class:VkZero::RenderPassResource	typeref:typename:AttachmentImage *
 resourceType	include/VkZero/binding.hpp	/^  using resourceType = Resource *;$/;"	t	struct:VkZero::ResourceBinding	typeref:typename:Resource *
 resource_matches	include/VkZero/graphics_pipeline.hpp	/^        constexpr bool resource_matches() {$/;"	f	namespace:VkZero::PipelineDetails	typeref:typename:bool
-resources	include/VkZero/binding.hpp	/^  std::vector<BindResource *> resources;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:std::vector<BindResource * >
+resources	include/VkZero/Internal/binding_internal.hpp	/^  std::vector<BindResource *> resources;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:std::vector<BindResource * >
 resources	include/VkZero/graphics_pipeline.hpp	/^        std::tuple<ShaderResourcesBindings&...> resources;$/;"	m	class:VkZero::GraphicsPipeline	typeref:typename:std::tuple<ShaderResourcesBindings &...>
 resources	include/VkZero/raytracing_pipeline.hpp	/^        std::tuple<ShaderResourcesBindings&...> resources;$/;"	m	class:VkZero::RaytracingPipeline	typeref:typename:std::tuple<ShaderResourcesBindings &...>
+resources	src/VkZero/binding.cpp	/^  std::vector<BindResource *> resources;$/;"	v	typeref:typename:std::vector<BindResource * >
 run	Makefile	/^run:$/;"	t
 run	src/Engine.cpp	/^void VoxelEngine::run() {$/;"	f	class:VoxelEngine	typeref:typename:void
 same_count	include/VkZero/shader_group.hpp	/^    static constexpr bool same_count =$/;"	m	struct:VkZero::ShaderGroupDetails::shader_binding_validator::binding_compatibility_checker	typeref:typename:bool
@@ -1355,7 +1359,8 @@ showCursor	src/VkZero/window.cpp	/^void Window::showCursor() {$/;"	f	class:Windo
 something	include/PipelineManager.hpp	/^  Pipeline something;$/;"	m	class:PipelineManager	typeref:typename:Pipeline
 something	include/Raytracer.hpp	/^  Pipeline something;  $/;"	m	class:Raytracer	typeref:typename:Pipeline
 sortChunks	src/VoxelWorld.cpp	/^void VoxelWorld::sortChunks() {$/;"	f	class:VoxelWorld	typeref:typename:void
-stages	include/VkZero/binding.hpp	/^  VkShaderStageFlags stages;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:VkShaderStageFlags
+stages	include/VkZero/Internal/binding_internal.hpp	/^  VkShaderStageFlags stages;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:VkShaderStageFlags
+stages	src/VkZero/binding.cpp	/^  VkShaderStageFlags stages;$/;"	v	typeref:typename:VkShaderStageFlags
 staging	include/VkZero/image.hpp	/^        StagingData staging[MaxImageCount];$/;"	m	class:VkZero::StagedImageBase	typeref:typename:StagingData[]
 startWorkers	src/VoxelWorld.cpp	/^void VoxelWorld::startWorkers(int numThreads) {$/;"	f	class:VoxelWorld	typeref:typename:void
 stopThreads	include/VoxelWorld.hpp	/^  bool stopThreads = false;$/;"	m	class:VoxelWorld	typeref:typename:bool
@@ -1376,8 +1381,8 @@ tuple_compatibility_checker	include/VkZero/shader_group.hpp	/^  struct tuple_com
 tuple_for_each	include/VkZero/render_pass.hpp	/^    constexpr void tuple_for_each(Tuple&& t, Func&& f) {$/;"	f	namespace:VkZero	typeref:typename:void
 tuple_for_each_impl	include/VkZero/render_pass.hpp	/^    constexpr void tuple_for_each_impl(Tuple&& t, Func&& f, std::index_sequence<I...>) {$/;"	f	namespace:VkZero	typeref:typename:void
 tuple_push_back	include/VkZero/render_pass.hpp	/^        struct tuple_push_back<std::tuple<Ts...>, T> {$/;"	s	namespace:VkZero::RenderPassDetails
+type	include/VkZero/Internal/binding_internal.hpp	/^  VkDescriptorType type;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:VkDescriptorType
 type	include/VkZero/binding.hpp	/^    using type = typename std::conditional_t<$/;"	t	struct:VkZero::CombinedBindings::filter_duplicates
-type	include/VkZero/binding.hpp	/^  VkDescriptorType type;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:VkDescriptorType
 type	include/VkZero/binding.hpp	/^  static constexpr VkDescriptorType type() { return ResourceType; }$/;"	f	struct:VkZero::ResourceBinding	typeref:typename:VkDescriptorType
 type	include/VkZero/binding.hpp	/^  static constexpr VkDescriptorType type() { return ResourceType; }$/;"	f	struct:VkZero::ShaderBinding	typeref:typename:VkDescriptorType
 type	include/VkZero/binding.hpp	/^  using type = typename filter_duplicates<AllBindings>::type;$/;"	t	struct:VkZero::CombinedBindings	typeref:typename:filter_duplicates<AllBindings>::type
@@ -1392,6 +1397,7 @@ type	include/VkZero/render_pass.hpp	/^            using type = std::tuple<Ts...,
 type	include/VkZero/shader.hpp	/^            using type = std::conditional_t<$/;"	t	struct:VkZero::ShaderDetails::attachments_extractor	typeref:typename:std::conditional_t<is_attachments_type<First>::value,First,typename attachments_extractor<std::tuple<Rest...>>::type>
 type	include/VkZero/shader.hpp	/^            using type = std::conditional_t<$/;"	t	struct:VkZero::ShaderDetails::bindings_extractor	typeref:typename:std::conditional_t<is_bindings_type<First>::value,First,typename bindings_extractor<std::tuple<Rest...>>::type>
 type	include/VkZero/shader.hpp	/^            using type = std::conditional_t<$/;"	t	struct:VkZero::ShaderDetails::push_constant_extractor	typeref:typename:std::conditional_t<is_push_constant_type<First>::value,First,typename push_constant_extractor<std::tuple<Rest...>>::type>
+type	src/VkZero/binding.cpp	/^  VkDescriptorType type;$/;"	v	typeref:typename:VkDescriptorType
 type	src/VkZero/descriptor_pool.cpp	/^    using type = decltype($/;"	t	struct:DescriptorTypes	file:
 type	src/VkZero/descriptor_pool.cpp	/^    using type = decltype($/;"	t	struct:get_shader_bindings	file:
 type	src/VkZero/descriptor_pool.cpp	/^    using type = std::conditional_t<$/;"	t	struct:unique_types	file:
@@ -1448,10 +1454,10 @@ width	include/VkZero/Internal/image_internal.hpp	/^        uint32_t width, heigh
 width	include/VkZero/render_pass.hpp	/^        uint32_t width, height;$/;"	m	class:VkZero::RenderPass	typeref:typename:uint32_t
 window	include/VkZero/Internal/window_internal.hpp	/^        GLFWwindow *window;$/;"	m	struct:VkZero::WindowImpl_T	typeref:typename:GLFWwindow *
 workers	include/VoxelWorld.hpp	/^  std::vector<std::thread> workers;$/;"	m	class:VoxelWorld	typeref:typename:std::vector<std::thread>
-write	include/VkZero/binding.hpp	/^  void write(VkDevice device, VkDescriptorSet &descriptorSet, int element,$/;"	f	struct:VkZero::ResourceBindingImpl_T	typeref:typename:void
 write	include/VkZero/image.hpp	/^        void write(VkCommandBuffer commandBuffer, char* data, uint32_t index)$/;"	f	class:VkZero::StagedImageBase	typeref:typename:void
 write	include/VkZero/image.hpp	/^        void write(char* data, uint32_t index) $/;"	f	class:VkZero::StagedImageBase	typeref:typename:void
-writeAll	include/VkZero/binding.hpp	/^  void writeAll(VkDevice device, std::vector<VkDescriptorSet> descriptorSets) {$/;"	f	struct:VkZero::ResourceBindingImpl_T	typeref:typename:void
+write	src/VkZero/binding.cpp	/^  void ResourceBindingImpl_T::write(VkDevice device, VkDescriptorSet &descriptorSet, int element/;"	f	class:ResourceBindingImpl_T	typeref:typename:void
+writeAll	src/VkZero/binding.cpp	/^  void ResourceBindingImpl_T::writeAll(VkDevice device, std::vector<VkDescriptorSet> descriptorS/;"	f	class:ResourceBindingImpl_T	typeref:typename:void
 writeDescriptor	include/VkZero/image.hpp	/^        void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet, uint32_t binding, u/;"	f	class:VkZero::ImageBase	typeref:typename:void
 writeDescriptor	include/VkZero/image.hpp	/^        void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet, uint32_t binding, u/;"	f	class:VkZero::StagedImageBase	typeref:typename:void
 yaw	include/Camera.hpp	/^  float yaw = -90.0f; \/\/ Rotation around the Y-axis (left\/right)$/;"	m	class:Camera	typeref:typename:float

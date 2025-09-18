@@ -1,4 +1,5 @@
 #include "VkZero/Internal/shader_resource_set_internal.hpp"
+#include "VkZero/Internal/binding_internal.hpp"
 
 using namespace VkZero;
 
