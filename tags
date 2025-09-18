@@ -676,10 +676,10 @@ Raytracer	include/Raytracer.hpp	/^class Raytracer {$/;"	c
 Raytracer	src/Raytracer.cpp	/^Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,$/;"	f	class:Raytracer
 RaytracingPipeline	include/VkZero/raytracing_pipeline.hpp	/^  RaytracingPipeline(ShaderGroup &shaderGroup,$/;"	f	class:VkZero::RaytracingPipeline
 RaytracingPipeline	include/VkZero/raytracing_pipeline.hpp	/^class RaytracingPipeline : public RaytracingPipelineBase {$/;"	c	namespace:VkZero
-RaytracingPipelineBase	include/VkZero/raytracing_pipeline.hpp	/^  RaytracingPipelineBase(ShaderGroupImpl *shaderGroup,$/;"	f	struct:VkZero::RaytracingPipelineBase
 RaytracingPipelineBase	include/VkZero/raytracing_pipeline.hpp	/^struct RaytracingPipelineBase {$/;"	s	namespace:VkZero
-RaytracingPipelineImpl_T	include/VkZero/raytracing_pipeline.hpp	/^  RaytracingPipelineImpl_T(ShaderGroupImpl *shaderGroup,$/;"	f	struct:VkZero::RaytracingPipelineImpl_T
-RaytracingPipelineImpl_T	include/VkZero/raytracing_pipeline.hpp	/^struct RaytracingPipelineImpl_T {$/;"	s	namespace:VkZero
+RaytracingPipelineBase	src/VkZero/raytracing_pipeline.cpp	/^RaytracingPipelineBase::RaytracingPipelineBase($/;"	f	class:RaytracingPipelineBase
+RaytracingPipelineImpl_T	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^struct RaytracingPipelineImpl_T {$/;"	s	namespace:VkZero
+RaytracingPipelineImpl_T	src/VkZero/raytracing_pipeline.cpp	/^RaytracingPipelineImpl_T::RaytracingPipelineImpl_T($/;"	f	class:RaytracingPipelineImpl_T
 RaytracingPushConstant	include/shaders.hpp	/^struct RaytracingPushConstant {$/;"	s
 RaytracingPushConstantData	include/Raytracer.hpp	/^  using RaytracingPushConstantData = VkZero::PushConstantData<RaytracingPushConstant>;$/;"	t	class:Raytracer	typeref:typename:VkZero::PushConstantData<RaytracingPushConstant>
 RaytracingPushConstants	include/Raytracer.hpp	/^  using RaytracingPushConstants = VkZero::ShaderPushConstants<VkZero::PushConstant<RaytracingPus/;"	t	class:Raytracer	typeref:typename:VkZero::ShaderPushConstants<VkZero::PushConstant<RaytracingPushConstant,VkZero::SHADER_RGEN>>
@@ -838,6 +838,7 @@ VkZero	include/VkZero/Internal/binding_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/core_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/graphics_pipeline_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/image_internal.hpp	/^namespace VkZero$/;"	n
+VkZero	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/shader_group_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/shader_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/shader_resource_set_internal.hpp	/^namespace VkZero {$/;"	n
@@ -897,9 +898,9 @@ __anon7974cf140602	include/VkZero/render_pass.hpp	/^            {$/;"	f	function
 __anon830707660102	src/VkZero/shader_resource_set.cpp	/^    : descriptorSetLayout([&]() {$/;"	f	file:
 __anon830707660202	src/VkZero/shader_resource_set.cpp	/^      descriptorSets([&]() {$/;"	f	file:
 __anon8519f9630102	src/VkZero/graphics_pipeline.cpp	/^      : m_shaderGroup(shaderGroup), resources(resources), pipelineLayout([&]() {$/;"	f	file:
+__anon9e840b460102	src/VkZero/raytracing_pipeline.cpp	/^    : resources(resources), m_shaderGroup(shaderGroup), pipelineLayout([&]() {$/;"	f	file:
 __anona64332f60108	src/Camera.cpp	/^  struct {$/;"	s	function:Camera::update	file:
 __anonabb63eb90102	include/VkZero/binding.hpp	/^            [&]() {$/;"	f	struct:VkZero::ResourceBinding	file:
-__anonb4a179670102	include/VkZero/raytracing_pipeline.hpp	/^      : resources(resources), m_shaderGroup(shaderGroup), pipelineLayout([&]() {$/;"	f	struct:VkZero::RaytracingPipelineImpl_T	file:
 __anonbe7cc5e90102	include/VkZero/shader_library.hpp	/^        static constexpr bool matches = []() {$/;"	f	struct:VkZero::shader_index	file:
 __anond26a2fc00102	src/VkZero/shader_group.cpp	/^    : m_shaders([&]() {$/;"	f	file:
 activeChunks	include/VoxelWorld.hpp	/^  std::unordered_set<uint16_t> activeChunks;$/;"	m	class:VoxelWorld	typeref:typename:std::unordered_set<uint16_t>
@@ -928,15 +929,15 @@ assign_global_locations	include/VkZero/render_pass.hpp	/^        struct assign_g
 attachment_collector	include/VkZero/shader_group.hpp	/^struct attachment_collector<std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero::ShaderGroupDetails
 attachments_extractor	include/VkZero/shader.hpp	/^        struct attachments_extractor<std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero::ShaderDetails
 beginSingleTimeCommands	src/CommandManager.cpp	/^VkCommandBuffer CommandManager::beginSingleTimeCommands() {$/;"	f	class:CommandManager	typeref:typename:VkCommandBuffer
-bindResources	include/VkZero/raytracing_pipeline.hpp	/^  void bindResources(VkCommandBuffer commandBuffer, int currentFrame) {$/;"	f	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:void
 bindResources	src/VkZero/graphics_pipeline.cpp	/^  void GraphicsPipelineImpl_T::bindResources(VkCommandBuffer commandBuffer, int currentFrame) {$/;"	f	class:GraphicsPipelineImpl_T	typeref:typename:void
+bindResources	src/VkZero/raytracing_pipeline.cpp	/^void RaytracingPipelineImpl_T::bindResources(VkCommandBuffer commandBuffer,$/;"	f	class:RaytracingPipelineImpl_T	typeref:typename:void
 binding	include/VkZero/Internal/binding_internal.hpp	/^  uint32_t binding;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:uint32_t
 binding	src/VkZero/binding.cpp	/^  uint32_t binding;$/;"	v	typeref:typename:uint32_t
 binding_compatibility_checker	include/VkZero/shader_group.hpp	/^  template <typename A, typename B> struct binding_compatibility_checker {$/;"	s	struct:VkZero::ShaderGroupDetails::shader_binding_validator
 bindings	include/VkZero/Internal/shader_resource_set_internal.hpp	/^  std::vector<ResourceBindingBase *> bindings;$/;"	m	struct:VkZero::ShaderResourceSetImpl_T	typeref:typename:std::vector<ResourceBindingBase * >
 bindings_extractor	include/VkZero/shader.hpp	/^        struct bindings_extractor<std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero::ShaderDetails
 buffer	include/VkZero/Internal/image_internal.hpp	/^        VkBuffer buffer;$/;"	m	struct:VkZero::StagingData_T	typeref:typename:VkBuffer
-callableRegion	include/VkZero/raytracing_pipeline.hpp	/^  VkStridedDeviceAddressRegionKHR callableRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
+callableRegion	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkStridedDeviceAddressRegionKHR callableRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
 camera	include/Engine.hpp	/^  static std::unique_ptr<class Camera> camera;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<class Camera>
 camera	src/Engine.cpp	/^std::unique_ptr<Camera> VoxelEngine::camera;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<Camera>
 cameraPosition	include/Camera.hpp	/^  glm::vec3 cameraPosition =$/;"	m	class:Camera	typeref:typename:glm::vec3
@@ -1136,7 +1137,7 @@ has_binding	include/VkZero/binding.hpp	/^template <int binding, typename Tuple> 
 height	include/VkZero/Internal/image_internal.hpp	/^        uint32_t width, height, depth;$/;"	m	struct:VkZero::ImageImpl_T	typeref:typename:uint32_t
 height	include/VkZero/render_pass.hpp	/^        uint32_t width, height;$/;"	m	class:VkZero::RenderPass	typeref:typename:uint32_t
 hideCursor	src/VkZero/window.cpp	/^void Window::hideCursor() {$/;"	f	class:Window	typeref:typename:void
-hitRegion	include/VkZero/raytracing_pipeline.hpp	/^  VkStridedDeviceAddressRegionKHR hitRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
+hitRegion	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkStridedDeviceAddressRegionKHR hitRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
 image	include/VkZero/Internal/image_internal.hpp	/^        VkImage image;$/;"	m	struct:VkZero::ImageData_T	typeref:typename:VkImage
 imageAvailableSemaphores	include/SyncManager.hpp	/^  std::vector<VkSemaphore> imageAvailableSemaphores;$/;"	m	class:SyncManager	typeref:typename:std::vector<VkSemaphore>
 imageLayout	include/VkZero/Internal/image_internal.hpp	/^        VkImageLayout imageLayout;$/;"	m	struct:VkZero::ImageImpl_T	typeref:typename:VkImageLayout
@@ -1199,7 +1200,7 @@ mWarpTransformType3D	include/FastNoiseLite.hpp	/^  TransformType3D mWarpTransfor
 mWeightedStrength	include/FastNoiseLite.hpp	/^  float mWeightedStrength;$/;"	m	class:FastNoiseLite	typeref:typename:float
 m_ranges	include/VkZero/Internal/shader_group_internal.hpp	/^    std::vector<VkPushConstantRange> &m_ranges;$/;"	m	struct:VkZero::ShaderGroupImpl	typeref:typename:std::vector<VkPushConstantRange> &
 m_shaderGroup	include/VkZero/Internal/graphics_pipeline_internal.hpp	/^  ShaderGroupImpl *m_shaderGroup;$/;"	m	struct:VkZero::GraphicsPipelineImpl_T	typeref:typename:ShaderGroupImpl *
-m_shaderGroup	include/VkZero/raytracing_pipeline.hpp	/^  ShaderGroupImpl *m_shaderGroup;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:ShaderGroupImpl *
+m_shaderGroup	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  ShaderGroupImpl *m_shaderGroup;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:ShaderGroupImpl *
 m_shaders	include/VkZero/Internal/shader_group_internal.hpp	/^    std::vector<VkPipelineShaderStageCreateInfo> m_shaders;$/;"	m	struct:VkZero::ShaderGroupImpl	typeref:typename:std::vector<VkPipelineShaderStageCreateInfo>
 main	src/main.cpp	/^int main() {$/;"	f	typeref:typename:int
 mainLoop	src/Engine.cpp	/^void VoxelEngine::mainLoop() {$/;"	f	class:VoxelEngine	typeref:typename:void
@@ -1212,7 +1213,7 @@ maxImages	include/VkZero/image.hpp	/^        static constexpr int maxImages = Ma
 maxImages	include/VkZero/image.hpp	/^        static constexpr int maxImages = MaxImageCount;$/;"	m	class:VkZero::StagedImageBase	typeref:typename:int
 memory	include/VkZero/Internal/image_internal.hpp	/^        VkDeviceMemory memory;$/;"	m	struct:VkZero::ImageData_T	typeref:typename:VkDeviceMemory
 memory	include/VkZero/Internal/image_internal.hpp	/^        VkDeviceMemory memory;$/;"	m	struct:VkZero::StagingData_T	typeref:typename:VkDeviceMemory
-missRegion	include/VkZero/raytracing_pipeline.hpp	/^  VkStridedDeviceAddressRegionKHR missRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
+missRegion	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkStridedDeviceAddressRegionKHR missRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
 modValue	src/Camera.cpp	/^    int lowerBound, upperBound, offset, modValue, shift;$/;"	m	struct:Camera::update::__anona64332f60108	typeref:typename:int	file:
 mouseSensitivity	include/Camera.hpp	/^  float mouseSensitivity = 0.1f;$/;"	m	class:Camera	typeref:typename:float
 mouseX	include/Camera.hpp	/^  float mouseX = 0.0f, mouseY = 0.0f;$/;"	m	class:Camera	typeref:typename:float
@@ -1256,13 +1257,13 @@ physicalDevice	include/VkZero/context.hpp	/^    VkPhysicalDevice physicalDevice;
 pickPhysicalDevice	src/VkZero/core.cpp	/^void VkZeroCoreImpl_T::pickPhysicalDevice(WindowImpl_T* window) {$/;"	f	class:VkZeroCoreImpl_T	typeref:typename:void
 pipeline	include/PipelineManager.hpp	/^  VkPipeline pipeline;$/;"	m	class:PipelineManager	typeref:typename:VkPipeline
 pipeline	include/VkZero/Internal/graphics_pipeline_internal.hpp	/^  VkPipeline pipeline = VK_NULL_HANDLE;$/;"	m	struct:VkZero::GraphicsPipelineImpl_T	typeref:typename:VkPipeline
-pipeline	include/VkZero/raytracing_pipeline.hpp	/^  VkPipeline pipeline = VK_NULL_HANDLE;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkPipeline
+pipeline	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkPipeline pipeline = VK_NULL_HANDLE;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkPipeline
 pipeline	include/VkZero/render_pass.hpp	/^        Pipeline& pipeline;$/;"	m	struct:VkZero::RaytracingRenderPassPipeline	typeref:typename:Pipeline &
 pipelineInfo	include/VkZero/Internal/graphics_pipeline_internal.hpp	/^  VkGraphicsPipelineCreateInfo pipelineInfo{};$/;"	m	struct:VkZero::GraphicsPipelineImpl_T	typeref:typename:VkGraphicsPipelineCreateInfo
-pipelineInfo	include/VkZero/raytracing_pipeline.hpp	/^  VkRayTracingPipelineCreateInfoKHR pipelineInfo{};$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkRayTracingPipelineCreateInfoKHR
+pipelineInfo	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkRayTracingPipelineCreateInfoKHR pipelineInfo{};$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkRayTracingPipelineCreateInfoKHR
 pipelineLayout	include/PipelineManager.hpp	/^  VkPipelineLayout pipelineLayout;$/;"	m	class:PipelineManager	typeref:typename:VkPipelineLayout
 pipelineLayout	include/VkZero/Internal/graphics_pipeline_internal.hpp	/^  VkPipelineLayout pipelineLayout;$/;"	m	struct:VkZero::GraphicsPipelineImpl_T	typeref:typename:VkPipelineLayout
-pipelineLayout	include/VkZero/raytracing_pipeline.hpp	/^  VkPipelineLayout pipelineLayout;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkPipelineLayout
+pipelineLayout	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkPipelineLayout pipelineLayout;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkPipelineLayout
 pipelineManager	include/Engine.hpp	/^  static std::unique_ptr<class PipelineManager> pipelineManager;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<class PipelineManager>
 pipelineManager	src/Engine.cpp	/^std::unique_ptr<PipelineManager> VoxelEngine::pipelineManager;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<PipelineManager>
 pipelines	include/VkZero/render_pass.hpp	/^        std::tuple<Pipelines&...> pipelines;$/;"	m	class:VkZero::RenderPass	typeref:typename:std::tuple<Pipelines &...>
@@ -1294,7 +1295,7 @@ queueMutex	include/VoxelWorld.hpp	/^  std::mutex queueMutex;$/;"	m	class:VoxelWo
 ranges	include/VkZero/Internal/shader_group_internal.hpp	/^  std::vector<VkPushConstantRange> ranges;$/;"	m	struct:VkZero::ShaderPushConstantsImpl_T	typeref:typename:std::vector<VkPushConstantRange>
 rayCast	src/Camera.cpp	/^glm::ivec3 Camera::rayCast(std::unique_ptr<VoxelWorld> &voxelWorld,$/;"	f	class:Camera	typeref:typename:glm::ivec3
 rayIntersectsCube	src/Camera.cpp	/^bool Camera::rayIntersectsCube(glm::vec3 corner, float size,$/;"	f	class:Camera	typeref:typename:bool
-raygenRegion	include/VkZero/raytracing_pipeline.hpp	/^  VkStridedDeviceAddressRegionKHR raygenRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
+raygenRegion	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkStridedDeviceAddressRegionKHR raygenRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
 raytracer	include/Engine.hpp	/^  static std::unique_ptr<class Raytracer> raytracer;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<class Raytracer>
 raytracer	src/Engine.cpp	/^std::unique_ptr<Raytracer> VoxelEngine::raytracer;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<Raytracer>
 raytracingCommandBuffers	include/Engine.hpp	/^  static std::vector<VkCommandBuffer> raytracingCommandBuffers;$/;"	m	class:VoxelEngine	typeref:typename:std::vector<VkCommandBuffer>
@@ -1330,7 +1331,7 @@ resourceType	include/VkZero/binding.hpp	/^  using resourceType = Resource *;$/;"
 resource_matches	include/VkZero/graphics_pipeline.hpp	/^constexpr bool resource_matches() {$/;"	f	namespace:VkZero::PipelineDetails	typeref:typename:bool
 resources	include/VkZero/Internal/binding_internal.hpp	/^  std::vector<BindResource *> resources;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:std::vector<BindResource * >
 resources	include/VkZero/Internal/graphics_pipeline_internal.hpp	/^  std::vector<ShaderResourceSetImpl_T *> resources;$/;"	m	struct:VkZero::GraphicsPipelineImpl_T	typeref:typename:std::vector<ShaderResourceSetImpl_T * >
-resources	include/VkZero/raytracing_pipeline.hpp	/^  std::vector<ShaderResourceSetImpl_T *> resources;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:std::vector<ShaderResourceSetImpl_T * >
+resources	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  std::vector<ShaderResourceSetImpl_T *> resources;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:std::vector<ShaderResourceSetImpl_T * >
 resources	src/VkZero/binding.cpp	/^  std::vector<BindResource *> resources;$/;"	v	typeref:typename:std::vector<BindResource * >
 run	Makefile	/^run:$/;"	t
 run	src/Engine.cpp	/^void VoxelEngine::run() {$/;"	f	class:VoxelEngine	typeref:typename:void
@@ -1338,9 +1339,9 @@ same_count	include/VkZero/shader_group.hpp	/^    static constexpr bool same_coun
 same_slot	include/VkZero/shader_group.hpp	/^    static constexpr bool same_slot =$/;"	m	struct:VkZero::ShaderGroupDetails::shader_binding_validator::binding_compatibility_checker	typeref:typename:bool
 same_type	include/VkZero/shader_group.hpp	/^    static constexpr bool same_type = A::type() == B::type();$/;"	m	struct:VkZero::ShaderGroupDetails::shader_binding_validator::binding_compatibility_checker	typeref:typename:bool
 sampler	include/VkZero/Internal/image_internal.hpp	/^        VkSampler sampler;$/;"	m	struct:VkZero::ImageImpl_T	typeref:typename:VkSampler
-sbtBuffer	include/VkZero/raytracing_pipeline.hpp	/^  VkBuffer sbtBuffer;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkBuffer
-sbtMemory	include/VkZero/raytracing_pipeline.hpp	/^  VkDeviceMemory sbtMemory;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkDeviceMemory
-sbtSize	include/VkZero/raytracing_pipeline.hpp	/^  VkDeviceSize sbtSize;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkDeviceSize
+sbtBuffer	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkBuffer sbtBuffer;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkBuffer
+sbtMemory	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkDeviceMemory sbtMemory;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkDeviceMemory
+sbtSize	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkDeviceSize sbtSize;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkDeviceSize
 section	include/Engine.hpp	/^  static uint8_t section;$/;"	m	class:VoxelEngine	typeref:typename:uint8_t
 section	src/Engine.cpp	/^uint8_t VoxelEngine::section = 0;$/;"	m	class:VoxelEngine	typeref:typename:uint8_t
 semiRandomFloat	include/Engine.hpp	/^static float semiRandomFloat(float x, float y, float z) {$/;"	f	typeref:typename:float

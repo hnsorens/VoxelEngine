@@ -12,6 +12,7 @@
 #include "VkZero/window.hpp"
 #include "VkZero/Internal/image_internal.hpp"
 #include "VkZero/Internal/graphics_pipeline_internal.hpp"
+#include "VkZero/Internal/raytracing_pipeline_internal.hpp"
 
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920
