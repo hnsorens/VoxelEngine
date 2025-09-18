@@ -82,8 +82,8 @@ void Raytracer::createRaytracingPipeline(
     VkZero::StagedSharedImage* voxelImage,
     VkZero::StagedSharedImage* voxelChunkMapImage) {
 
-    raytracingPipeline = something.pipeline;
-    raytracingPipelineLayout = something.pipelineLayout;
+    raytracingPipeline = something.impl->pipeline;
+    raytracingPipelineLayout = something.impl->pipelineLayout;
     raytracingDescriptorSetLayout = set1.impl->descriptorSetLayout;
     raytracingDescriptorSets = set1.impl->descriptorSets;
     for (int i = 0; i < 2; i++)

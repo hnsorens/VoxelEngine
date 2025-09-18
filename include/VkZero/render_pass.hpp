@@ -548,13 +548,13 @@ namespace VkZero
             std::apply([&](auto& pipeline)
             {
                 vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                                pipeline.pipeline.pipeline);
-                pipeline.pipeline.bindResources(commandBuffer, currentFrame);
+                                pipeline.pipeline.impl->pipeline);
+                pipeline.pipeline.impl->bindResources(commandBuffer, currentFrame);
                 *(uint32_t*)(pipeline.pushConstantData.data) = 0;
-                vkCmdPushConstants(commandBuffer, pipeline.pipeline.pipelineLayout,
+                vkCmdPushConstants(commandBuffer, pipeline.pipeline.impl->pipelineLayout,
                                 VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 8, pipeline.pushConstantData.data);
-                vkCmdTraceRaysKHR(commandBuffer, &pipeline.pipeline.raygenRegion, &pipeline.pipeline.missRegion, &pipeline.pipeline.hitRegion,
-                                &pipeline.pipeline.callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+                vkCmdTraceRaysKHR(commandBuffer, &pipeline.pipeline.impl->raygenRegion, &pipeline.pipeline.impl->missRegion, &pipeline.pipeline.impl->hitRegion,
+                                &pipeline.pipeline.impl->callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
 
                 VkMemoryBarrier barrier = {};
                 barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
@@ -573,10 +573,10 @@ namespace VkZero
                                                             // trace rays execution
                 0, 1, &barrier, 0, nullptr, 0, nullptr);
                 *(uint32_t*)(pipeline.pushConstantData.data) = 1;
-                vkCmdPushConstants(commandBuffer, pipeline.pipeline.pipelineLayout,
+                vkCmdPushConstants(commandBuffer, pipeline.pipeline.impl->pipelineLayout,
                                 VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, pipeline.pushConstantData.data);
-                vkCmdTraceRaysKHR(commandBuffer, &pipeline.pipeline.raygenRegion, &pipeline.pipeline.missRegion, &pipeline.pipeline.hitRegion,
-                                &pipeline.pipeline.callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+                vkCmdTraceRaysKHR(commandBuffer, &pipeline.pipeline.impl->raygenRegion, &pipeline.pipeline.impl->missRegion, &pipeline.pipeline.impl->hitRegion,
+                                &pipeline.pipeline.impl->callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
                 vkCmdPipelineBarrier(
                     commandBuffer,
                     VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
@@ -585,10 +585,10 @@ namespace VkZero
                                                                 // trace rays execution
                     0, 1, &barrier, 0, nullptr, 0, nullptr);
                 *(uint32_t*)(pipeline.pushConstantData.data) = 2;
-                vkCmdPushConstants(commandBuffer, pipeline.pipeline.pipelineLayout,
+                vkCmdPushConstants(commandBuffer, pipeline.pipeline.impl->pipelineLayout,
                                 VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, pipeline.pushConstantData.data);
-                vkCmdTraceRaysKHR(commandBuffer, &pipeline.pipeline.raygenRegion, &pipeline.pipeline.missRegion, &pipeline.pipeline.hitRegion,
-                                &pipeline.pipeline.callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+                vkCmdTraceRaysKHR(commandBuffer, &pipeline.pipeline.impl->raygenRegion, &pipeline.pipeline.impl->missRegion, &pipeline.pipeline.impl->hitRegion,
+                                &pipeline.pipeline.impl->callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
             }, pipelines);
         }
 
