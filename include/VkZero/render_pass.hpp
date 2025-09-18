@@ -11,6 +11,7 @@
 #include "VkZero/fixed_string.hpp"
 #include "VkZero/window.hpp"
 #include "VkZero/Internal/image_internal.hpp"
+#include "VkZero/Internal/graphics_pipeline_internal.hpp"
 
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920
@@ -309,7 +310,7 @@ namespace VkZero
 
             std::apply([&](auto& pipeline){
                 vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipeline.pipeline);
+                            pipeline.impl->pipeline);
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.y = 0.0f;
@@ -322,7 +323,7 @@ namespace VkZero
                 scissor.offset = {0, 0};
                 scissor.extent = Window->getSwapChainExtent();
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-                pipeline.bindResources(commandBuffer, currentFrame);
+                pipeline.impl->bindResources(commandBuffer, currentFrame);
                 vkCmdDraw(commandBuffer, 6, 1, 0, 0);
             }, pipelines);
             vkCmdEndRenderPass(commandBuffer);
@@ -438,7 +439,7 @@ namespace VkZero
             }
 
             // Create pipelines for each subpass
-            (pipelines.create_pipeline(vkZero_core->device, renderPass), ...);
+            (pipelines.impl->create_pipeline(vkZero_core->device, renderPass), ...);
 
             framebuffers.resize(resources.framebufferCount);
 
