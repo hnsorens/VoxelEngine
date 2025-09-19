@@ -153,10 +153,10 @@ struct ShaderPushConstantsBase {
 };
 
 template <typename Attachments>
-struct GetAttachmentNames;
+struct GetAttachments;
 
 template <typename... Attachments>
-struct GetAttachmentNames<std::tuple<Attachments...>>{
+struct GetAttachments<std::tuple<Attachments...>>{
   static std::vector<struct AttachmentImpl_T*> get()
   {
     return std::vector<struct AttachmentImpl_T*>({Attachments{}.impl...});
@@ -208,6 +208,6 @@ struct ShaderGroupBase
     // Constructor: takes push constants and shader instances
     ShaderGroup(ShaderPushConstants &pushConstants, Shaders &...shaders)
         : ShaderGroupBase({shaders.impl...},
-                          pushConstants.impl, GetAttachmentNames<Attachments>::get()) {}
+                          pushConstants.impl, GetAttachments<Attachments>::get()) {}
   };
 } // namespace VkZero
