@@ -20,8 +20,8 @@ ShaderPushConstantsBase::ShaderPushConstantsBase(
 }
 
 ShaderGroupImpl::ShaderGroupImpl(std::vector<ShaderImpl_T *> shaders,
-                                 ShaderPushConstantsImpl_T *pushConstantsImpl)
-    : m_shaders([&]() {
+                                 ShaderPushConstantsImpl_T *pushConstantsImpl, std::vector<AttachmentImpl_T*> attachments) : attachments(attachments),
+    m_shaders([&]() {
         std::vector<VkPipelineShaderStageCreateInfo> shaderCreateInfos;
         for (auto &s : shaders) {
           shaderCreateInfos.push_back(s->shaderInfo);
@@ -32,6 +32,6 @@ ShaderGroupImpl::ShaderGroupImpl(std::vector<ShaderImpl_T *> shaders,
 
 ShaderGroupBase::ShaderGroupBase(
     std::vector<struct ShaderImpl_T *> shaders,
-    struct ShaderPushConstantsImpl_T *pushConstants) {
-  impl = new ShaderGroupImpl(shaders, pushConstants);
+    struct ShaderPushConstantsImpl_T *pushConstants, std::vector<AttachmentImpl_T*> attachments) {
+  impl = new ShaderGroupImpl(shaders, pushConstants, attachments);
 }

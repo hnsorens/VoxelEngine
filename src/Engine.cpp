@@ -262,7 +262,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
         throw std::runtime_error("failed to begin recording command buffer!");
     }
 
-    pipelineManager->renderPass.record(commandManager->getCommandBuffers()[currentFrame], Window, currentFrame, imageIndex);
+    pipelineManager->renderPass.impl->record(commandManager->getCommandBuffers()[currentFrame], Window, currentFrame, imageIndex);
 
     if (vkEndCommandBuffer(commandManager->getCommandBuffers()[currentFrame]) != VK_SUCCESS) {
         throw std::runtime_error("failed to record raytracing command buffer!");

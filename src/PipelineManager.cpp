@@ -19,7 +19,7 @@ PipelineManager::PipelineManager(std::unique_ptr<Raytracer> &raytracer,
     set2{{&window->getSwapChainImages()}},
     renderPass{window->getSwapChainExtent().width, window->getSwapChainExtent().height, set2, something}
   {
-
+    
     // pipeline = something.pipeline;
     // pipelineLayout = something.pipelineLayout;
     // renderpass = renderPass.renderPass;
@@ -48,7 +48,7 @@ const VkDescriptorSet &PipelineManager::getDescriptorSet(int i) const {
 }
 
 void PipelineManager::recreateFramebuffers(std::unique_ptr<VkZero::Window>& window) {
-    renderPass.recreateSwapchain(window);
+    renderPass.impl->recreateSwapchain(window);
 }
 
 

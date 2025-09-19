@@ -14,9 +14,10 @@ struct ShaderPushConstantsImpl_T
 struct ShaderGroupImpl {
 public:
   ShaderGroupImpl(std::vector<ShaderImpl_T*> shaders,
-                  ShaderPushConstantsImpl_T *pushConstantsImpl);
+                  ShaderPushConstantsImpl_T *pushConstantsImpl, std::vector<AttachmentImpl_T*> attachments);
     std::vector<VkPipelineShaderStageCreateInfo> m_shaders;
     std::vector<VkPushConstantRange> &m_ranges;
+    std::vector<AttachmentImpl_T*> attachments;
   };
 
 }

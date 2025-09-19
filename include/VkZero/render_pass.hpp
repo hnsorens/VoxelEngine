@@ -1,18 +1,19 @@
 #pragma once
 
 #include "VkZero/Internal/core_internal.hpp"
+#include "VkZero/Internal/graphics_pipeline_internal.hpp"
+#include "VkZero/Internal/image_internal.hpp"
+#include "VkZero/Internal/raytracing_pipeline_internal.hpp"
+#include "VkZero/fixed_string.hpp"
+#include "VkZero/window.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <memory>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include "VkZero/fixed_string.hpp"
-#include "VkZero/window.hpp"
-#include "VkZero/Internal/image_internal.hpp"
-#include "VkZero/Internal/graphics_pipeline_internal.hpp"
-#include "VkZero/Internal/raytracing_pipeline_internal.hpp"
 
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920
@@ -20,580 +21,686 @@
 #define ALIGN_UP(value, alignment)                                             \
   (((value) + (alignment) - 1) & ~((alignment) - 1))
 
-namespace VkZero 
-{
-    template <FixedString Name>
-    class RenderPassResource
-    {
-    public:
-        RenderPassResource(AttachmentImage* image) : resource{image} {}
+namespace VkZero {
 
-        static constexpr FixedString name = Name.value;
-        AttachmentImage* resource;
-    };
+struct RenderPassResourceImpl_T {
+  RenderPassResourceImpl_T(const char* name, AttachmentImage *image) : image(image), name(name) {}
 
-    namespace RenderPassResourceSetDetails
-    {
-        // Compile-time name matching to find resource index
-        template <FixedString TargetName, typename Tuple, std::size_t Index = 0>
-        constexpr std::size_t findResourceIndex()
-        {
-            if constexpr (Index >= std::tuple_size_v<Tuple>) {
-                static_assert(Index < std::tuple_size_v<Tuple>, 
-                    "Resource not found for attachment");
-                return Index;
-            } else {
-                using Element = std::tuple_element_t<Index, Tuple>;
-                if constexpr (Element::name == TargetName) {
-                    return Index;
-                } else {
-                    return findResourceIndex<TargetName, Tuple, Index + 1>();
-                }
-            }
-        }
-    };
+  AttachmentImage *image;
+  const char* name;
+};
 
-    template <typename... Resources>
-    class RenderPassResourceSet
-    {
-    public:
-        RenderPassResourceSet(Resources... resources) : images{resources...} {}
-        int framebufferCount = 3;
+struct RenderPassResourceBase {
+  RenderPassResourceBase(const char* name, AttachmentImage *image) {
+    impl = new RenderPassResourceImpl_T(name, image);
+  }
 
-        template <typename Attachments>
-        std::vector<VkImageView> getAttachments(int index)
-        {
-            std::vector<VkImageView> attachments;
-            attachments.reserve(std::tuple_size_v<Attachments>);
-            
-            // For each attachment, find the matching resource at compile time
-            [&] <std::size_t... I> (std::index_sequence<I...>) {
-                (attachments.push_back(
-                    std::get<
-                        RenderPassResourceSetDetails::findResourceIndex<
-                            std::tuple_element_t<I, Attachments>::name,
-                            std::tuple<Resources...>
-                        >()
-                    >(images).resource->images[index]->view
-                ), ...);
-            }(std::make_index_sequence<std::tuple_size_v<Attachments>>{});
+  struct RenderPassResourceImpl_T *impl;
+};
 
-            return std::move(attachments);
-        }
+template <FixedString Name>
+class RenderPassResource : public RenderPassResourceBase {
+public:
+  RenderPassResource(AttachmentImage *image) : RenderPassResourceBase(name, image) {}
 
-        std::tuple<Resources...> images;
-    };
+  static constexpr const char* name = Name.value;
+};
 
-    template <FixedString Name, VkFormat Format, int Location>
-    struct ColorAttachment
-    {
-        static constexpr FixedString name = Name.value;
-        static constexpr VkFormat get_format() { return Format; }
-        static constexpr int get_location() { return Location; } 
-    };
-
-    template <FixedString Name, VkFormat Format, int Location>
-    struct DepthAttachment
-    {
-        static constexpr FixedString name = Name.value;
-        static constexpr VkFormat get_format() { return Format; }
-        static constexpr int get_location() { return Location; } 
-    };
-
-    template <FixedString Name>
-    struct PreserveAttachment
-    {
-        static constexpr FixedString name = Name.value;
-    };
-
-    template <FixedString Name, VkFormat Format, int Location>
-    struct InputAttachment
-    {
-        static constexpr FixedString name = Name.value;
-        static constexpr VkFormat get_format() { return Format; }
-        static constexpr int get_location() { return Location; } 
-    };
-    namespace RenderPassDetails
-    {
-        template <typename Pipelines>
-        struct get_all_attachments;
-
-        template <>
-        struct get_all_attachments<std::tuple<>>
-        {
-            using value = std::tuple<>;
-        };
-
-        template <typename First, typename... Rest>
-        struct get_all_attachments<std::tuple<First, Rest...>>
-        {
-            using value = decltype(
-                std::tuple_cat(
-                    std::declval<typename First::Attachments>(),
-                    std::declval<typename get_all_attachments<std::tuple<Rest...>>::value>()
-                )
-            );
-        };
-
-        // Helper to append to a tuple
-        template <typename Tuple, typename T>
-        struct tuple_push_back;
-
-        template <typename... Ts, typename T>
-        struct tuple_push_back<std::tuple<Ts...>, T> {
-            using type = std::tuple<Ts..., T>;
-        };
-
-        // Check if a tuple contains an attachment with same name/type (for InputAttachment, also check format)
-        template <typename T, typename Tuple>
-        struct contains_attachment;
-
-        template <typename T>
-        struct contains_attachment<T, std::tuple<>> : std::false_type {};
-
-        template <typename T, typename First, typename... Rest>
-        struct contains_attachment<T, std::tuple<First, Rest...>>
-            : std::conditional_t<
-                std::is_same_v<T, First> ||
-                (T::name == First::name && std::is_same_v<T, First>) || 
-                (std::is_same_v<T, InputAttachment<T::name, T::get_format(), T::get_location()>> &&
-                std::is_same_v<First, InputAttachment<First::name, First::get_format(), First::get_location()>> &&
-                T::get_format() == First::get_format()),
-                std::true_type,
-                contains_attachment<T, std::tuple<Rest...>>
-            > {};
-
-        // Meta-function to filter preserve/input attachments
-        template <typename Attachments, typename Tuple>
-        struct filter_preserve_input;
-
-        template <typename Tuple>
-        struct filter_preserve_input<std::tuple<>, Tuple> {
-            using type = std::tuple<>;
-        };
-
-        template <typename First, typename... Rest, typename All>
-        struct filter_preserve_input<std::tuple<First, Rest...>, All> {
-            using tail = typename filter_preserve_input<std::tuple<Rest...>, All>::type;
-            using type = std::conditional_t<
-                std::is_same_v<First, PreserveAttachment<First::name>> || 
-                std::is_same_v<First, InputAttachment<First::name, First::get_format(), First::get_location()>>,
-                std::conditional_t<contains_attachment<First, All>::value,
-                                typename tuple_push_back<tail, First>::type,
-                                tail>,
-                typename tuple_push_back<tail, First>::type
-            >;
-        };
-
-        // Assign global locations
-        template <typename Tuple, int Start = 0>
-        struct assign_global_locations;
-
-        template <int Start>
-        struct assign_global_locations<std::tuple<>, Start> {
-            using type = std::tuple<>;
-        };
-
-        template <typename First, typename... Rest, int Start>
-        struct assign_global_locations<std::tuple<First, Rest...>, Start> {
-            // Produce new type with updated location
-            using new_first = First;
-            template <typename T> struct update_location { using type = T; };
-
-            template <FixedString N, VkFormat F, int L>
-            struct update_location<ColorAttachment<N, F, L>> { 
-                using type = ColorAttachment<N, F, Start>; 
-            };
-
-            template <FixedString N, VkFormat F, int L>
-            struct update_location<DepthAttachment<N, F, L>> { 
-                using type = DepthAttachment<N, F, Start>; 
-            };
-
-            template <FixedString N, VkFormat F, int L>
-            struct update_location<InputAttachment<N, F, L>> {
-                using type = InputAttachment<N, F, Start>;
-            };
-
-            using type = decltype(std::tuple_cat(
-                std::tuple<typename update_location<First>::type>{},
-                typename assign_global_locations<std::tuple<Rest...>, Start + 1>::type{}
-            ));
-        };
-
-        // The main meta-function
-        template <typename AllAttachments>
-        struct get_common_attachments
-        {
-            // Filter preserves/inputs
-            using filtered = typename filter_preserve_input<AllAttachments, AllAttachments>::type;
-
-            // Assign global locations
-            using value = typename assign_global_locations<filtered>::type;
-        };
-    };
-
-    // Compile-time tuple iteration
-    template <typename Tuple, typename Func, std::size_t... I>
-    constexpr void tuple_for_each_impl(Tuple&& t, Func&& f, std::index_sequence<I...>) {
-        (f(std::get<I>(t)), ...);
+namespace RenderPassResourceSetDetails {
+// Compile-time name matching to find resource index
+template <FixedString TargetName, typename Tuple, std::size_t Index = 0>
+constexpr std::size_t findResourceIndex() {
+  if constexpr (Index >= std::tuple_size_v<Tuple>) {
+    static_assert(Index < std::tuple_size_v<Tuple>,
+                  "Resource not found for attachment");
+    return Index;
+  } else {
+    using Element = std::tuple_element_t<Index, Tuple>;
+    if constexpr (Element::name == TargetName) {
+      return Index;
+    } else {
+      return findResourceIndex<TargetName, Tuple, Index + 1>();
     }
-
-    template <typename Tuple, typename Func>
-    constexpr void tuple_for_each(Tuple&& t, Func&& f) {
-        tuple_for_each_impl(
-            std::forward<Tuple>(t),
-            std::forward<Func>(f),
-            std::make_index_sequence<std::tuple_size<std::remove_reference_t<Tuple>>::value>{}
-        );
-    }
-
-    template <typename Resources, typename... Pipelines>
-    class RenderPass
-    {
-    public:
-        using allAttachments = RenderPassDetails::get_all_attachments<std::tuple<Pipelines...>>::value;
-        using commonAttachments = RenderPassDetails::get_common_attachments<allAttachments>::value;
-
-        static_assert(std::tuple_size<allAttachments>::value > 0, "RenderPass must have at least one attachment.");
-
-        RenderPass(uint32_t width, uint32_t height, Resources& resources, Pipelines&... pipelines) : width{width}, height{height}, pipelines(pipelines...)
-        {
-            createRenderPass(resources, pipelines...);
-        }
-        
-        void recreateSwapchain(std::unique_ptr<Window>& window) {
-            // Clean up old framebuffers
-            for (auto framebuffer : framebuffers) {
-                vkDestroyFramebuffer(vkZero_core->device, framebuffer, nullptr);
-            }
-            
-            // Recreate the render pass and framebuffers
-            // createRenderPass(ctx, resources, pipelines...);
-
-            // size_t numImages = window->swapchainImageCount;
-            // framebuffers.resize(numImages);
-            
-            for (size_t i = 0; i < framebuffers.size(); i++) {
-                VkImageView attachments[] = {window->getSwapChainImages().images[i]->view};
-                VkFramebufferCreateInfo framebufferInfo{};
-                framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                framebufferInfo.renderPass = renderPass;
-                framebufferInfo.attachmentCount = 1;
-                framebufferInfo.pAttachments = attachments;
-                framebufferInfo.width = window->getSwapChainExtent().width;
-                framebufferInfo.height = window->getSwapChainExtent().height;
-                framebufferInfo.layers = 1;
-
-                if (vkCreateFramebuffer(vkZero_core->device, &framebufferInfo, nullptr,
-                                        &framebuffers[i]) != VK_SUCCESS) {
-                    throw std::runtime_error("failed to create framebuffer!");
-                }
-            }
-        }
-        
-        const std::vector<VkFramebuffer>& getFramebuffers() const { return framebuffers; }
-        VkRenderPass getRenderPass() const { return renderPass; }
-
-        void record(VkCommandBuffer commandBuffer, std::unique_ptr<Window>& Window, uint32_t currentFrame, uint32_t imageIndex)
-        {
-            VkRenderPassBeginInfo renderPassInfo{};
-            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = renderPass;
-            renderPassInfo.framebuffer = framebuffers[imageIndex];
-            renderPassInfo.renderArea.offset = {0, 0};
-            renderPassInfo.renderArea.extent = Window->getSwapChainExtent();
-            VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-            renderPassInfo.clearValueCount = 1;
-            renderPassInfo.pClearValues = &clearColor;
-            vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
-                                VK_SUBPASS_CONTENTS_INLINE);
-
-            std::apply([&](auto& pipeline){
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipeline.impl->pipeline);
-                VkViewport viewport{};
-                viewport.x = 0.0f;
-                viewport.y = 0.0f;
-                viewport.width = (float)Window->getSwapChainExtent().width;
-                viewport.height = (float)Window->getSwapChainExtent().height;
-                viewport.minDepth = 0.0f;
-                viewport.maxDepth = 1.0f;
-                vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-                VkRect2D scissor{};
-                scissor.offset = {0, 0};
-                scissor.extent = Window->getSwapChainExtent();
-                vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-                pipeline.impl->bindResources(commandBuffer, currentFrame);
-                vkCmdDraw(commandBuffer, 6, 1, 0, 0);
-            }, pipelines);
-            vkCmdEndRenderPass(commandBuffer);
-        }
-        
-    private:
-        void createRenderPass(Resources& resources, Pipelines&... pipelines) {
-            // Gather all global attachments
-            std::vector<VkAttachmentDescription> attachmentDescriptions;
-            tuple_for_each(commonAttachments{}, [&](auto att){
-                using AttType = decltype(att);
-                VkAttachmentDescription desc{};
-                desc.samples = VK_SAMPLE_COUNT_1_BIT;
-                desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-                desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-                if constexpr (std::is_same_v<AttType, ColorAttachment<AttType::name, AttType::get_format(), AttType::get_location()>>) {
-                    desc.format = AttType::get_format();
-                    desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                } else if constexpr (std::is_same_v<AttType, DepthAttachment<AttType::name, AttType::get_format(), AttType::get_location()>>) {
-                    desc.format = AttType::get_format();
-                    desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                } else if constexpr (std::is_same_v<AttType, InputAttachment<AttType::name, AttType::get_format(), AttType::get_location()>>) {
-                    desc.format = AttType::get_format();
-                    desc.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                } else {
-                    return; // PreserveAttachment is not an actual attachment
-                }
-
-                attachmentDescriptions.push_back(desc);
-            });
-
-            std::vector<std::vector<VkAttachmentReference>> attachmentRefsMap;
-            std::vector<std::vector<uint32_t>> preserveRefsMap;
-            // Build subpasses
-            std::vector<VkSubpassDescription> subpassDescs;
-            
-            ([&](auto& pipeline){
-                VkSubpassDescription subpass{};
-                subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-                std::vector<VkAttachmentReference> colorRefs;
-                std::vector<uint32_t> preserveRefs;
-                VkAttachmentReference depthRef{};
-                depthRef.attachment = VK_ATTACHMENT_UNUSED;
-
-                tuple_for_each(typename std::remove_reference_t<decltype(pipeline)>::Attachments{}, [&](auto att){
-                    using AttType = decltype(att);
-                    uint32_t loc = AttType::get_location();
-                    if constexpr (std::is_same_v<AttType, ColorAttachment<AttType::name, AttType::get_format(), AttType::get_location()>>) {
-                        colorRefs.push_back({loc, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-                    } else if constexpr (std::is_same_v<AttType, DepthAttachment<AttType::name, AttType::get_format(), AttType::get_location()>>) {
-                        depthRef.attachment = loc;
-                        depthRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                    } else if constexpr (std::is_same_v<AttType, PreserveAttachment<AttType::name>>) {
-                        preserveRefs.push_back(loc);
-                    }
-                });
-
-                attachmentRefsMap.push_back(std::move(colorRefs));
-                preserveRefsMap.push_back(std::move(preserveRefs));
-
-                subpass.colorAttachmentCount = static_cast<uint32_t>(attachmentRefsMap.back().size());
-                subpass.pColorAttachments = attachmentRefsMap.back().data();
-                subpass.preserveAttachmentCount = static_cast<uint32_t>(preserveRefsMap.back().size());
-                subpass.pPreserveAttachments = preserveRefsMap.back().data();
-                subpass.pDepthStencilAttachment = (depthRef.attachment != VK_ATTACHMENT_UNUSED) ? &depthRef : nullptr;
-
-                subpassDescs.push_back(subpass);
-
-            }(pipelines), ...);
-
-            // Dependencies for proper layout transitions
-            std::vector<VkSubpassDependency> dependencies;
-            
-            // First dependency: External to first subpass (for initial layout transition)
-            VkSubpassDependency dependency1{};
-            dependency1.srcSubpass = VK_SUBPASS_EXTERNAL;
-            dependency1.dstSubpass = 0;
-            dependency1.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependency1.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependency1.srcAccessMask = 0;
-            dependency1.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            dependency1.dependencyFlags = 0;
-            dependencies.push_back(dependency1);
-            
-            // Second dependency: Last subpass to external (for final layout transition to present)
-            VkSubpassDependency dependency2{};
-            dependency2.srcSubpass = 0;
-            dependency2.dstSubpass = VK_SUBPASS_EXTERNAL;
-            dependency2.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependency2.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-            dependency2.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            dependency2.dstAccessMask = 0;
-            dependency2.dependencyFlags = 0;
-            dependencies.push_back(dependency2);
-
-            VkRenderPassCreateInfo renderPassInfo{};
-            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-            renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentDescriptions.size());
-            renderPassInfo.pAttachments = attachmentDescriptions.data();
-            renderPassInfo.subpassCount = static_cast<uint32_t>(subpassDescs.size());
-            renderPassInfo.pSubpasses = subpassDescs.data();
-            renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-            renderPassInfo.pDependencies = dependencies.data();
-
-            fflush(stdout);
-            if (vkCreateRenderPass(vkZero_core->device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create render pass!");
-            }
-
-            // Create pipelines for each subpass
-            (pipelines.impl->create_pipeline(vkZero_core->device, renderPass), ...);
-
-            framebuffers.resize(resources.framebufferCount);
-
-            for (size_t i = 0; i < resources.framebufferCount; i++) {
-                // VkImageView attachments[] = {swapChainImageViews[i]};
-
-                std::vector<VkImageView> attachments = resources.template getAttachments<commonAttachments>(i);
-
-                VkFramebufferCreateInfo framebufferInfo{};
-                framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                framebufferInfo.renderPass = renderPass;
-                framebufferInfo.attachmentCount = attachments.size();
-                framebufferInfo.pAttachments = attachments.data();
-                framebufferInfo.width = width;
-                framebufferInfo.height = height;
-                framebufferInfo.layers = 1;
-
-                if (vkCreateFramebuffer(vkZero_core->device, &framebufferInfo, nullptr,
-                                        &framebuffers[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create framebuffer!");
-                }
-            }
-        }
-
-    private:
-        uint32_t width, height;
-        VkRenderPass renderPass;
-        std::vector<VkFramebuffer> framebuffers;
-        std::tuple<Pipelines&...> pipelines;
-        friend class PipelineManager;
-
-    };
-
-    template <typename... Structures>
-    struct PushConstantData
-    {
-        PushConstantData()
-        {
-            size_t size = (sizeof(Structures) + ...);
-            data = new char(size);
-        }
-
-        ~PushConstantData()
-        {
-            delete data;
-        }
-
-        template <typename T>
-        T* get()
-        {
-            return (T*)(data + offset<T>());
-        }
-
-    private:
-
-        template <typename T>
-        constexpr size_t offset()
-        {
-            size_t current = 0;
-            ([&](){
-                if constexpr (std::is_same<T, Structures>())
-                {
-                    return current;
-                }
-                else {
-                    current += sizeof(Structures);
-                }
-            }(), ...);
-
-            static_assert("Type does not exist in Push Constant Data");
-            return 0;
-        }
-
-        char* data;
-
-        template <typename... RaytracingPipelines>
-        friend class RaytracingRenderPass;
-    };
-
-    template <typename PushConstant, typename Pipeline>
-    struct RaytracingRenderPassPipeline
-    {
-    public:
-        RaytracingRenderPassPipeline(Pipeline& pipeline, PushConstant& pushConstants) : pipeline(pipeline), pushConstantData(pushConstants) {}
-    private:
-        Pipeline& pipeline;
-        PushConstant& pushConstantData;
-
-        template <typename... RaytracingPipelines>
-        friend class RaytracingRenderPass;
-    };
-
-    template <typename... RaytracingPipelines>
-    class RaytracingRenderPass
-    {
-    public:
-        RaytracingRenderPass(RaytracingPipelines... pipelines) : pipelines{pipelines...} 
-        {
-            vkCmdTraceRaysKHR =
-                reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(
-                    vkZero_core->device, "vkCmdTraceRaysKHR"));
-        }
-
-        void record(VkCommandBuffer commandBuffer, uint32_t currentFrame, uint32_t imageIndex)
-        {
-            std::apply([&](auto& pipeline)
-            {
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                                pipeline.pipeline.impl->pipeline);
-                pipeline.pipeline.impl->bindResources(commandBuffer, currentFrame);
-                *(uint32_t*)(pipeline.pushConstantData.data) = 0;
-                vkCmdPushConstants(commandBuffer, pipeline.pipeline.impl->pipelineLayout,
-                                VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 8, pipeline.pushConstantData.data);
-                vkCmdTraceRaysKHR(commandBuffer, &pipeline.pipeline.impl->raygenRegion, &pipeline.pipeline.impl->missRegion, &pipeline.pipeline.impl->hitRegion,
-                                &pipeline.pipeline.impl->callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
-
-                VkMemoryBarrier barrier = {};
-                barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-                barrier.srcAccessMask =
-                    VK_ACCESS_SHADER_WRITE_BIT |
-                    VK_ACCESS_SHADER_READ_BIT; // Ensure writes from the first trace finish
-                barrier.dstAccessMask =
-                    VK_ACCESS_SHADER_READ_BIT |
-                    VK_ACCESS_SHADER_WRITE_BIT; // Ensure the second trace can read them
-                barrier.pNext = 0;
-                vkCmdPipelineBarrier(
-                commandBuffer,
-                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
-                                                            // rays execution
-                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination: Second
-                                                            // trace rays execution
-                0, 1, &barrier, 0, nullptr, 0, nullptr);
-                *(uint32_t*)(pipeline.pushConstantData.data) = 1;
-                vkCmdPushConstants(commandBuffer, pipeline.pipeline.impl->pipelineLayout,
-                                VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, pipeline.pushConstantData.data);
-                vkCmdTraceRaysKHR(commandBuffer, &pipeline.pipeline.impl->raygenRegion, &pipeline.pipeline.impl->missRegion, &pipeline.pipeline.impl->hitRegion,
-                                &pipeline.pipeline.impl->callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
-                vkCmdPipelineBarrier(
-                    commandBuffer,
-                    VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First trace
-                                                                // rays execution
-                    VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination: Second
-                                                                // trace rays execution
-                    0, 1, &barrier, 0, nullptr, 0, nullptr);
-                *(uint32_t*)(pipeline.pushConstantData.data) = 2;
-                vkCmdPushConstants(commandBuffer, pipeline.pipeline.impl->pipelineLayout,
-                                VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4, pipeline.pushConstantData.data);
-                vkCmdTraceRaysKHR(commandBuffer, &pipeline.pipeline.impl->raygenRegion, &pipeline.pipeline.impl->missRegion, &pipeline.pipeline.impl->hitRegion,
-                                &pipeline.pipeline.impl->callableRegion, RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
-            }, pipelines);
-        }
-
-        PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
-        std::tuple<RaytracingPipelines...> pipelines;
-    };
+  }
 }
+}; // namespace RenderPassResourceSetDetails
+//
+struct RenderPassResourceSetImpl_T {
+  RenderPassResourceSetImpl_T(std::unordered_map<std::string, RenderPassResourceImpl_T *> resources)
+      : resources(std::move(resources)) {}
+  int framebufferCount = 3;
+  std::unordered_map<std::string, RenderPassResourceImpl_T*> resources;
+};
+
+struct RenderPassResourceSetBase {
+  RenderPassResourceSetBase(std::vector<RenderPassResourceImpl_T *> resources) {
+    std::unordered_map<std::string, RenderPassResourceImpl_T*> resourceMap;
+
+    for (auto resource : resources)
+    {
+      resourceMap[resource->name] = resource;
+    }
+
+    impl = new RenderPassResourceSetImpl_T(std::move(resourceMap));
+  }
+
+  struct RenderPassResourceSetImpl_T *impl;
+};
+
+template <typename... Resources>
+class RenderPassResourceSet : public RenderPassResourceSetBase {
+public:
+  RenderPassResourceSet(Resources... resources)
+      : RenderPassResourceSetBase({resources.impl...}) {}
+};
+
+struct AttachmentImpl_T {
+  AttachmentImpl_T(const char *name, VkFormat format, int location,
+                   int type)
+      : name(name), format(format), location(location), type(type) {}
+
+  AttachmentImpl_T(const char *name)
+      : name(name), type(3) {}
+
+  const char *name;
+  VkFormat format;
+  int location;
+  // TODO change back to AttachmentBase::AttachmentType
+  int type;
+};
+
+struct AttachmentBase {
+  enum class AttachmentType {
+    ATTACHMENT_COLOR,
+    ATTACHMENT_DEPTH,
+    ATTACHMENT_PRESERVE,
+    ATTACHMENT_INPUT,
+  };
+
+
+AttachmentBase(const char *name, VkFormat format, int location,
+                               AttachmentType type) {
+  impl = new AttachmentImpl_T(name, format, location, (int)type);
+}
+
+AttachmentBase(const char *name) {
+  impl = new AttachmentImpl_T(name);
+}
+  struct AttachmentImpl_T *impl;
+};
+
+
+
+template <FixedString Name, VkFormat Format, int Location>
+struct ColorAttachment : public AttachmentBase {
+
+  ColorAttachment()
+      : AttachmentBase(name.value, Format, Location,
+                       AttachmentBase::AttachmentType::ATTACHMENT_COLOR) {}
+
+  static constexpr FixedString name = Name.value;
+  static constexpr VkFormat get_format() { return Format; }
+  static constexpr int get_location() { return Location; }
+};
+
+template <FixedString Name, VkFormat Format, int Location>
+struct DepthAttachment : public AttachmentBase {
+
+  DepthAttachment()
+      : AttachmentBase(name.value, Format, Location,
+                       AttachmentBase::AttachmentType::ATTACHMENT_DEPTH) {}
+
+  static constexpr FixedString name = Name.value;
+  static constexpr VkFormat get_format() { return Format; }
+  static constexpr int get_location() { return Location; }
+};
+
+template <FixedString Name> struct PreserveAttachment : public AttachmentBase {
+
+  PreserveAttachment() : AttachmentBase(name.value) {}
+
+  static constexpr FixedString name = Name.value;
+};
+
+template <FixedString Name, VkFormat Format, int Location>
+struct InputAttachment : public AttachmentBase {
+
+  InputAttachment()
+      : AttachmentBase(name.value, Format, Location,
+                       AttachmentBase::AttachmentType::ATTACHMENT_INPUT) {}
+
+  static constexpr FixedString name = Name.value;
+  static constexpr VkFormat get_format() { return Format; }
+  static constexpr int get_location() { return Location; }
+};
+namespace RenderPassDetails {
+template <typename Pipelines> struct get_all_attachments;
+
+template <> struct get_all_attachments<std::tuple<>> {
+  using value = std::tuple<>;
+};
+
+template <typename First, typename... Rest>
+struct get_all_attachments<std::tuple<First, Rest...>> {
+  using value = decltype(std::tuple_cat(
+      std::declval<typename First::Attachments>(),
+      std::declval<
+          typename get_all_attachments<std::tuple<Rest...>>::value>()));
+};
+
+// Helper to append to a tuple
+template <typename Tuple, typename T> struct tuple_push_back;
+
+template <typename... Ts, typename T>
+struct tuple_push_back<std::tuple<Ts...>, T> {
+  using type = std::tuple<Ts..., T>;
+};
+
+// Check if a tuple contains an attachment with same name/type (for
+// InputAttachment, also check format)
+template <typename T, typename Tuple> struct contains_attachment;
+
+template <typename T>
+struct contains_attachment<T, std::tuple<>> : std::false_type {};
+
+template <typename T, typename First, typename... Rest>
+struct contains_attachment<T, std::tuple<First, Rest...>>
+    : std::conditional_t<
+          std::is_same_v<T, First> ||
+              (T::name == First::name && std::is_same_v<T, First>) ||
+              (std::is_same_v<T, InputAttachment<T::name, T::get_format(),
+                                                 T::get_location()>> &&
+               std::is_same_v<First,
+                              InputAttachment<First::name, First::get_format(),
+                                              First::get_location()>> &&
+               T::get_format() == First::get_format()),
+          std::true_type, contains_attachment<T, std::tuple<Rest...>>> {};
+
+// Meta-function to filter preserve/input attachments
+template <typename Attachments, typename Tuple> struct filter_preserve_input;
+
+template <typename Tuple> struct filter_preserve_input<std::tuple<>, Tuple> {
+  using type = std::tuple<>;
+};
+
+template <typename First, typename... Rest, typename All>
+struct filter_preserve_input<std::tuple<First, Rest...>, All> {
+  using tail = typename filter_preserve_input<std::tuple<Rest...>, All>::type;
+  using type = std::conditional_t<
+      std::is_same_v<First, PreserveAttachment<First::name>> ||
+          std::is_same_v<First,
+                         InputAttachment<First::name, First::get_format(),
+                                         First::get_location()>>,
+      std::conditional_t<contains_attachment<First, All>::value,
+                         typename tuple_push_back<tail, First>::type, tail>,
+      typename tuple_push_back<tail, First>::type>;
+};
+
+// Assign global locations
+template <typename Tuple, int Start = 0> struct assign_global_locations;
+
+template <int Start> struct assign_global_locations<std::tuple<>, Start> {
+  using type = std::tuple<>;
+};
+
+template <typename First, typename... Rest, int Start>
+struct assign_global_locations<std::tuple<First, Rest...>, Start> {
+  // Produce new type with updated location
+  using new_first = First;
+  template <typename T> struct update_location {
+    using type = T;
+  };
+
+  template <FixedString N, VkFormat F, int L>
+  struct update_location<ColorAttachment<N, F, L>> {
+    using type = ColorAttachment<N, F, Start>;
+  };
+
+  template <FixedString N, VkFormat F, int L>
+  struct update_location<DepthAttachment<N, F, L>> {
+    using type = DepthAttachment<N, F, Start>;
+  };
+
+  template <FixedString N, VkFormat F, int L>
+  struct update_location<InputAttachment<N, F, L>> {
+    using type = InputAttachment<N, F, Start>;
+  };
+
+  using type = decltype(std::tuple_cat(
+      std::tuple<typename update_location<First>::type>{},
+      typename assign_global_locations<std::tuple<Rest...>,
+                                       Start + 1>::type{}));
+};
+
+// The main meta-function
+template <typename AllAttachments> struct get_common_attachments {
+  // Filter preserves/inputs
+  using filtered =
+      typename filter_preserve_input<AllAttachments, AllAttachments>::type;
+
+  // Assign global locations
+  using value = typename assign_global_locations<filtered>::type;
+};
+}; // namespace RenderPassDetails
+
+// Compile-time tuple iteration
+template <typename Tuple, typename Func, std::size_t... I>
+constexpr void tuple_for_each_impl(Tuple &&t, Func &&f,
+                                   std::index_sequence<I...>) {
+  (f(std::get<I>(t)), ...);
+}
+
+template <typename Tuple, typename Func>
+constexpr void tuple_for_each(Tuple &&t, Func &&f) {
+  tuple_for_each_impl(
+      std::forward<Tuple>(t), std::forward<Func>(f),
+      std::make_index_sequence<
+          std::tuple_size<std::remove_reference_t<Tuple>>::value>{});
+}
+
+struct RenderPassImpl_T {
+  RenderPassImpl_T(uint32_t width, uint32_t height,
+                   RenderPassResourceSetImpl_T *resources,
+                   std::vector<GraphicsPipelineImpl_T *> pipelines,
+                   std::vector<AttachmentImpl_T *> requiredAttachments)
+      : width{width}, height{height}, pipelines(pipelines) {
+    createRenderPass(resources, requiredAttachments);
+  }
+
+  void createRenderPass(RenderPassResourceSetImpl_T *resources,
+                        std::vector<AttachmentImpl_T *> requiredAttachments) {
+    // Gather all global attachments
+    std::vector<VkAttachmentDescription> attachmentDescriptions;
+    for (auto att : requiredAttachments) {
+      VkAttachmentDescription desc{};
+      desc.samples = VK_SAMPLE_COUNT_1_BIT;
+      desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+      desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+      desc.format = att->format;
+
+      switch ((AttachmentBase::AttachmentType)att->type) {
+      case AttachmentBase::AttachmentType::ATTACHMENT_COLOR:
+        desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        break;
+      case AttachmentBase::AttachmentType::ATTACHMENT_DEPTH:
+        desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        break;
+      case AttachmentBase::AttachmentType::ATTACHMENT_INPUT:
+        desc.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        break;
+      default:
+        continue;
+      }
+
+      attachmentDescriptions.push_back(desc);
+    }
+
+    std::vector<std::vector<VkAttachmentReference>> attachmentRefsMap;
+    std::vector<std::vector<uint32_t>> preserveRefsMap;
+    // Build subpasses
+    std::vector<VkSubpassDescription> subpassDescs;
+
+    for (auto p : pipelines) {
+
+      VkSubpassDescription subpass{};
+      subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+      std::vector<VkAttachmentReference> colorRefs;
+      std::vector<uint32_t> preserveRefs;
+      VkAttachmentReference depthRef{};
+      depthRef.attachment = VK_ATTACHMENT_UNUSED;
+
+      for (auto att : p->m_shaderGroup->attachments) {
+        uint32_t loc = att->location;
+        switch ((AttachmentBase::AttachmentType)att->type) {
+        case AttachmentBase::AttachmentType::ATTACHMENT_COLOR:
+
+          colorRefs.push_back({loc, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+          break;
+        case AttachmentBase::AttachmentType::ATTACHMENT_DEPTH:
+          depthRef.attachment = loc;
+          depthRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+          break;
+        case AttachmentBase::AttachmentType::ATTACHMENT_PRESERVE:
+          preserveRefs.push_back(loc);
+          break;
+        default:
+          break;
+        }
+      }
+
+      attachmentRefsMap.push_back(std::move(colorRefs));
+      preserveRefsMap.push_back(std::move(preserveRefs));
+
+      subpass.colorAttachmentCount =
+          static_cast<uint32_t>(attachmentRefsMap.back().size());
+      subpass.pColorAttachments = attachmentRefsMap.back().data();
+      subpass.preserveAttachmentCount =
+          static_cast<uint32_t>(preserveRefsMap.back().size());
+      subpass.pPreserveAttachments = preserveRefsMap.back().data();
+      subpass.pDepthStencilAttachment =
+          (depthRef.attachment != VK_ATTACHMENT_UNUSED) ? &depthRef : nullptr;
+
+      subpassDescs.push_back(subpass);
+    }
+
+    // Dependencies for proper layout transitions
+    std::vector<VkSubpassDependency> dependencies;
+
+    // First dependency: External to first subpass (for initial layout
+    // transition)
+    VkSubpassDependency dependency1{};
+    dependency1.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency1.dstSubpass = 0;
+    dependency1.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency1.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency1.srcAccessMask = 0;
+    dependency1.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency1.dependencyFlags = 0;
+    dependencies.push_back(dependency1);
+
+    // Second dependency: Last subpass to external (for final layout transition
+    // to present)
+    VkSubpassDependency dependency2{};
+    dependency2.srcSubpass = 0;
+    dependency2.dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependency2.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency2.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependency2.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency2.dstAccessMask = 0;
+    dependency2.dependencyFlags = 0;
+    dependencies.push_back(dependency2);
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount =
+        static_cast<uint32_t>(attachmentDescriptions.size());
+    renderPassInfo.pAttachments = attachmentDescriptions.data();
+    renderPassInfo.subpassCount = static_cast<uint32_t>(subpassDescs.size());
+    renderPassInfo.pSubpasses = subpassDescs.data();
+    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+    renderPassInfo.pDependencies = dependencies.data();
+
+    fflush(stdout);
+    if (vkCreateRenderPass(vkZero_core->device, &renderPassInfo, nullptr,
+                           &renderPass) != VK_SUCCESS) {
+      throw std::runtime_error("Failed to create render pass!");
+    }
+
+    for (auto p : pipelines)
+    {
+      p->create_pipeline(vkZero_core->device, renderPass);
+    }
+
+    framebuffers.resize(resources->framebufferCount);
+
+    for (size_t i = 0; i < resources->framebufferCount; i++) {
+      // VkImageView attachments[] = {swapChainImageViews[i]};
+
+      std::vector<VkImageView> attachments;
+
+      // Collect Attachments
+      for (auto att : requiredAttachments)
+      {
+        attachments.push_back(resources->resources[att->name]->image->images[i]->view);
+      }
+
+      VkFramebufferCreateInfo framebufferInfo{};
+      framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+      framebufferInfo.renderPass = renderPass;
+      framebufferInfo.attachmentCount = attachments.size();
+      framebufferInfo.pAttachments = attachments.data();
+      framebufferInfo.width = width;
+      framebufferInfo.height = height;
+      framebufferInfo.layers = 1;
+
+      if (vkCreateFramebuffer(vkZero_core->device, &framebufferInfo, nullptr,
+                              &framebuffers[i]) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create framebuffer!");
+      }
+    }
+  }
+
+  void recreateSwapchain(std::unique_ptr<Window> &window) {
+    // Clean up old framebuffers
+    for (auto framebuffer : framebuffers) {
+      vkDestroyFramebuffer(vkZero_core->device, framebuffer, nullptr);
+    }
+
+    // Recreate the render pass and framebuffers
+    // createRenderPass(ctx, resources, pipelines...);
+
+    // size_t numImages = window->swapchainImageCount;
+    // framebuffers.resize(numImages);
+
+    for (size_t i = 0; i < framebuffers.size(); i++) {
+      VkImageView attachments[] = {
+          window->getSwapChainImages().images[i]->view};
+      VkFramebufferCreateInfo framebufferInfo{};
+      framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+      framebufferInfo.renderPass = renderPass;
+      framebufferInfo.attachmentCount = 1;
+      framebufferInfo.pAttachments = attachments;
+      framebufferInfo.width = window->getSwapChainExtent().width;
+      framebufferInfo.height = window->getSwapChainExtent().height;
+      framebufferInfo.layers = 1;
+
+      if (vkCreateFramebuffer(vkZero_core->device, &framebufferInfo, nullptr,
+                              &framebuffers[i]) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create framebuffer!");
+      }
+    }
+  }
+
+  const std::vector<VkFramebuffer> &getFramebuffers() const {
+    return framebuffers;
+  }
+  VkRenderPass getRenderPass() const { return renderPass; }
+
+  void record(VkCommandBuffer commandBuffer, std::unique_ptr<Window> &Window,
+              uint32_t currentFrame, uint32_t imageIndex) {
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.framebuffer = framebuffers[imageIndex];
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = Window->getSwapChainExtent();
+    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
+                         VK_SUBPASS_CONTENTS_INLINE);
+    
+    for (auto p : pipelines)
+    {
+
+          vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            p->pipeline);
+          VkViewport viewport{};
+          viewport.x = 0.0f;
+          viewport.y = 0.0f;
+          viewport.width = (float)Window->getSwapChainExtent().width;
+          viewport.height = (float)Window->getSwapChainExtent().height;
+          viewport.minDepth = 0.0f;
+          viewport.maxDepth = 1.0f;
+          vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+          VkRect2D scissor{};
+          scissor.offset = {0, 0};
+          scissor.extent = Window->getSwapChainExtent();
+          vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+          p->bindResources(commandBuffer, currentFrame);
+          vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+    }
+    vkCmdEndRenderPass(commandBuffer);
+  }
+
+  uint32_t width, height;
+  VkRenderPass renderPass;
+  std::vector<VkFramebuffer> framebuffers;
+  std::vector<GraphicsPipelineImpl_T *> pipelines;
+};
+
+struct RenderPassBase {
+  RenderPassBase(uint32_t width, uint32_t height,
+                 RenderPassResourceSetImpl_T *resources,
+                 std::vector<GraphicsPipelineImpl_T *> pipelines,
+                 std::vector<AttachmentImpl_T*> requiredAttachments) {
+    impl = new RenderPassImpl_T(width, height, resources, pipelines,
+                                requiredAttachments);
+  }
+
+  struct RenderPassImpl_T *impl;
+};
+
+template <typename Resources, typename... Pipelines>
+class RenderPass : public RenderPassBase {
+public:
+  using allAttachments =
+      RenderPassDetails::get_all_attachments<std::tuple<Pipelines...>>::value;
+  using commonAttachments =
+      RenderPassDetails::get_common_attachments<allAttachments>::value;
+
+  static_assert(std::tuple_size<allAttachments>::value > 0,
+                "RenderPass must have at least one attachment.");
+
+  RenderPass(uint32_t width, uint32_t height, Resources &resource,
+             Pipelines &...pipelines)
+      : RenderPassBase(width, height, resource.impl, {pipelines.impl...},
+                       GetAttachmentNames<commonAttachments>::get()) {}
+};
+
+template <typename... Structures> struct PushConstantData {
+  PushConstantData() {
+    size_t size = (sizeof(Structures) + ...);
+    data = new char(size);
+  }
+
+  ~PushConstantData() { delete data; }
+
+  template <typename T> T *get() { return (T *)(data + offset<T>()); }
+
+private:
+  template <typename T> constexpr size_t offset() {
+    size_t current = 0;
+    (
+        [&]() {
+          if constexpr (std::is_same<T, Structures>()) {
+            return current;
+          } else {
+            current += sizeof(Structures);
+          }
+        }(),
+        ...);
+
+    static_assert("Type does not exist in Push Constant Data");
+    return 0;
+  }
+
+  char *data;
+
+  template <typename... RaytracingPipelines> friend class RaytracingRenderPass;
+};
+
+template <typename PushConstant, typename Pipeline>
+struct RaytracingRenderPassPipeline {
+public:
+  RaytracingRenderPassPipeline(Pipeline &pipeline, PushConstant &pushConstants)
+      : pipeline(pipeline), pushConstantData(pushConstants) {}
+
+private:
+  Pipeline &pipeline;
+  PushConstant &pushConstantData;
+
+  template <typename... RaytracingPipelines> friend class RaytracingRenderPass;
+};
+
+template <typename... RaytracingPipelines> class RaytracingRenderPass {
+public:
+  RaytracingRenderPass(RaytracingPipelines... pipelines)
+      : pipelines{pipelines...} {
+    vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(
+        vkGetDeviceProcAddr(vkZero_core->device, "vkCmdTraceRaysKHR"));
+  }
+
+  void record(VkCommandBuffer commandBuffer, uint32_t currentFrame,
+              uint32_t imageIndex) {
+    std::apply(
+        [&](auto &pipeline) {
+          vkCmdBindPipeline(commandBuffer,
+                            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                            pipeline.pipeline.impl->pipeline);
+          pipeline.pipeline.impl->bindResources(commandBuffer, currentFrame);
+          *(uint32_t *)(pipeline.pushConstantData.data) = 0;
+          vkCmdPushConstants(commandBuffer,
+                             pipeline.pipeline.impl->pipelineLayout,
+                             VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 8,
+                             pipeline.pushConstantData.data);
+          vkCmdTraceRaysKHR(commandBuffer,
+                            &pipeline.pipeline.impl->raygenRegion,
+                            &pipeline.pipeline.impl->missRegion,
+                            &pipeline.pipeline.impl->hitRegion,
+                            &pipeline.pipeline.impl->callableRegion,
+                            RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+
+          VkMemoryBarrier barrier = {};
+          barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+          barrier.srcAccessMask =
+              VK_ACCESS_SHADER_WRITE_BIT |
+              VK_ACCESS_SHADER_READ_BIT; // Ensure writes from the first trace
+                                         // finish
+          barrier.dstAccessMask =
+              VK_ACCESS_SHADER_READ_BIT |
+              VK_ACCESS_SHADER_WRITE_BIT; // Ensure the second trace can read
+                                          // them
+          barrier.pNext = 0;
+          vkCmdPipelineBarrier(
+              commandBuffer,
+              VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First
+                                                            // trace rays
+                                                            // execution
+              VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination:
+                                                            // Second trace rays
+                                                            // execution
+              0, 1, &barrier, 0, nullptr, 0, nullptr);
+          *(uint32_t *)(pipeline.pushConstantData.data) = 1;
+          vkCmdPushConstants(commandBuffer,
+                             pipeline.pipeline.impl->pipelineLayout,
+                             VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4,
+                             pipeline.pushConstantData.data);
+          vkCmdTraceRaysKHR(commandBuffer,
+                            &pipeline.pipeline.impl->raygenRegion,
+                            &pipeline.pipeline.impl->missRegion,
+                            &pipeline.pipeline.impl->hitRegion,
+                            &pipeline.pipeline.impl->callableRegion,
+                            RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+          vkCmdPipelineBarrier(
+              commandBuffer,
+              VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First
+                                                            // trace rays
+                                                            // execution
+              VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination:
+                                                            // Second trace rays
+                                                            // execution
+              0, 1, &barrier, 0, nullptr, 0, nullptr);
+          *(uint32_t *)(pipeline.pushConstantData.data) = 2;
+          vkCmdPushConstants(commandBuffer,
+                             pipeline.pipeline.impl->pipelineLayout,
+                             VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4,
+                             pipeline.pushConstantData.data);
+          vkCmdTraceRaysKHR(commandBuffer,
+                            &pipeline.pipeline.impl->raygenRegion,
+                            &pipeline.pipeline.impl->missRegion,
+                            &pipeline.pipeline.impl->hitRegion,
+                            &pipeline.pipeline.impl->callableRegion,
+                            RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+        },
+        pipelines);
+  }
+
+  PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
+  std::tuple<RaytracingPipelines...> pipelines;
+};
+} // namespace VkZero
