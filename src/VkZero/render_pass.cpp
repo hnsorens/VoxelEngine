@@ -32,3 +32,15 @@ RenderPassBase::RenderPassBase(uint32_t width, uint32_t height,
   impl = new RenderPassImpl_T(width, height, resources, pipelines,
                               requiredAttachments);
 }
+
+PushConstantDataBase::PushConstantDataBase(size_t size)
+{
+  impl = new PushConstantDataImpl_T(size);
+}
+
+RaytracingRenderpassBase::RaytracingRenderpassBase(
+      std::vector<
+          std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
+          pipelines) {
+    impl = new RaytracingRenderpassImpl_T(pipelines);
+  }

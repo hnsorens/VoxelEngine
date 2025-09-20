@@ -12,6 +12,9 @@
 #include "Engine.hpp"
 #include "shaders.hpp"
 
+#define RAYTRACE_HEIGHT 1080
+#define RAYTRACE_WIDTH 1920
+
 Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
                      std::unique_ptr<VoxelWorld> &voxelWorld,
                      std::unique_ptr<Camera> &camera) :
@@ -55,7 +58,7 @@ Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
       {&raytracingLightStorageImageZ},
       {&raytracingLightStorageImageW}
     },
-    something(group, set1),
+    something(RAYTRACE_WIDTH, RAYTRACE_HEIGHT, group, set1),
     renderPass({something, data})
 
 {

@@ -19,7 +19,7 @@ namespace VkZero {
 
 
 struct RaytracingPipelineBase {
-  RaytracingPipelineBase(ShaderGroupImpl *shaderGroup,
+  RaytracingPipelineBase(uint32_t width, uint32_t height, ShaderGroupImpl *shaderGroup,
                          std::vector<ShaderResourceSetImpl_T *> resources);
 
   struct RaytracingPipelineImpl_T *impl;
@@ -34,8 +34,8 @@ class RaytracingPipeline : public RaytracingPipelineBase {
 public:
   using Attachments = ShaderGroup::Attachments;
 
-  RaytracingPipeline(ShaderGroup &shaderGroup,
+  RaytracingPipeline(uint32_t width, uint32_t height, ShaderGroup &shaderGroup,
                      ShaderResourcesBindings &...resources)
-      : RaytracingPipelineBase(shaderGroup.impl, {resources.impl...}) {}
+      : RaytracingPipelineBase(width, height, shaderGroup.impl, {resources.impl...}) {}
 };
 } // namespace VkZero

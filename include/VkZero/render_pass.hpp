@@ -279,22 +279,9 @@ public:
                        GetAttachments<commonAttachments>::get()) {}
 };
 
-struct PushConstantDataImpl_T {
-  PushConstantDataImpl_T(size_t size)
-  {
-    data = new char(size);
-  }
-
-  ~PushConstantDataImpl_T() { delete data; }
-
-  char* data;
-};
 
 struct PushConstantDataBase {
-  PushConstantDataBase(size_t size)
-  {
-    impl = new PushConstantDataImpl_T(size);
-  }
+  PushConstantDataBase(size_t size);
 
   struct PushConstantDataImpl_T* impl;
 };
@@ -315,90 +302,12 @@ public:
   template <typename... RaytracingPipelines> friend class RaytracingRenderPass;
 };
 
-struct RaytracingRenderpassImpl_T {
-  RaytracingRenderpassImpl_T(
-      std::vector<
-          std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
-          pipelines)
-      : pipelines{pipelines} {
-    vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(
-        vkGetDeviceProcAddr(vkZero_core->device, "vkCmdTraceRaysKHR"));
-  }
-
-  void record(VkCommandBuffer commandBuffer, uint32_t currentFrame,
-              uint32_t imageIndex) {
-    for (auto &[pipeline, pushConstant] : pipelines) {
-      vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                        pipeline->pipeline);
-      pipeline->bindResources(commandBuffer, currentFrame);
-      *(uint32_t *)(pushConstant->data) = 0;
-      vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout,
-                         VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 8,
-                         pushConstant->data);
-      vkCmdTraceRaysKHR(commandBuffer, &pipeline->raygenRegion,
-                        &pipeline->missRegion, &pipeline->hitRegion,
-                        &pipeline->callableRegion, RAYTRACE_WIDTH,
-                        RAYTRACE_HEIGHT, 1);
-
-      VkMemoryBarrier barrier = {};
-      barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-      barrier.srcAccessMask =
-          VK_ACCESS_SHADER_WRITE_BIT |
-          VK_ACCESS_SHADER_READ_BIT; // Ensure writes from the first trace
-                                     // finish
-      barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT |
-                              VK_ACCESS_SHADER_WRITE_BIT; // Ensure the second
-                                                          // trace can read them
-      barrier.pNext = 0;
-      vkCmdPipelineBarrier(
-          commandBuffer,
-          VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First
-                                                        // trace rays
-                                                        // execution
-          VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination:
-                                                        // Second trace rays
-                                                        // execution
-          0, 1, &barrier, 0, nullptr, 0, nullptr);
-      *(uint32_t *)(pushConstant->data) = 1;
-      vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout,
-                         VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4,
-                         pushConstant->data);
-      vkCmdTraceRaysKHR(commandBuffer, &pipeline->raygenRegion,
-                        &pipeline->missRegion, &pipeline->hitRegion,
-                        &pipeline->callableRegion, RAYTRACE_WIDTH,
-                        RAYTRACE_HEIGHT, 1);
-      vkCmdPipelineBarrier(
-          commandBuffer,
-          VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First
-                                                        // trace rays
-                                                        // execution
-          VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination:
-                                                        // Second trace rays
-                                                        // execution
-          0, 1, &barrier, 0, nullptr, 0, nullptr);
-      *(uint32_t *)(pushConstant->data) = 2;
-      vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout,
-                         VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4,
-                         pushConstant->data);
-      vkCmdTraceRaysKHR(commandBuffer, &pipeline->raygenRegion,
-                        &pipeline->missRegion, &pipeline->hitRegion,
-                        &pipeline->callableRegion, RAYTRACE_WIDTH,
-                        RAYTRACE_HEIGHT, 1);
-    }
-  }
-
-  PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
-  std::vector<std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
-      pipelines;
-};
 
 struct RaytracingRenderpassBase {
   RaytracingRenderpassBase(
       std::vector<
           std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
-          pipelines) {
-    impl = new RaytracingRenderpassImpl_T(pipelines);
-  }
+          pipelines);
 
   struct RaytracingRenderpassImpl_T *impl;
 };

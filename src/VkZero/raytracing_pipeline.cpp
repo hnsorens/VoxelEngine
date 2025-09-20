@@ -3,11 +3,11 @@
 
 using namespace VkZero;
 
-RaytracingPipelineImpl_T::RaytracingPipelineImpl_T(
+RaytracingPipelineImpl_T::RaytracingPipelineImpl_T(uint32_t width, uint32_t height,
     ShaderGroupImpl *shaderGroup,
     std::vector<ShaderResourceSetImpl_T *> resources)
 
-    : resources(resources), m_shaderGroup(shaderGroup), pipelineLayout([&]() {
+    : resources(resources), m_shaderGroup(shaderGroup), width(width), height(height), pipelineLayout([&]() {
         std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
 
         for (auto r : resources) {
@@ -160,8 +160,8 @@ void RaytracingPipelineImpl_T::bindResources(VkCommandBuffer commandBuffer,
   }
 }
 
-RaytracingPipelineBase::RaytracingPipelineBase(
+RaytracingPipelineBase::RaytracingPipelineBase(uint32_t width, uint32_t height,
     ShaderGroupImpl *shaderGroup,
     std::vector<ShaderResourceSetImpl_T *> resources) {
-  impl = new RaytracingPipelineImpl_T(shaderGroup, std::move(resources));
+  impl = new RaytracingPipelineImpl_T(width, height, shaderGroup, std::move(resources));
 }

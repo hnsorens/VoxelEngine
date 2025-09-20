@@ -3,7 +3,7 @@
 namespace VkZero {
 
 struct RaytracingPipelineImpl_T {
-RaytracingPipelineImpl_T(ShaderGroupImpl *shaderGroup,
+RaytracingPipelineImpl_T(uint32_t width, uint32_t height, ShaderGroupImpl *shaderGroup,
                           std::vector<ShaderResourceSetImpl_T *> resources);
 
   void bindResources(VkCommandBuffer commandBuffer, int currentFrame);
@@ -22,5 +22,8 @@ RaytracingPipelineImpl_T(ShaderGroupImpl *shaderGroup,
   VkDeviceMemory sbtMemory;
 
   std::vector<ShaderResourceSetImpl_T *> resources;
+  uint32_t width;
+  uint32_t height;
 };
+
 }
