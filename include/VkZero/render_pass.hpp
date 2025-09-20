@@ -23,9 +23,8 @@
 
 namespace VkZero {
 
-
 struct RenderPassResourceBase {
- RenderPassResourceBase(const char* name, AttachmentImage *image);
+  RenderPassResourceBase(const char *name, AttachmentImage *image);
 
   struct RenderPassResourceImpl_T *impl;
 };
@@ -33,9 +32,10 @@ struct RenderPassResourceBase {
 template <FixedString Name>
 class RenderPassResource : public RenderPassResourceBase {
 public:
-  RenderPassResource(AttachmentImage *image) : RenderPassResourceBase(name, image) {}
+  RenderPassResource(AttachmentImage *image)
+      : RenderPassResourceBase(name, image) {}
 
-  static constexpr const char* name = Name.value;
+  static constexpr const char *name = Name.value;
 };
 
 namespace RenderPassResourceSetDetails {
@@ -79,15 +79,12 @@ struct AttachmentBase {
     ATTACHMENT_INPUT,
   };
 
+  AttachmentBase(const char *name, VkFormat format, int location,
+                 AttachmentType type);
 
-AttachmentBase(const char *name, VkFormat format, int location,
-                               AttachmentType type);
-
-AttachmentBase(const char *name);
+  AttachmentBase(const char *name);
   struct AttachmentImpl_T *impl;
 };
-
-
 
 template <FixedString Name, VkFormat Format, int Location>
 struct ColorAttachment : public AttachmentBase {
@@ -256,12 +253,11 @@ constexpr void tuple_for_each(Tuple &&t, Func &&f) {
           std::tuple_size<std::remove_reference_t<Tuple>>::value>{});
 }
 
-
 struct RenderPassBase {
   RenderPassBase(uint32_t width, uint32_t height,
                  RenderPassResourceSetImpl_T *resources,
                  std::vector<GraphicsPipelineImpl_T *> pipelines,
-                 std::vector<AttachmentImpl_T*> requiredAttachments);
+                 std::vector<AttachmentImpl_T *> requiredAttachments);
 
   struct RenderPassImpl_T *impl;
 };
@@ -283,36 +279,28 @@ public:
                        GetAttachments<commonAttachments>::get()) {}
 };
 
-template <typename... Structures> struct PushConstantData {
-  PushConstantData() {
-    size_t size = (sizeof(Structures) + ...);
+struct PushConstantDataImpl_T {
+  PushConstantDataImpl_T(size_t size)
+  {
     data = new char(size);
   }
 
-  ~PushConstantData() { delete data; }
+  ~PushConstantDataImpl_T() { delete data; }
 
-  template <typename T> T *get() { return (T *)(data + offset<T>()); }
+  char* data;
+};
 
-private:
-  template <typename T> constexpr size_t offset() {
-    size_t current = 0;
-    (
-        [&]() {
-          if constexpr (std::is_same<T, Structures>()) {
-            return current;
-          } else {
-            current += sizeof(Structures);
-          }
-        }(),
-        ...);
-
-    static_assert("Type does not exist in Push Constant Data");
-    return 0;
+struct PushConstantDataBase {
+  PushConstantDataBase(size_t size)
+  {
+    impl = new PushConstantDataImpl_T(size);
   }
 
-  char *data;
+  struct PushConstantDataImpl_T* impl;
+};
 
-  template <typename... RaytracingPipelines> friend class RaytracingRenderPass;
+template <typename... Structures> struct PushConstantData : public PushConstantDataBase {
+  PushConstantData() : PushConstantDataBase((sizeof(Structures) + ...)) {}
 };
 
 template <typename PushConstant, typename Pipeline>
@@ -321,97 +309,105 @@ public:
   RaytracingRenderPassPipeline(Pipeline &pipeline, PushConstant &pushConstants)
       : pipeline(pipeline), pushConstantData(pushConstants) {}
 
-private:
   Pipeline &pipeline;
   PushConstant &pushConstantData;
 
   template <typename... RaytracingPipelines> friend class RaytracingRenderPass;
 };
 
-template <typename... RaytracingPipelines> class RaytracingRenderPass {
-public:
-  RaytracingRenderPass(RaytracingPipelines... pipelines)
-      : pipelines{pipelines...} {
+struct RaytracingRenderpassImpl_T {
+  RaytracingRenderpassImpl_T(
+      std::vector<
+          std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
+          pipelines)
+      : pipelines{pipelines} {
     vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(
         vkGetDeviceProcAddr(vkZero_core->device, "vkCmdTraceRaysKHR"));
   }
 
   void record(VkCommandBuffer commandBuffer, uint32_t currentFrame,
               uint32_t imageIndex) {
-    std::apply(
-        [&](auto &pipeline) {
-          vkCmdBindPipeline(commandBuffer,
-                            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                            pipeline.pipeline.impl->pipeline);
-          pipeline.pipeline.impl->bindResources(commandBuffer, currentFrame);
-          *(uint32_t *)(pipeline.pushConstantData.data) = 0;
-          vkCmdPushConstants(commandBuffer,
-                             pipeline.pipeline.impl->pipelineLayout,
-                             VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 8,
-                             pipeline.pushConstantData.data);
-          vkCmdTraceRaysKHR(commandBuffer,
-                            &pipeline.pipeline.impl->raygenRegion,
-                            &pipeline.pipeline.impl->missRegion,
-                            &pipeline.pipeline.impl->hitRegion,
-                            &pipeline.pipeline.impl->callableRegion,
-                            RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
+    for (auto &[pipeline, pushConstant] : pipelines) {
+      vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                        pipeline->pipeline);
+      pipeline->bindResources(commandBuffer, currentFrame);
+      *(uint32_t *)(pushConstant->data) = 0;
+      vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout,
+                         VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 8,
+                         pushConstant->data);
+      vkCmdTraceRaysKHR(commandBuffer, &pipeline->raygenRegion,
+                        &pipeline->missRegion, &pipeline->hitRegion,
+                        &pipeline->callableRegion, RAYTRACE_WIDTH,
+                        RAYTRACE_HEIGHT, 1);
 
-          VkMemoryBarrier barrier = {};
-          barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-          barrier.srcAccessMask =
-              VK_ACCESS_SHADER_WRITE_BIT |
-              VK_ACCESS_SHADER_READ_BIT; // Ensure writes from the first trace
-                                         // finish
-          barrier.dstAccessMask =
-              VK_ACCESS_SHADER_READ_BIT |
-              VK_ACCESS_SHADER_WRITE_BIT; // Ensure the second trace can read
-                                          // them
-          barrier.pNext = 0;
-          vkCmdPipelineBarrier(
-              commandBuffer,
-              VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First
-                                                            // trace rays
-                                                            // execution
-              VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination:
-                                                            // Second trace rays
-                                                            // execution
-              0, 1, &barrier, 0, nullptr, 0, nullptr);
-          *(uint32_t *)(pipeline.pushConstantData.data) = 1;
-          vkCmdPushConstants(commandBuffer,
-                             pipeline.pipeline.impl->pipelineLayout,
-                             VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4,
-                             pipeline.pushConstantData.data);
-          vkCmdTraceRaysKHR(commandBuffer,
-                            &pipeline.pipeline.impl->raygenRegion,
-                            &pipeline.pipeline.impl->missRegion,
-                            &pipeline.pipeline.impl->hitRegion,
-                            &pipeline.pipeline.impl->callableRegion,
-                            RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
-          vkCmdPipelineBarrier(
-              commandBuffer,
-              VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First
-                                                            // trace rays
-                                                            // execution
-              VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination:
-                                                            // Second trace rays
-                                                            // execution
-              0, 1, &barrier, 0, nullptr, 0, nullptr);
-          *(uint32_t *)(pipeline.pushConstantData.data) = 2;
-          vkCmdPushConstants(commandBuffer,
-                             pipeline.pipeline.impl->pipelineLayout,
-                             VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4,
-                             pipeline.pushConstantData.data);
-          vkCmdTraceRaysKHR(commandBuffer,
-                            &pipeline.pipeline.impl->raygenRegion,
-                            &pipeline.pipeline.impl->missRegion,
-                            &pipeline.pipeline.impl->hitRegion,
-                            &pipeline.pipeline.impl->callableRegion,
-                            RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1);
-        },
-        pipelines);
+      VkMemoryBarrier barrier = {};
+      barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+      barrier.srcAccessMask =
+          VK_ACCESS_SHADER_WRITE_BIT |
+          VK_ACCESS_SHADER_READ_BIT; // Ensure writes from the first trace
+                                     // finish
+      barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT |
+                              VK_ACCESS_SHADER_WRITE_BIT; // Ensure the second
+                                                          // trace can read them
+      barrier.pNext = 0;
+      vkCmdPipelineBarrier(
+          commandBuffer,
+          VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First
+                                                        // trace rays
+                                                        // execution
+          VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination:
+                                                        // Second trace rays
+                                                        // execution
+          0, 1, &barrier, 0, nullptr, 0, nullptr);
+      *(uint32_t *)(pushConstant->data) = 1;
+      vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout,
+                         VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4,
+                         pushConstant->data);
+      vkCmdTraceRaysKHR(commandBuffer, &pipeline->raygenRegion,
+                        &pipeline->missRegion, &pipeline->hitRegion,
+                        &pipeline->callableRegion, RAYTRACE_WIDTH,
+                        RAYTRACE_HEIGHT, 1);
+      vkCmdPipelineBarrier(
+          commandBuffer,
+          VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Source: First
+                                                        // trace rays
+                                                        // execution
+          VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, // Destination:
+                                                        // Second trace rays
+                                                        // execution
+          0, 1, &barrier, 0, nullptr, 0, nullptr);
+      *(uint32_t *)(pushConstant->data) = 2;
+      vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout,
+                         VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4,
+                         pushConstant->data);
+      vkCmdTraceRaysKHR(commandBuffer, &pipeline->raygenRegion,
+                        &pipeline->missRegion, &pipeline->hitRegion,
+                        &pipeline->callableRegion, RAYTRACE_WIDTH,
+                        RAYTRACE_HEIGHT, 1);
+    }
   }
 
   PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
-  std::tuple<RaytracingPipelines...> pipelines;
+  std::vector<std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
+      pipelines;
+};
+
+struct RaytracingRenderpassBase {
+  RaytracingRenderpassBase(
+      std::vector<
+          std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
+          pipelines) {
+    impl = new RaytracingRenderpassImpl_T(pipelines);
+  }
+
+  struct RaytracingRenderpassImpl_T *impl;
+};
+
+template <typename... RaytracingPipelines>
+class RaytracingRenderPass : public RaytracingRenderpassBase {
+public:
+  RaytracingRenderPass(RaytracingPipelines... pipelines)
+      : RaytracingRenderpassBase(
+            {{pipelines.pipeline.impl, pipelines.pushConstantData.impl}...}) {}
 };
 } // namespace VkZero
