@@ -12,6 +12,7 @@ RaytracingRenderpassImpl_T::RaytracingRenderpassImpl_T(
 }
 
 void RaytracingRenderpassImpl_T::record(VkCommandBuffer commandBuffer,
+                                        Window* window,
                                         uint32_t currentFrame,
                                         uint32_t imageIndex) {
   for (auto &[pipeline, pushConstant] : pipelines) {

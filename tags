@@ -511,7 +511,7 @@ GraphicsRenderpass	include/VkZero/render_pass.hpp	/^  GraphicsRenderpass(uint32_
 GraphicsRenderpass	include/VkZero/render_pass.hpp	/^class GraphicsRenderpass : public GraphicsRenderpassBase {$/;"	c	namespace:VkZero
 GraphicsRenderpassBase	include/VkZero/render_pass.hpp	/^struct GraphicsRenderpassBase {$/;"	s	namespace:VkZero
 GraphicsRenderpassBase	src/VkZero/graphics_renderpass.cpp	/^GraphicsRenderpassBase::GraphicsRenderpassBase(uint32_t width, uint32_t height,$/;"	f	class:GraphicsRenderpassBase
-GraphicsRenderpassImpl_T	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^struct GraphicsRenderpassImpl_T {$/;"	s	namespace:VkZero
+GraphicsRenderpassImpl_T	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^struct GraphicsRenderpassImpl_T : public RenderpassImpl_T {$/;"	s	namespace:VkZero
 GraphicsRenderpassImpl_T	src/VkZero/graphics_renderpass.cpp	/^GraphicsRenderpassImpl_T::GraphicsRenderpassImpl_T(uint32_t width, uint32_t height,$/;"	f	class:GraphicsRenderpassImpl_T
 HEIGHT	include/Engine.hpp	/^const uint32_t HEIGHT = 1280;$/;"	v	typeref:typename:const uint32_t
 Hash	include/FastNoiseLite.hpp	/^  static int Hash(int seed, int xPrimed, int yPrimed) {$/;"	f	class:FastNoiseLite	typeref:typename:int
@@ -716,7 +716,7 @@ RaytracingRenderPassPipeline	include/VkZero/render_pass.hpp	/^struct RaytracingR
 RaytracingRenderPass_t	include/Raytracer.hpp	/^  using RaytracingRenderPass_t = VkZero::RaytracingRenderPass<VkZero::RaytracingRenderPassPipeli/;"	t	class:Raytracer	typeref:typename:VkZero::RaytracingRenderPass<VkZero::RaytracingRenderPassPipeline<RaytracingPushConstantData,Pipeline>>
 RaytracingRenderpassBase	include/VkZero/render_pass.hpp	/^struct RaytracingRenderpassBase {$/;"	s	namespace:VkZero
 RaytracingRenderpassBase	src/VkZero/raytracing_renderpass.cpp	/^RaytracingRenderpassBase::RaytracingRenderpassBase($/;"	f	class:RaytracingRenderpassBase
-RaytracingRenderpassImpl_T	include/VkZero/Internal/raytracing_renderpass_internal.hpp	/^struct RaytracingRenderpassImpl_T {$/;"	s	namespace:VkZero
+RaytracingRenderpassImpl_T	include/VkZero/Internal/raytracing_renderpass_internal.hpp	/^struct RaytracingRenderpassImpl_T : public RenderpassImpl_T{$/;"	s	namespace:VkZero
 RaytracingRenderpassImpl_T	src/VkZero/raytracing_renderpass.cpp	/^RaytracingRenderpassImpl_T::RaytracingRenderpassImpl_T($/;"	f	class:RaytracingRenderpassImpl_T
 RaytracingResourceSet	include/Raytracer.hpp	/^  using RaytracingResourceSet = VkZero::ShaderResourceSet<$/;"	t	class:Raytracer
 RaytracingShaderGroup	include/Raytracer.hpp	/^  using RaytracingShaderGroup = VkZero::ShaderGroup<RaytracingPushConstants, main_rmiss, main_rg/;"	t	class:Raytracer	typeref:typename:VkZero::ShaderGroup<RaytracingPushConstants,main_rmiss,main_rgen>
@@ -736,6 +736,7 @@ RenderPassResourceSetDetails	include/VkZero/render_pass.hpp	/^namespace RenderPa
 RenderPassResourceSetImpl_T	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  RenderPassResourceSetImpl_T($/;"	f	struct:VkZero::RenderPassResourceSetImpl_T
 RenderPassResourceSetImpl_T	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^struct RenderPassResourceSetImpl_T {$/;"	s	namespace:VkZero
 RenderingLocalRead	include/VkZero/types.hpp	/^        RenderingLocalRead = 1000232000,$/;"	e	enum:VkZero::ImageLayout
+RenderpassImpl_T	include/VkZero/Internal/renderpass_internal.hpp	/^struct RenderpassImpl_T$/;"	s	namespace:VkZero
 ResourceBinding	include/VkZero/binding.hpp	/^  ResourceBinding(Resource *info)$/;"	f	struct:VkZero::ResourceBinding
 ResourceBinding	include/VkZero/binding.hpp	/^struct ResourceBinding : public ResourceBindingBase {$/;"	s	namespace:VkZero
 ResourceBindingBase	include/VkZero/binding.hpp	/^struct ResourceBindingBase {$/;"	s	namespace:VkZero
@@ -877,6 +878,7 @@ VkZero	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^namespace VkZe
 VkZero	include/VkZero/Internal/image_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/raytracing_renderpass_internal.hpp	/^namespace VkZero {$/;"	n
+VkZero	include/VkZero/Internal/renderpass_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/shader_group_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/shader_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/shader_resource_set_internal.hpp	/^namespace VkZero {$/;"	n
@@ -1354,7 +1356,7 @@ raytracingPositionStorageImage	include/Raytracer.hpp	/^  VkZero::SwapImage raytr
 raytracingPushConstants	include/Raytracer.hpp	/^  RaytracingPushConstants raytracingPushConstants;$/;"	m	class:Raytracer	typeref:typename:RaytracingPushConstants
 raytracingStorageImage	include/Raytracer.hpp	/^  VkZero::SwapImage raytracingStorageImage;$/;"	m	class:Raytracer	typeref:typename:VkZero::SwapImage
 readFile	src/VkZero/resource_manager.cpp	/^std::vector<char> ResourceManager::readFile(const std::string &filename) {$/;"	f	class:ResourceManager	typeref:typename:std::vector<char>
-record	src/VkZero/graphics_renderpass.cpp	/^  void GraphicsRenderpassImpl_T::record(VkCommandBuffer commandBuffer, std::unique_ptr<Window> &/;"	f	class:GraphicsRenderpassImpl_T	typeref:typename:void
+record	src/VkZero/graphics_renderpass.cpp	/^  void GraphicsRenderpassImpl_T::record(VkCommandBuffer commandBuffer, Window* window,$/;"	f	class:GraphicsRenderpassImpl_T	typeref:typename:void
 record	src/VkZero/raytracing_renderpass.cpp	/^void RaytracingRenderpassImpl_T::record(VkCommandBuffer commandBuffer,$/;"	f	class:RaytracingRenderpassImpl_T	typeref:typename:void
 recordCommandBuffer	src/Engine.cpp	/^  void VoxelEngine::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {$/;"	f	class:VoxelEngine	typeref:typename:void
 recordRaytracingCommandBuffer	src/Raytracer.cpp	/^void Raytracer::recordRaytracingCommandBuffer(VkCommandBuffer commandBuffer,$/;"	f	class:Raytracer	typeref:typename:void

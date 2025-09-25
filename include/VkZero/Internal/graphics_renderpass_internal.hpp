@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VkZero/render_pass.hpp"
+#include "VkZero/Internal/renderpass_internal.hpp"
 
 namespace VkZero {
 
@@ -33,7 +34,8 @@ struct AttachmentImpl_T {
   int type;
 };
 
-struct GraphicsRenderpassImpl_T {
+
+struct GraphicsRenderpassImpl_T : public RenderpassImpl_T {
   GraphicsRenderpassImpl_T(uint32_t width, uint32_t height,
                    RenderPassResourceSetImpl_T *resources,
                    std::vector<GraphicsPipelineImpl_T *> pipelines,
@@ -48,8 +50,8 @@ struct GraphicsRenderpassImpl_T {
 
   VkRenderPass getRenderPass() const;
 
-  void record(VkCommandBuffer commandBuffer, std::unique_ptr<Window> &Window,
-              uint32_t currentFrame, uint32_t imageIndex);
+  void record(VkCommandBuffer commandBuffer, Window* window,
+              uint32_t currentFrame, uint32_t imageIndex) override;
 
   uint32_t width, height;
   VkRenderPass renderPass;

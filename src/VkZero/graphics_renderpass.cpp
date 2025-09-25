@@ -240,14 +240,14 @@ GraphicsRenderpassImpl_T::GraphicsRenderpassImpl_T(uint32_t width, uint32_t heig
   }
   VkRenderPass GraphicsRenderpassImpl_T::getRenderPass() const { return renderPass; }
 
-  void GraphicsRenderpassImpl_T::record(VkCommandBuffer commandBuffer, std::unique_ptr<Window> &Window,
+  void GraphicsRenderpassImpl_T::record(VkCommandBuffer commandBuffer, Window* window,
               uint32_t currentFrame, uint32_t imageIndex) {
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = framebuffers[imageIndex];
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = Window->getSwapChainExtent();
+    renderPassInfo.renderArea.extent = window->getSwapChainExtent();
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
@@ -261,14 +261,14 @@ GraphicsRenderpassImpl_T::GraphicsRenderpassImpl_T(uint32_t width, uint32_t heig
       VkViewport viewport{};
       viewport.x = 0.0f;
       viewport.y = 0.0f;
-      viewport.width = (float)Window->getSwapChainExtent().width;
-      viewport.height = (float)Window->getSwapChainExtent().height;
+      viewport.width = (float)window->getSwapChainExtent().width;
+      viewport.height = (float)window->getSwapChainExtent().height;
       viewport.minDepth = 0.0f;
       viewport.maxDepth = 1.0f;
       vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
       VkRect2D scissor{};
       scissor.offset = {0, 0};
-      scissor.extent = Window->getSwapChainExtent();
+      scissor.extent = window->getSwapChainExtent();
       vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
       p->bindResources(commandBuffer, currentFrame);
       vkCmdDraw(commandBuffer, 6, 1, 0, 0);
