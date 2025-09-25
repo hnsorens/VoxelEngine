@@ -33,8 +33,8 @@ struct AttachmentImpl_T {
   int type;
 };
 
-struct RenderPassImpl_T {
-  RenderPassImpl_T(uint32_t width, uint32_t height,
+struct GraphicsRenderpassImpl_T {
+  GraphicsRenderpassImpl_T(uint32_t width, uint32_t height,
                    RenderPassResourceSetImpl_T *resources,
                    std::vector<GraphicsPipelineImpl_T *> pipelines,
                    std::vector<AttachmentImpl_T *> requiredAttachments);

@@ -6,7 +6,7 @@
 #include "VkZero/Internal/core_internal.hpp"
 #include "VoxelWorld.hpp"
 #include "VkZero/Internal/window_internal.hpp"
-#include "VkZero/Internal/renderpass_internal.hpp"
+#include "VkZero/Internal/graphics_renderpass_internal.hpp"
 #include "VkZero/Internal/raytracing_renderpass_internal.hpp"
 #include "shaders.hpp"
 #include <cstdio>

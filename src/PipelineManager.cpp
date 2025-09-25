@@ -10,7 +10,7 @@
 #include <vulkan/vulkan_core.h>
 #include "VkZero/image.hpp"
 #include "VkZero/render_pass.hpp"
-#include "VkZero/Internal/renderpass_internal.hpp"
+#include "VkZero/Internal/graphics_renderpass_internal.hpp"
 
 PipelineManager::PipelineManager(std::unique_ptr<Raytracer> &raytracer,
                                 std::unique_ptr<VkZero::Window>& window) : 

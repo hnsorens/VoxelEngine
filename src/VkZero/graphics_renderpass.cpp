@@ -1,4 +1,4 @@
-#include "VkZero/Internal/renderpass_internal.hpp"
+#include "VkZero/Internal/graphics_renderpass_internal.hpp"
 
 using namespace VkZero;
 RenderPassResourceBase::RenderPassResourceBase(const char *name,
@@ -25,11 +25,11 @@ AttachmentBase::AttachmentBase(const char *name) {
   impl = new AttachmentImpl_T(name);
 }
 
-RenderPassBase::RenderPassBase(uint32_t width, uint32_t height,
+GraphicsRenderpassBase::GraphicsRenderpassBase(uint32_t width, uint32_t height,
                RenderPassResourceSetImpl_T *resources,
                std::vector<GraphicsPipelineImpl_T *> pipelines,
                std::vector<AttachmentImpl_T *> requiredAttachments) {
-  impl = new RenderPassImpl_T(width, height, resources, pipelines,
+  impl = new GraphicsRenderpassImpl_T(width, height, resources, pipelines,
                               requiredAttachments);
 }
 
@@ -40,7 +40,7 @@ PushConstantDataBase::PushConstantDataBase(size_t size)
 
 
 
-RenderPassImpl_T::RenderPassImpl_T(uint32_t width, uint32_t height,
+GraphicsRenderpassImpl_T::GraphicsRenderpassImpl_T(uint32_t width, uint32_t height,
                    RenderPassResourceSetImpl_T *resources,
                    std::vector<GraphicsPipelineImpl_T *> pipelines,
                    std::vector<AttachmentImpl_T *> requiredAttachments)
@@ -48,7 +48,7 @@ RenderPassImpl_T::RenderPassImpl_T(uint32_t width, uint32_t height,
     createRenderPass(resources, requiredAttachments);
   }
 
-  void RenderPassImpl_T::createRenderPass(RenderPassResourceSetImpl_T *resources,
+  void GraphicsRenderpassImpl_T::createRenderPass(RenderPassResourceSetImpl_T *resources,
                         std::vector<AttachmentImpl_T *> requiredAttachments) {
     // Gather all global attachments
     std::vector<VkAttachmentDescription> attachmentDescriptions;
@@ -204,7 +204,7 @@ RenderPassImpl_T::RenderPassImpl_T(uint32_t width, uint32_t height,
     }
   }
 
-  void RenderPassImpl_T::recreateSwapchain(std::unique_ptr<Window> &window) {
+  void GraphicsRenderpassImpl_T::recreateSwapchain(std::unique_ptr<Window> &window) {
     // Clean up old framebuffers
     for (auto framebuffer : framebuffers) {
       vkDestroyFramebuffer(vkZero_core->device, framebuffer, nullptr);
@@ -235,12 +235,12 @@ RenderPassImpl_T::RenderPassImpl_T(uint32_t width, uint32_t height,
     }
   }
 
-  const std::vector<VkFramebuffer> &RenderPassImpl_T::getFramebuffers() const {
+  const std::vector<VkFramebuffer> &GraphicsRenderpassImpl_T::getFramebuffers() const {
     return framebuffers;
   }
-  VkRenderPass RenderPassImpl_T::getRenderPass() const { return renderPass; }
+  VkRenderPass GraphicsRenderpassImpl_T::getRenderPass() const { return renderPass; }
 
-  void RenderPassImpl_T::record(VkCommandBuffer commandBuffer, std::unique_ptr<Window> &Window,
+  void GraphicsRenderpassImpl_T::record(VkCommandBuffer commandBuffer, std::unique_ptr<Window> &Window,
               uint32_t currentFrame, uint32_t imageIndex) {
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

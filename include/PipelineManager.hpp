@@ -32,7 +32,7 @@ public:
   using PipelineShaderResources = VkZero::ShaderResourceSet<VkZero::ResourceBinding<VkZero::SwapImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkZero::SHADER_FRAGMENT, 0, 1>>;
   using Pipeline = VkZero::GraphicsPipeline<PipelineShaderGroup, PipelineShaderResources>;
   using PipelineRenderPassResources = VkZero::RenderPassResourceSet<VkZero::RenderPassResource<"output">>;
-  using PipelineRenderPass = VkZero::RenderPass<PipelineRenderPassResources, Pipeline>;
+  using PipelineRenderPass = VkZero::GraphicsRenderpass<PipelineRenderPassResources, Pipeline>;
 
   PipelineShaderPushConstant pushConstants;
   PipelineShaderGroup group;

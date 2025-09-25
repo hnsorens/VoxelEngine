@@ -253,17 +253,17 @@ constexpr void tuple_for_each(Tuple &&t, Func &&f) {
           std::tuple_size<std::remove_reference_t<Tuple>>::value>{});
 }
 
-struct RenderPassBase {
-  RenderPassBase(uint32_t width, uint32_t height,
+struct GraphicsRenderpassBase {
+  GraphicsRenderpassBase(uint32_t width, uint32_t height,
                  RenderPassResourceSetImpl_T *resources,
                  std::vector<GraphicsPipelineImpl_T *> pipelines,
                  std::vector<AttachmentImpl_T *> requiredAttachments);
 
-  struct RenderPassImpl_T *impl;
+  struct GraphicsRenderpassImpl_T *impl;
 };
 
 template <typename Resources, typename... Pipelines>
-class RenderPass : public RenderPassBase {
+class GraphicsRenderpass : public GraphicsRenderpassBase {
 public:
   using allAttachments =
       RenderPassDetails::get_all_attachments<std::tuple<Pipelines...>>::value;
@@ -273,9 +273,9 @@ public:
   static_assert(std::tuple_size<allAttachments>::value > 0,
                 "RenderPass must have at least one attachment.");
 
-  RenderPass(uint32_t width, uint32_t height, Resources &resource,
+  GraphicsRenderpass(uint32_t width, uint32_t height, Resources &resource,
              Pipelines &...pipelines)
-      : RenderPassBase(width, height, resource.impl, {pipelines.impl...},
+      : GraphicsRenderpassBase(width, height, resource.impl, {pipelines.impl...},
                        GetAttachments<commonAttachments>::get()) {}
 };
 
