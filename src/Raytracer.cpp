@@ -17,7 +17,7 @@
 
 Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
                      std::unique_ptr<VoxelWorld> &voxelWorld,
-                     std::unique_ptr<Camera> &camera) :
+                     std::unique_ptr<Camera> &camera, std::function<void(VkCommandBuffer, uint32_t)> after) :
     raytracingStorageImage{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,
         VkZero::Format::R16G16B16A16Unorm,
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -59,7 +59,7 @@ Raytracer::Raytracer(std::unique_ptr<CommandManager> &commandManager,
       {&raytracingLightStorageImageW}
     },
     something(RAYTRACE_WIDTH, RAYTRACE_HEIGHT, group, set1),
-    renderPass({something, data})
+    renderPass(RaytracingRenderPass_t::NO_FUNCTION, {something, data}, after)
 
 {
   createRaytracingPipeline(VkZero::vkZero_core->device, camera->uniformBuffer,

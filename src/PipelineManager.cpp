@@ -49,7 +49,7 @@ const VkDescriptorSet &PipelineManager::getDescriptorSet(int i) const {
 }
 
 void PipelineManager::recreateFramebuffers(std::unique_ptr<VkZero::Window>& window) {
-    renderPass.impl->recreateSwapchain(window);
+    renderPass.impl->recreateSwapchain(window->impl);
 }
 
 

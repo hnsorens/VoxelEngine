@@ -4,6 +4,7 @@
 #include "Raytracer.hpp"
 #include "SyncManager.hpp"
 #include "VkZero/Internal/core_internal.hpp"
+#include "VkZero/frame.hpp"
 #include "VoxelWorld.hpp"
 #include "VkZero/Internal/window_internal.hpp"
 #include "VkZero/Internal/graphics_renderpass_internal.hpp"
@@ -50,7 +51,7 @@ void VoxelEngine::initVulkan() {
     createCommandBuffers();
     voxelWorld = std::make_unique<VoxelWorld>(commandManager);
     raytracer = std::make_unique<Raytracer>(commandManager,
-                                            voxelWorld, camera);
+                                            voxelWorld, camera, [&](VkCommandBuffer cb, uint32_t cf){voxelWorld->updateVoxels(cb, cf);});
     pipelineManager =
         std::make_unique<PipelineManager>(raytracer, Window);
     syncManager = std::make_unique<SyncManager>();
@@ -264,7 +265,7 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
         throw std::runtime_error("failed to begin recording command buffer!");
     }
 
-    pipelineManager->renderPass.impl->record(commandManager->getCommandBuffers()[currentFrame], Window.get(), currentFrame, imageIndex);
+    pipelineManager->renderPass.impl->record(commandManager->getCommandBuffers()[currentFrame], Window.get()->impl, currentFrame, imageIndex);
 
     if (vkEndCommandBuffer(commandManager->getCommandBuffers()[currentFrame]) != VK_SUCCESS) {
         throw std::runtime_error("failed to record raytracing command buffer!");
@@ -279,8 +280,8 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
         throw std::runtime_error("failed to begin recording command buffer!");
     }
 
-    raytracer->renderPass.impl->record(raytracingCommandBuffers[currentFrame], Window.get(), currentFrame, imageIndex);
-    voxelWorld->updateVoxels(raytracingCommandBuffers[currentFrame], currentFrame);
+    raytracer->renderPass.impl->record(raytracingCommandBuffers[currentFrame], Window.get()->impl, currentFrame, imageIndex);
+    //voxelWorld->updateVoxels(raytracingCommandBuffers[currentFrame], currentFrame);
 
     if (vkEndCommandBuffer(raytracingCommandBuffers[currentFrame]) != VK_SUCCESS) {
         throw std::runtime_error("failed to record raytracing command buffer!");

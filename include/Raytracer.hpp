@@ -16,7 +16,7 @@ class Raytracer {
 public:
   Raytracer(std::unique_ptr<class CommandManager> &commandManager,
             std::unique_ptr<VoxelWorld> &voxelWorld,
-            std::unique_ptr<class Camera> &camera);
+            std::unique_ptr<class Camera> &camera, std::function<void(VkCommandBuffer, uint32_t)> after);
   ~Raytracer();
 
   void createRaytracingPipeline(

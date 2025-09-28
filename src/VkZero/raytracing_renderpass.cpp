@@ -5,17 +5,18 @@ using namespace VkZero;
 
 RaytracingRenderpassImpl_T::RaytracingRenderpassImpl_T(
     std::vector<std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
-        pipelines)
-    : pipelines{pipelines} {
+        pipelines, std::function<void(VkCommandBuffer, uint32_t)> before, std::function<void(VkCommandBuffer, uint32_t)> after)
+    : pipelines{pipelines}, before(before), after(after) {
   vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(
       vkGetDeviceProcAddr(vkZero_core->device, "vkCmdTraceRaysKHR"));
 }
 
 void RaytracingRenderpassImpl_T::record(VkCommandBuffer commandBuffer,
-                                        Window* window,
+                                        WindowImpl_T* window,
                                         uint32_t currentFrame,
                                         uint32_t imageIndex) {
   for (auto &[pipeline, pushConstant] : pipelines) {
+    before(commandBuffer, currentFrame);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
                       pipeline->pipeline);
     pipeline->bindResources(commandBuffer, currentFrame);
@@ -71,11 +72,12 @@ void RaytracingRenderpassImpl_T::record(VkCommandBuffer commandBuffer,
                       &pipeline->missRegion, &pipeline->hitRegion,
                       &pipeline->callableRegion, pipeline->width,
                       pipeline->height, 1);
+    after(commandBuffer, currentFrame);
   }
 }
 RaytracingRenderpassBase::RaytracingRenderpassBase(
       std::vector<
           std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
-          pipelines) {
-    impl = new RaytracingRenderpassImpl_T(pipelines);
+          pipelines, std::function<void(VkCommandBuffer, uint32_t)> before, std::function<void(VkCommandBuffer, uint32_t)> after) {
+    impl = new RaytracingRenderpassImpl_T(pipelines, before, after);
   }

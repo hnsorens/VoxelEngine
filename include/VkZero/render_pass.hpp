@@ -8,6 +8,7 @@
 #include "VkZero/window.hpp"
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 #include <memory>
 #include <tuple>
 #include <unordered_map>
@@ -307,7 +308,7 @@ struct RaytracingRenderpassBase {
   RaytracingRenderpassBase(
       std::vector<
           std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
-          pipelines);
+          pipelines, std::function<void(VkCommandBuffer, uint32_t)> before, std::function<void(VkCommandBuffer, uint32_t)> after);
 
   struct RaytracingRenderpassImpl_T *impl;
 };
@@ -315,8 +316,9 @@ struct RaytracingRenderpassBase {
 template <typename... RaytracingPipelines>
 class RaytracingRenderPass : public RaytracingRenderpassBase {
 public:
-  RaytracingRenderPass(RaytracingPipelines... pipelines)
+  RaytracingRenderPass(std::function<void(VkCommandBuffer, uint32_t)> before, RaytracingPipelines... pipelines, std::function<void(VkCommandBuffer, uint32_t)> after)
       : RaytracingRenderpassBase(
-            {{pipelines.pipeline.impl, pipelines.pushConstantData.impl}...}) {}
+            {{pipelines.pipeline.impl, pipelines.pushConstantData.impl}...}, before, after) {}
+  static void NO_FUNCTION(VkCommandBuffer commandBuffer, uint32_t currentFrame) {}
 };
 } // namespace VkZero

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "VkZero/Internal/window_internal.hpp"
 #include "VkZero/render_pass.hpp"
 #include "VkZero/Internal/renderpass_internal.hpp"
 
@@ -44,14 +45,15 @@ struct GraphicsRenderpassImpl_T : public RenderpassImpl_T {
   void createRenderPass(RenderPassResourceSetImpl_T *resources,
                         std::vector<AttachmentImpl_T *> requiredAttachments);
 
-  void recreateSwapchain(std::unique_ptr<Window> &window);
+  void recreateSwapchain(WindowImpl_T* window) override;
 
   const std::vector<VkFramebuffer> &getFramebuffers() const;
 
   VkRenderPass getRenderPass() const;
 
-  void record(VkCommandBuffer commandBuffer, Window* window,
+  void record(VkCommandBuffer commandBuffer, WindowImpl_T* window,
               uint32_t currentFrame, uint32_t imageIndex) override;
+
 
   uint32_t width, height;
   VkRenderPass renderPass;
