@@ -1,15 +1,17 @@
 #include "Camera.hpp"
-#include "ResourceManager.hpp"
+#include "VkZero/Internal/core_internal.hpp"
+#include "VkZero/resource_manager.hpp"
 #include "VoxelWorld.hpp"
-#include "VulkanContext.hpp"
-#include "WindowManager.hpp"
+#include "VkZero/info.hpp"
+#include "VkZero/window.hpp"
+#include <cstdio>
 #include <cstring>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <memory>
 #include <stdexcept>
 
-Camera::Camera(std::unique_ptr<VulkanContext> &vulkanContext) {
+Camera::Camera(std::unique_ptr<VkZero::Window> &window) {
   uniformBuffer.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBufferMemory.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
@@ -22,46 +24,46 @@ Camera::Camera(std::unique_ptr<VulkanContext> &vulkanContext) {
     bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(vulkanContext->getDevice(), &bufferInfo, nullptr,
+    if (vkCreateBuffer(VkZero::vkZero_core->device, &bufferInfo, nullptr,
                        &uniformBuffer[i]) != VK_SUCCESS) {
       throw std::runtime_error("failed to create uniform buffer");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(vulkanContext->getDevice(), uniformBuffer[i],
+    vkGetBufferMemoryRequirements(VkZero::vkZero_core->device, uniformBuffer[i],
                                   &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = ResourceManager::findMemoryType(
-        vulkanContext->getPhysicalDevice(), memRequirements.memoryTypeBits,
+    allocInfo.memoryTypeIndex = VkZero::ResourceManager::findMemoryType(
+        VkZero::vkZero_core->physicalDevice, memRequirements.memoryTypeBits,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    if (vkAllocateMemory(vulkanContext->getDevice(), &allocInfo, nullptr,
+    if (vkAllocateMemory(VkZero::vkZero_core->device, &allocInfo, nullptr,
                          &uniformBufferMemory[i]) != VK_SUCCESS) {
       throw std::runtime_error("Failed to allocate uniform buffer memory!");
     }
 
-    vkBindBufferMemory(vulkanContext->getDevice(), uniformBuffer[i],
+    vkBindBufferMemory(VkZero::vkZero_core->device, uniformBuffer[i],
                        uniformBufferMemory[i], 0);
 
-    vkMapMemory(vulkanContext->getDevice(), uniformBufferMemory[i], 0,
+    vkMapMemory(VkZero::vkZero_core->device, uniformBufferMemory[i], 0,
                 sizeof(TransformUBO), 0, &uniformBuffersMapped[i]);
     memcpy(uniformBuffersMapped[i], &ubo, sizeof(TransformUBO));
     ubo.view = glm::mat4(1.0);
     ubo.proj =
         glm::perspective(glm::radians(70.0f),
-                         vulkanContext->getSwapChainExtent().width /
-                             (float)vulkanContext->getSwapChainExtent().height,
+                         window->getSwapChainExtent().width /
+                             (float)window->getSwapChainExtent().height,
                          0.1f, 1000.0f);
     ubo.proj[1][1] *= -1;
     ubo.proj = glm::inverse(ubo.proj);
   }
 }
 Camera::~Camera() {}
-void Camera::update(std::unique_ptr<WindowManager> &windowManager,
+void Camera::update(std::unique_ptr<VkZero::Window> &Window,
                     std::unique_ptr<VoxelWorld> &voxelWorld, int currentFrame) {
   struct {
     float &pos;
@@ -70,11 +72,11 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
                 {cameraPosition.y, -640, -340, 128, 64, 8},
                 {cameraPosition.z, -640, -340, 128, 512, 64}};
 
-  cameraPosition.z += cameraVelocity.z * windowManager->getDeltaTime();
-  cameraTargetPoint.z += cameraVelocity.z * windowManager->getDeltaTime();
+  cameraPosition.z += cameraVelocity.z * Window->getDeltaTime();
+  cameraTargetPoint.z += cameraVelocity.z * Window->getDeltaTime();
   ;
-
   glm::ivec3 intCameraPosition = glm::ivec3(cameraPosition) * -1;
+
 
 #define voxChunk(chunk, x, y, z)                                               \
   chunk[((z) % 128) * 128 * 128 + ((y) % 128) * 128 + ((x) % 128)]
@@ -94,6 +96,7 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
     }
   }
   // // ceiling
+   
   bool is_ouch = false;
 
   if (is_grounded) {
@@ -101,40 +104,40 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
   } else if (is_ouch) {
     cameraVelocity.z = -fabsf(cameraVelocity.z) * 0.8;
   } else {
-    cameraVelocity.z -= 20 * 7 * windowManager->getDeltaTime();
+    cameraVelocity.z -= 20 * 7 * Window->getDeltaTime();
     ;
   }
-
-  if (windowManager->isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+ 
+  if (Window->isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
     // Hide the cursor and capture mouse movement
 
-    windowManager->hideCursor();
+    Window->hideCursor();
 
     float deltaTime = 0.1f;
 
     movementSpeed =
-        windowManager->isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
+        Window->isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
     bool reset = false;
-    if (windowManager->isKeyPressed(GLFW_KEY_S)) {
+    if (Window->isKeyPressed(GLFW_KEY_S)) {
       reset = true;
       cameraPosition += movementSpeed * deltaTime *
                         glm::normalize(cameraTargetPoint - cameraPosition) *
                         glm::vec3(1, 1, 0);
     }
-    if (windowManager->isKeyPressed(GLFW_KEY_W)) {
+    if (Window->isKeyPressed(GLFW_KEY_W)) {
       reset = true;
       cameraPosition -= movementSpeed * deltaTime *
                         glm::normalize(cameraTargetPoint - cameraPosition) *
                         glm::vec3(1, 1, 0);
     }
-    if (windowManager->isKeyPressed(GLFW_KEY_D)) {
+    if (Window->isKeyPressed(GLFW_KEY_D)) {
       reset = true;
       cameraPosition -=
           glm::normalize(glm::cross(cameraTargetPoint - cameraPosition,
                                     glm::vec3(0.0f, 0.0f, 1.0f))) *
           movementSpeed * deltaTime * glm::vec3(1, 1, 0);
     }
-    if (windowManager->isKeyPressed(GLFW_KEY_A)) {
+    if (Window->isKeyPressed(GLFW_KEY_A)) {
       reset = true;
       cameraPosition +=
           glm::normalize(glm::cross(cameraTargetPoint - cameraPosition,
@@ -143,11 +146,11 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
     }
 
     // Q and E for vertical movement
-    if (windowManager->isKeyPressed(GLFW_KEY_Q)) {
+    if (Window->isKeyPressed(GLFW_KEY_Q)) {
       cameraPosition.z -= movementSpeed * 2 * deltaTime;
     }
-    if ((windowManager->isKeyPressed(GLFW_KEY_SPACE) ||
-         windowManager->isKeyPressed(GLFW_KEY_E)) &&
+    if ((Window->isKeyPressed(GLFW_KEY_SPACE) ||
+         Window->isKeyPressed(GLFW_KEY_E)) &&
         is_grounded) {
       cameraVelocity.z += 600 * deltaTime;
     }
@@ -157,7 +160,7 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
     }
 
     double currentMouseX, currentMouseY;
-    windowManager->getCursorPos(&currentMouseX, &currentMouseY);
+    Window->getCursorPos(&currentMouseX, &currentMouseY);
 
     if (firstMouse) {
       lastMouseX = static_cast<float>(currentMouseX);
@@ -201,18 +204,13 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
     cameraTargetPoint = cameraPosition + direction;
   } else {
     // Release the cursor and reset first mouse flag
-    windowManager->showCursor();
+    Window->showCursor();
     firstMouse = true;
   }
-
+ 
   ubo.view = glm::inverse(glm::lookAt(cameraPosition, cameraTargetPoint,
                                       glm::vec3(0.0f, 0.0f, 1.0f)));
-
-  printf("\rPOSITION: %i %i %i\tCHUNK: %i %i %i\tDELTA TIME: %f\to: %i",
-         (int)cameraPosition.x, (int)cameraPosition.y, (int)cameraPosition.z,
-         chunkPosition.x, chunkPosition.y, chunkPosition.z,
-         windowManager->getDeltaTime(), is_ouch);
-
+ 
   for (auto &check : checks) {
     if (check.pos < check.lowerBound) {
       check.pos += check.offset;
@@ -223,11 +221,11 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
                                       check.modValue - check.shift);
     }
   }
-
+ 
   voxelWorld->sortChunks();
 
   // Raycast and print distance
-  if (windowManager->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
+  if (Window->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
     bool hit = false;
     glm::ivec3 hitPosition =
         rayCast(voxelWorld, -cameraPosition, cameraTargetPoint - cameraPosition,
@@ -260,7 +258,7 @@ void Camera::update(std::unique_ptr<WindowManager> &windowManager,
       voxelWorld->chunkUpdateQueue[++voxelWorld->chunkUpdateQueue[0]] = chunkID;
     }
   }
-
+ 
   memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(TransformUBO));
 }
 

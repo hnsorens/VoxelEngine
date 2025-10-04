@@ -1,4 +1,7 @@
 #pragma once
+#include "VkZero/image.hpp"
+#include <sys/types.h>
+#define FNL_IMPL
 #include "FastNoiseLite.hpp"
 #include <condition_variable>
 #include <cstdint>
@@ -7,7 +10,6 @@
 #include <thread>
 #include <unordered_set>
 #include <vector>
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 //=================
@@ -30,13 +32,12 @@
 class VoxelWorld {
 public:
   struct VoxelChunk {
-    uint8_t *data;
+    u_int8_t *data;
     glm::ivec3 position;
     bool inQueue;
   };
 
-  VoxelWorld(std::unique_ptr<class VulkanContext> &vulkanContext,
-             std::unique_ptr<class CommandManager> &commandManager);
+  VoxelWorld(std::unique_ptr<class CommandManager> &commandManager);
   ~VoxelWorld();
 
   void generateTerrain();
@@ -46,7 +47,6 @@ public:
   void sortChunks();
   void updateVoxelChunkMap(int modValue, int offset);
   void updateVoxels(VkCommandBuffer commandBuffer,
-                    std::unique_ptr<VulkanContext> &vulkanContext,
                     int currentImage);
   void chunkWorker();
   void generateChunk(VoxelChunk &chunk);
@@ -62,23 +62,15 @@ public:
   std::unordered_set<uint16_t> activeChunks;
   std::mutex queueMutex;
   std::condition_variable queueCond;
-  bool stopThreads;
+  bool stopThreads = false;
 
-  std::vector<VkImage> voxelTexture;
-  std::vector<VkDeviceMemory> voxelTexturesMemory;
-  std::vector<VkImageView> voxelImageView;
+  std::vector<VkZero::StagedSharedImage> voxelImages;
 
   std::vector<uint16_t> chunkUpdateQueue;
 
   std::vector<VoxelChunk> voxelData;
-  VkSampler voxelTextureSampler;
-  std::vector<VkBuffer> voxelStagingBuffer;
-  std::vector<VkDeviceMemory> voxelStagingBufferMemory;
-  std::vector<VkImage> voxelChunkMapTexture;
-  std::vector<VkDeviceMemory> voxelChunkMapTexturesMemory;
-  std::vector<VkImageView> voxelChunkMapImageView;
-  std::vector<VkBuffer> voxelChunkMapStagingBuffer;
-  std::vector<VkDeviceMemory> voxelChunkMapStagingBufferMemory;
+
+  VkZero::StagedSharedImage voxelChunkMapImage;
   uint16_t *voxelChunkMapData;
 
   FastNoiseLite noise;

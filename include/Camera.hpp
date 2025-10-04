@@ -3,7 +3,6 @@
 #include <memory>
 #include <vector>
 
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 struct TransformUBO {
@@ -11,12 +10,16 @@ struct TransformUBO {
   glm::mat4 proj;
 };
 
+namespace VkZero
+{
+  class Window;
+}
 class Camera {
 public:
-  Camera(std::unique_ptr<class VulkanContext> &vulkanContext);
+  Camera(std::unique_ptr<VkZero::Window> &window);
   ~Camera();
 
-  void update(std::unique_ptr<class WindowManager> &windowManager,
+  void update(std::unique_ptr<VkZero::Window> &Window,
               std::unique_ptr<class VoxelWorld> &voxelWorld, int currentFrame);
   void processMouseMovement(float xoffset, float yoffset);
   void processKeyboardInput(int key, float deltaTime);
@@ -26,7 +29,6 @@ public:
   float getYaw() const;
   float getPitch() const;
 
-private:
   void onMouseMove(double xPos, double yPos);
   glm::ivec3 rayCast(std::unique_ptr<class VoxelWorld> &voxelWorld,
                      glm::vec3 rayOrigin, glm::vec3 rayDir, bool &something_hit,

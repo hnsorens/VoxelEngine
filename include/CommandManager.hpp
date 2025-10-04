@@ -1,24 +1,26 @@
 #pragma once
-#include "VulkanContext.hpp"
+#include <memory>
 #include <vector>
 #include <vulkan/vulkan.h>
 
+namespace VkZero
+{
+  struct QueueFamilyIndices;
+}
 class CommandManager {
 public:
-  CommandManager(std::unique_ptr<VulkanContext> &vulkanContext);
+  CommandManager();
   ~CommandManager();
 
   VkCommandBuffer
-  beginSingleTimeCommands(std::unique_ptr<VulkanContext> &vulkanContext);
-  void endSingleTimeCommands(std::unique_ptr<VulkanContext> &vulkanContext,
-                             VkCommandBuffer commandBuffer);
+  beginSingleTimeCommands();
+  void endSingleTimeCommands(VkCommandBuffer commandBuffer);
   VkCommandPool getCommandPool() const;
   const std::vector<VkCommandBuffer> &getCommandBuffers() const;
 
 private:
-  void createCommandPool(VkDevice device,
-                         const QueueFamilyIndices &queueFamilyIndices);
-  void allocateCommandBuffers(VkDevice device);
+  void createCommandPool();
+  void allocateCommandBuffers();
 
   VkCommandPool commandPool;
   std::vector<VkCommandBuffer> commandBuffers;

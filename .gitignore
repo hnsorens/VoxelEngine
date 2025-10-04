@@ -1,2 +1,4 @@
 # Ignore all files in bin directory
 bin/
+compile_commands.json
+*.idx
