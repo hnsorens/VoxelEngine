@@ -59,10 +59,11 @@ struct WindowImpl_T {
         VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
       recreateSwapchain();
+      return true;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
       throw std::runtime_error("failed to acquire swap chain image!");
     }
-    return result == VK_ERROR_OUT_OF_DATE_KHR;
+    return false;
   }
 
   bool present(uint32_t &imageIndex, VkSemaphore &signalSemaphore) {
@@ -86,11 +87,11 @@ struct WindowImpl_T {
       recreateSwapchain();
       // Add a small delay to prevent excessive recreation
       std::this_thread::sleep_for(std::chrono::milliseconds(16));
+      return true;
     } else if (result != VK_SUCCESS) {
       throw std::runtime_error("failed to present swap chain image!");
     }
-
-    return result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR;
+    return false;
   }
 };
 }

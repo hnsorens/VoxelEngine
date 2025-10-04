@@ -1,14 +1,16 @@
 #pragma once
 
+#include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/Internal/renderpass_internal.hpp"
 #include "VkZero/Internal/window_internal.hpp"
 #include "VkZero/info.hpp"
 #include <iostream>
+#include <vulkan/vulkan_core.h>
 namespace VkZero {
 
 struct frameImpl_T {
   frameImpl_T(std::vector<RenderpassImpl_T *> renderpasses, WindowImpl_T* window)
-      : renderpasses(std::move(renderpasses)), window(window) {
+      : renderpasses(renderpasses), window(window) {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -74,7 +76,10 @@ struct frameImpl_T {
       for (auto r : renderpasses) {
         r->recreateSwapchain(window);
       }
+      return;
     }
+
+    vkResetFences(VkZero::vkZero_core->device, 1, &inFlightFences[currentFrame]);
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -148,7 +153,7 @@ struct frameBase {
 
 template <typename... Renderpasses> class frame : public frameBase {
 public:
-  frame(Renderpasses &...renderpasses, Window window)
-      : frameBase({(struct RenderpassImpl_T *)(renderpasses.impl)...}, window.impl) {}
+  frame(Renderpasses &...renderpasses, WindowImpl_T* window)
+      : frameBase({(struct RenderpassImpl_T *)(renderpasses.impl)...}, window) {}
 };
 } // namespace VkZero

@@ -247,13 +247,14 @@ void WindowImpl_T::recreateSwapchain() {
   cleanupSwapChain();
 
   createSwapChain(swapChain);
+  printf("swapchain %x\n", swapChain);
 
   swapchainImages = createSwapchainImages();
 }
 
 AttachmentImage WindowImpl_T::createSwapchainImages() {
   std::vector<VkImage> swapChainImages;
-    vkGetSwapchainImagesKHR(device, swapChain, &swapchainImageCount, nullptr);
+    // vkGetSwapchainImagesKHR(device, swapChain, &swapchainImageCount, nullptr);
     swapChainImages.resize(swapchainImageCount);
     vkGetSwapchainImagesKHR(device, swapChain, &swapchainImageCount,
                             swapChainImages.data());
@@ -281,6 +282,8 @@ AttachmentImage WindowImpl_T::createSwapchainImages() {
                             &swapChainImageViews[i]) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image views!");
       }
+
+      printf("view isk %x\n", swapChainImageViews[i]);
     }
     return AttachmentImage(swapChainImages.data(), swapChainImageViews.data(), swapChainImages.size());
 }

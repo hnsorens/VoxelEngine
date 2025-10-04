@@ -29,7 +29,6 @@ public:
   float getYaw() const;
   float getPitch() const;
 
-private:
   void onMouseMove(double xPos, double yPos);
   glm::ivec3 rayCast(std::unique_ptr<class VoxelWorld> &voxelWorld,
                      glm::vec3 rayOrigin, glm::vec3 rayDir, bool &something_hit,

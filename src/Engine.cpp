@@ -5,6 +5,7 @@
 #include "SyncManager.hpp"
 #include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/frame.hpp"
+#include "VkZeroObjects.hpp"
 #include "VoxelWorld.hpp"
 #include "VkZero/Internal/window_internal.hpp"
 #include "VkZero/Internal/graphics_renderpass_internal.hpp"
@@ -20,8 +21,7 @@
 std::unique_ptr<VkZero::Window> VoxelEngine::Window;
 std::unique_ptr<SyncManager> VoxelEngine::syncManager;
 std::unique_ptr<CommandManager> VoxelEngine::commandManager;
-std::unique_ptr<PipelineManager> VoxelEngine::pipelineManager;
-std::unique_ptr<Raytracer> VoxelEngine::raytracer;
+std::unique_ptr<VkZeroObjects> VoxelEngine::obj;
 std::unique_ptr<VoxelWorld> VoxelEngine::voxelWorld;
 std::unique_ptr<Camera> VoxelEngine::camera;
 std::unique_ptr<GlobalShaderLibrary> VoxelEngine::shaders;
@@ -50,10 +50,8 @@ void VoxelEngine::initVulkan() {
 
     createCommandBuffers();
     voxelWorld = std::make_unique<VoxelWorld>(commandManager);
-    raytracer = std::make_unique<Raytracer>(commandManager,
-                                            voxelWorld, camera, [&](VkCommandBuffer cb, uint32_t cf){voxelWorld->updateVoxels(cb, cf);});
-    pipelineManager =
-        std::make_unique<PipelineManager>(raytracer, Window);
+    obj = std::make_unique<VkZeroObjects>(commandManager,
+                                            voxelWorld, camera, Window, [&](VkCommandBuffer cb, uint32_t cf){voxelWorld->updateVoxels(cb, cf);});
     syncManager = std::make_unique<SyncManager>();
 }
 
@@ -188,162 +186,11 @@ void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
   }
 
   void VoxelEngine::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-      throw std::runtime_error("failed to begin recording command buffer!");
-    }
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = pipelineManager->getRenderPass();
-    renderPassInfo.framebuffer = pipelineManager->getFrameBuffer(imageIndex);
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = Window->getSwapChainExtent();
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
-                         VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      pipelineManager->getGraphicsPipeline());
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float)Window->getSwapChainExtent().width;
-    viewport.height = (float)Window->getSwapChainExtent().height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = Window->getSwapChainExtent();
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipelineManager->getGraphicsPipelineLayout(), 0, 1,
-                            &pipelineManager->getDescriptorSet(currentFrame), 0,
-                            nullptr);
-    vkCmdDraw(commandBuffer, 6, 1, 0, 0);
-    vkCmdEndRenderPass(commandBuffer);
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-      throw std::runtime_error("failed to record command buffer!");
-    }
+  
   }
 
   void VoxelEngine::drawFrame() {
     // Wait for the previous frame to finish with a timeout
-    VkResult fenceResult = vkWaitForFences(VkZero::vkZero_core->device, 1,
-                    &syncManager->getInFlightFences()[currentFrame], VK_TRUE,
-                    1000000000); // 1 second timeout
-    
-    if (fenceResult == VK_TIMEOUT) {
-        std::cout << "Warning: Frame fence timeout, continuing anyway" << std::endl;
-    }
-    
-    camera->update(Window, voxelWorld, currentFrame);
-    uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(
-        VkZero::vkZero_core->device, Window->impl->getSwapChain(), UINT64_MAX,
-        syncManager->getImageAvailableSemaphores()[currentFrame],
-        VK_NULL_HANDLE, &imageIndex);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-      Window->impl->recreateSwapchain();
-      pipelineManager->recreateFramebuffers(Window);
-      return;
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-      throw std::runtime_error("failed to acquire swap chain image!");
-    }
-    vkResetFences(VkZero::vkZero_core->device, 1,
-                  &syncManager->getInFlightFences()[currentFrame]);
-
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    
-    vkResetCommandBuffer(commandManager->getCommandBuffers()[currentFrame], 0);
-    if (vkBeginCommandBuffer(commandManager->getCommandBuffers()[currentFrame], &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("failed to begin recording command buffer!");
-    }
-
-    pipelineManager->renderPass.impl->record(commandManager->getCommandBuffers()[currentFrame], Window.get()->impl, currentFrame, imageIndex);
-
-    if (vkEndCommandBuffer(commandManager->getCommandBuffers()[currentFrame]) != VK_SUCCESS) {
-        throw std::runtime_error("failed to record raytracing command buffer!");
-    }
-
-    // recordVoxelCommandBuffer(
-    //     raytracingCommandBuffers[currentFrame],
-    //     currentFrame,
-    //     section);
-    vkResetCommandBuffer(raytracingCommandBuffers[currentFrame], 0);
-    if (vkBeginCommandBuffer(raytracingCommandBuffers[currentFrame], &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("failed to begin recording command buffer!");
-    }
-
-    raytracer->renderPass.impl->record(raytracingCommandBuffers[currentFrame], Window.get()->impl, currentFrame, imageIndex);
-    //voxelWorld->updateVoxels(raytracingCommandBuffers[currentFrame], currentFrame);
-
-    if (vkEndCommandBuffer(raytracingCommandBuffers[currentFrame]) != VK_SUCCESS) {
-        throw std::runtime_error("failed to record raytracing command buffer!");
-    }
-
-
-
-
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = {
-        syncManager->getImageAvailableSemaphores()[currentFrame]};
-    VkPipelineStageFlags waitStages[] = {
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-    std::vector<VkCommandBuffer> commands;
-    commands.push_back(
-        raytracingCommandBuffers[currentFrame]);
-    commands.push_back(commandManager->getCommandBuffers()[currentFrame]);
-
-    submitInfo.commandBufferCount = 2;
-    submitInfo.pCommandBuffers = commands.data();
-    VkSemaphore signalSemaphores[] = {
-        syncManager->getRenderFinishedSemaphores()[currentFrame]};
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    if (vkQueueSubmit(VkZero::vkZero_core->graphicsQueue, 1, &submitInfo,
-                      syncManager->getInFlightFences()[currentFrame]) !=
-        VK_SUCCESS) {
-      throw std::runtime_error("failed to submit draw command buffer!");
-    }
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
-
-    VkSwapchainKHR swapChains[] = {Window->impl->getSwapChain()};
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapChains;
-
-    presentInfo.pImageIndices = &imageIndex;
-
-    result = vkQueuePresentKHR(VkZero::vkZero_core->presentQueue, &presentInfo);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-        Window->impl->framebufferResized) {
-      Window->impl->framebufferResized = false;
-      std::cout << "Recreating swapchain..." << std::endl;
-      Window->impl->recreateSwapchain();
-      pipelineManager->recreateFramebuffers(Window);
-      // Add a small delay to prevent excessive recreation
-      std::this_thread::sleep_for(std::chrono::milliseconds(16));
-    } else if (result != VK_SUCCESS) {
-      throw std::runtime_error("failed to present swap chain image!");
-    }
-
-    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-    if (currentFrame == 0)
-      section = (section + 1) % 16;
+    camera->update(Window, voxelWorld, obj->frame.impl->currentFrame);
+    obj->draw();
   }
