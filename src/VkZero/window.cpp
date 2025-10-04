@@ -247,7 +247,6 @@ void WindowImpl_T::recreateSwapchain() {
   cleanupSwapChain();
 
   createSwapChain(swapChain);
-  printf("swapchain %x\n", swapChain);
 
   swapchainImages = createSwapchainImages();
 }
@@ -283,7 +282,6 @@ AttachmentImage WindowImpl_T::createSwapchainImages() {
         throw std::runtime_error("failed to create image views!");
       }
 
-      printf("view isk %x\n", swapChainImageViews[i]);
     }
     return AttachmentImage(swapChainImages.data(), swapChainImageViews.data(), swapChainImages.size());
 }

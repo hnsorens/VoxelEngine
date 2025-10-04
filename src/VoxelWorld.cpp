@@ -112,7 +112,6 @@ void VoxelWorld::requestChunk(uint16_t chunkID, float priority) {
   // std::fill(voxelData[chunkID].data, voxelData[chunkID].data + 128 * 128 *
   // 128, 0);
   std::lock_guard<std::mutex> lock(queueMutex);
-// printf("requesting chunk\n");
   // chunkGenerationID[chunkID]++; // Increment generation ID
   if (voxelData[chunkID].inQueue)
     return;

@@ -1033,8 +1033,6 @@ commandPool	include/VkZero/frame.hpp	/^  VkCommandPool commandPool;$/;"	m	struct
 commonAttachments	include/VkZero/render_pass.hpp	/^  using commonAttachments =$/;"	t	class:VkZero::GraphicsRenderpass	typeref:typename:RenderPassDetails::get_common_attachments<allAttachments>::value
 contains	src/VkZero/descriptor_pool.cpp	/^struct contains<T, std::tuple<U, Rest...>> $/;"	s	file:
 contains_attachment	include/VkZero/render_pass.hpp	/^struct contains_attachment<T, std::tuple<First, Rest...>>$/;"	s	namespace:VkZero::RenderPassDetails
-createBuffer	src/Engine.cpp	/^void VoxelEngine::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice,$/;"	f	class:VoxelEngine	typeref:typename:void
-createCommandBuffers	src/Engine.cpp	/^  void VoxelEngine::createCommandBuffers() {$/;"	f	class:VoxelEngine	typeref:typename:void
 createCommandPool	src/CommandManager.cpp	/^void CommandManager::createCommandPool() {$/;"	f	class:CommandManager	typeref:typename:void
 createInstance	src/VkZero/core.cpp	/^void VkZeroCoreImpl_T::createInstance() {$/;"	f	class:VkZeroCoreImpl_T	typeref:typename:void
 createLogicalDevice	src/VkZero/core.cpp	/^void VkZeroCoreImpl_T::createLogicalDevice(WindowImpl_T* window) {$/;"	f	class:VkZeroCoreImpl_T	typeref:typename:void
@@ -1417,7 +1415,6 @@ raytracingStorageImage	include/VkZeroObjects.hpp	/^  VkZero::SwapImage raytracin
 readFile	src/VkZero/resource_manager.cpp	/^std::vector<char> ResourceManager::readFile(const std::string &filename) {$/;"	f	class:ResourceManager	typeref:typename:std::vector<char>
 record	src/VkZero/graphics_renderpass.cpp	/^void GraphicsRenderpassImpl_T::record(VkCommandBuffer commandBuffer,$/;"	f	class:GraphicsRenderpassImpl_T	typeref:typename:void
 record	src/VkZero/raytracing_renderpass.cpp	/^void RaytracingRenderpassImpl_T::record(VkCommandBuffer commandBuffer,$/;"	f	class:RaytracingRenderpassImpl_T	typeref:typename:void
-recordCommandBuffer	src/Engine.cpp	/^  void VoxelEngine::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {$/;"	f	class:VoxelEngine	typeref:typename:void
 recordRaytracingCommandBuffer	src/Raytracer.cpp	/^void Raytracer::recordRaytracingCommandBuffer(VkCommandBuffer commandBuffer,$/;"	f	class:Raytracer	typeref:typename:void
 recordRaytracingCommandBuffer	src/VkZeroObjects.cpp	/^void VkZeroObjects::recordRaytracingCommandBuffer(VkCommandBuffer commandBuffer,$/;"	f	class:VkZeroObjects	typeref:typename:void
 recreateFramebuffers	src/PipelineManager.cpp	/^void PipelineManager::recreateFramebuffers(std::unique_ptr<VkZero::Window>& window) {$/;"	f	class:PipelineManager	typeref:typename:void
