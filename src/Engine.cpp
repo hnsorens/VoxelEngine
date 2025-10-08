@@ -1,8 +1,5 @@
 #include "Engine.hpp"
 #include "Camera.hpp"
-#include "PipelineManager.hpp"
-#include "Raytracer.hpp"
-#include "SyncManager.hpp"
 #include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/frame.hpp"
 #include "VkZeroObjects.hpp"
@@ -19,7 +16,6 @@
 
 // Static member definitions
 std::unique_ptr<VkZero::Window> VoxelEngine::Window;
-std::unique_ptr<SyncManager> VoxelEngine::syncManager;
 std::unique_ptr<CommandManager> VoxelEngine::commandManager;
 std::unique_ptr<VkZeroObjects> VoxelEngine::obj;
 std::unique_ptr<VoxelWorld> VoxelEngine::voxelWorld;
@@ -51,7 +47,6 @@ void VoxelEngine::initVulkan() {
     voxelWorld = std::make_unique<VoxelWorld>(commandManager);
     obj = std::make_unique<VkZeroObjects>(commandManager,
                                             voxelWorld, camera, Window, [&](VkCommandBuffer cb, uint32_t cf){voxelWorld->updateVoxels(cb, cf);});
-    syncManager = std::make_unique<SyncManager>();
 }
 
 void VoxelEngine::mainLoop() {

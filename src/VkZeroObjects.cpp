@@ -1,8 +1,6 @@
 
-#include "Raytracer.hpp"
 #include "Camera.hpp"
 #include "CommandManager.hpp"
-#include "PipelineManager.hpp"
 #include "VkZero/render_pass.hpp"
 #include "VkZero/resource_manager.hpp"
 #include "VoxelWorld.hpp"
