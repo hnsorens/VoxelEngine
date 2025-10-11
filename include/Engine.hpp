@@ -25,7 +25,6 @@ public:
   }
 
   static std::unique_ptr<VkZero::Window> Window;
-  static std::unique_ptr<class CommandManager> commandManager;
   static std::unique_ptr<class VkZeroObjects> obj;
   static std::unique_ptr<class VoxelWorld> voxelWorld;
   static std::unique_ptr<class Camera> camera;

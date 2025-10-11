@@ -37,7 +37,7 @@ public:
     bool inQueue;
   };
 
-  VoxelWorld(std::unique_ptr<class CommandManager> &commandManager);
+  VoxelWorld();
   ~VoxelWorld();
 
   void generateTerrain();

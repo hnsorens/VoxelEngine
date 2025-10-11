@@ -1,6 +1,5 @@
 #include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/Internal/image_internal.hpp"
-#include "CommandManager.hpp"
 #include "VkZero/resource_manager.hpp"
 #include "Engine.hpp"
 #include <cstdint>
@@ -64,12 +63,12 @@ void transitionImageLayout(VkCommandBuffer commandBuffer,
   );
 }
 
-void transitionImageLayout(std::unique_ptr<CommandManager> &commandManager,
+void transitionImageLayout(
                                             VkImage image, VkFormat format, VkImageLayout oldLayout,
                                             VkImageLayout newLayout, uint32_t mipLevels) {
-    VkCommandBuffer commandBuffer = commandManager->beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = ResourceManager::beginSingleTimeCommands();
     transitionImageLayout(commandBuffer, image, format, oldLayout, newLayout, mipLevels);
-    commandManager->endSingleTimeCommands(commandBuffer);
+  ResourceManager::endSingleTimeCommands(commandBuffer);
 }
 
 size_t formatSize(VkFormat format)
@@ -160,7 +159,7 @@ void CreateImages(
             throw std::runtime_error("failed to creaet raytracing image view!");
         }
 
-        transitionImageLayout(VoxelEngine::commandManager, images[i]->image, (VkFormat)impl->format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
+        transitionImageLayout(images[i]->image, (VkFormat)impl->format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 1);
     }
 
     VkSamplerCreateInfo samplerCreateInfo = {};
@@ -269,18 +268,14 @@ Image::Image(uint32_t width, uint32_t height, uint32_t depth,
 
 void Image::Write(ImageData image, StagingData staging, char* data)
 {
-    
-    std::unique_ptr<CommandManager>& commandManager = VoxelEngine::commandManager;
-
-    VkCommandBuffer commandBuffer = commandManager->beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = ResourceManager::beginSingleTimeCommands();
     Write(commandBuffer, image, staging, data);
-    commandManager->endSingleTimeCommands(commandBuffer);
+    ResourceManager::endSingleTimeCommands(commandBuffer);
 }
 
 void Image::Write(VkCommandBuffer commandBuffer, ImageData image, StagingData staging, char* data)
 {
     
-    std::unique_ptr<CommandManager>& commandManager = VoxelEngine::commandManager;
     
     // TODO adjust the size depending on the format
     void *mappedData;
@@ -305,11 +300,10 @@ void Image::Write(VkCommandBuffer commandBuffer, ImageData image, StagingData st
 void Image::changeLayout(ImageData image, VkImageLayout newLayout, int mipLevels)
 {
     
-    std::unique_ptr<CommandManager>& commandManager = VoxelEngine::commandManager;
 
-    VkCommandBuffer commandBuffer = commandManager->beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = ResourceManager::beginSingleTimeCommands();
     changeLayout(commandBuffer, image, newLayout, mipLevels);
-    commandManager->endSingleTimeCommands(commandBuffer);
+  ResourceManager::endSingleTimeCommands(commandBuffer);
 }
 
 void Image::changeLayout(VkCommandBuffer commandBuffer, ImageData image, VkImageLayout newLayout, int mipLevels)

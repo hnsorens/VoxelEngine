@@ -1,6 +1,5 @@
 
 #include "Camera.hpp"
-#include "CommandManager.hpp"
 #include "VkZero/render_pass.hpp"
 #include "VkZero/resource_manager.hpp"
 #include "VoxelWorld.hpp"
@@ -16,7 +15,7 @@
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920
 
-VkZeroObjects::VkZeroObjects(std::unique_ptr<CommandManager> &commandManager,
+VkZeroObjects::VkZeroObjects(
                      std::unique_ptr<VoxelWorld> &voxelWorld,
                      std::unique_ptr<Camera> &camera, std::unique_ptr<VkZero::Window> &window, std::function<void(VkCommandBuffer, uint32_t)> after) :
     raytracingStorageImage{RAYTRACE_WIDTH, RAYTRACE_HEIGHT, 1,

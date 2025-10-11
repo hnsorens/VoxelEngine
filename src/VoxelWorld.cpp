@@ -1,5 +1,4 @@
 #include "VoxelWorld.hpp"
-#include "CommandManager.hpp"
 #include "VkZero/resource_manager.hpp"
 #include "VkZero/image.hpp"
 #include <algorithm>
@@ -9,7 +8,7 @@
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
-VoxelWorld::VoxelWorld(std::unique_ptr<CommandManager> &commandManager) : 
+VoxelWorld::VoxelWorld() : 
     voxelChunkMapImage{8, 8, 8,
         VkZero::Format::R16Uint,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,

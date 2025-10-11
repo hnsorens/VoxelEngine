@@ -16,7 +16,6 @@
 
 // Static member definitions
 std::unique_ptr<VkZero::Window> VoxelEngine::Window;
-std::unique_ptr<CommandManager> VoxelEngine::commandManager;
 std::unique_ptr<VkZeroObjects> VoxelEngine::obj;
 std::unique_ptr<VoxelWorld> VoxelEngine::voxelWorld;
 std::unique_ptr<Camera> VoxelEngine::camera;
@@ -42,10 +41,9 @@ void VoxelEngine::initVulkan() {
     shaders = std::make_unique<GlobalShaderLibrary>();
 
     camera = std::make_unique<Camera>(Window);
-    commandManager = std::make_unique<CommandManager>();
 
-    voxelWorld = std::make_unique<VoxelWorld>(commandManager);
-    obj = std::make_unique<VkZeroObjects>(commandManager,
+    voxelWorld = std::make_unique<VoxelWorld>();
+    obj = std::make_unique<VkZeroObjects>(
                                             voxelWorld, camera, Window, [&](VkCommandBuffer cb, uint32_t cf){voxelWorld->updateVoxels(cb, cf);});
 }
 
