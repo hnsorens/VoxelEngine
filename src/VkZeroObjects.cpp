@@ -67,7 +67,7 @@ VkZeroObjects::VkZeroObjects(
     graphicsRenderPass{window->getSwapChainExtent().width, window->getSwapChainExtent().height, graphicsRenderpassAttachmentSet, graphicsPipeline},
     frame{raytracingRenderPass, graphicsRenderPass, window->impl}
 {
-  createRaytracingPipeline(VkZero::vkZero_core->device, camera->uniformBuffer.uniformBuffer,
+  createRaytracingPipeline(VkZero::vkZero_core->device, camera->uniformBuffer.impl->uniformBuffer,
                            voxelWorld->voxelImages.data(),
                            &voxelWorld->voxelChunkMapImage);
 }

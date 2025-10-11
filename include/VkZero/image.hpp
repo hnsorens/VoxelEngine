@@ -26,47 +26,27 @@ struct StagingData_T {
   VkDeviceMemory memory;
 };
 
-struct ImageImpl_T {
-  uint32_t width, height, depth;
-  VkSampler sampler;
-  VkImageLayout imageLayout;
-  VkFormat format;
-};
 class Image {
-protected:
-  Image(VkImage *images, VkImageView *imageViews, size_t imageCount,
-        ImageData_T **data) {
-    impl = new ImageImpl_T;
+public:
+  Image(VkImage *vk_images, VkImageView *imageViews, size_t imageCount) {
+    images.resize(imageCount);
     for (int i = 0; i < imageCount; i++) {
-      data[i] = new ImageData_T;
-      data[i]->image = images[i];
-      data[i]->view = imageViews[i];
+      images[i] = new ImageData_T;
+      images[i]->image = vk_images[i];
+      images[i]->view = imageViews[i];
     }
   }
 
   Image(uint32_t width, uint32_t height, uint32_t depth, Format format,
-        VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-        ImageData_T **images, size_t imageCount) {
-    impl = new ImageImpl_T;
-    impl->width = width;
-    impl->height = height;
-    impl->depth = depth;
-    impl->format = (VkFormat)format;
-    impl->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    CreateImages(usage, properties, images, impl, imageCount);
-  }
-
-  Image(uint32_t width, uint32_t height, uint32_t depth, Format format,
-        VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-        ImageData_T **images, StagingData_T **staging, size_t imageCount) {
-    impl = new ImageImpl_T;
-    impl->width = width;
-    impl->height = height;
-    impl->depth = depth;
-    impl->format = (VkFormat)format;
-    impl->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    CreateImages(usage, properties, images, impl, imageCount);
-    CreateStagingBuffer(staging, impl, imageCount);
+        VkImageUsageFlags usage, VkMemoryPropertyFlags properties, size_t imageCount, bool staging) : width(width), height(height), depth(depth) {
+    images.resize(imageCount);
+    imageFormat = (VkFormat)format;
+    imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    CreateImages(usage, properties, images.data(), imageCount);
+    if (staging) {
+      stageBuffers.resize(imageCount);
+      CreateStagingBuffer(stageBuffers.data(), imageCount);
+    }
   }
 
   void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
@@ -148,7 +128,7 @@ protected:
   }
 
   void CreateImages(VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-                    struct ImageData_T **images, struct ImageImpl_T *impl,
+                    struct ImageData_T **images,
                     size_t imageCount) {
 
     for (int i = 0; i < imageCount; i++) {
@@ -158,11 +138,11 @@ protected:
       VkImageCreateInfo imageCreateInfo = {};
       imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
       imageCreateInfo.imageType =
-          impl->depth > 1 ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
-      imageCreateInfo.format = impl->format;
-      imageCreateInfo.extent.width = impl->width;
-      imageCreateInfo.extent.height = impl->height;
-      imageCreateInfo.extent.depth = impl->depth;
+          depth > 1 ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
+      imageCreateInfo.format = imageFormat;
+      imageCreateInfo.extent.width = width;
+      imageCreateInfo.extent.height = height;
+      imageCreateInfo.extent.depth = depth;
       imageCreateInfo.mipLevels = 1;
       imageCreateInfo.arrayLayers = 1;
       imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -211,8 +191,8 @@ protected:
       viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
       viewCreateInfo.image = images[i]->image;
       viewCreateInfo.viewType =
-          impl->depth > 1 ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D;
-      viewCreateInfo.format = (VkFormat)impl->format;
+          depth > 1 ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D;
+      viewCreateInfo.format = (VkFormat)imageFormat;
       viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
       viewCreateInfo.subresourceRange.baseMipLevel = 0;
       viewCreateInfo.subresourceRange.levelCount = 1;
@@ -224,7 +204,7 @@ protected:
         throw std::runtime_error("failed to creaet raytracing image view!");
       }
 
-      transitionImageLayout(images[i]->image, (VkFormat)impl->format,
+      transitionImageLayout(images[i]->image, imageFormat,
                             VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
                             1);
     }
@@ -247,20 +227,19 @@ protected:
     samplerCreateInfo.mipLodBias = 0.0f;
 
     if (vkCreateSampler(vkZero_core->device, &samplerCreateInfo, nullptr,
-                        &impl->sampler) != VK_SUCCESS) {
+                        &sampler) != VK_SUCCESS) {
       throw std::runtime_error("failed to create sampler");
     }
   }
 
-  void CreateStagingBuffer(struct StagingData_T **staging,
-                           struct ImageImpl_T *impl, size_t imageCount) {
+  void CreateStagingBuffer(struct StagingData_T **staging, size_t imageCount) {
 
     for (int i = 0; i < imageCount; i++) {
       staging[i] = new StagingData_T;
       VkBufferCreateInfo bufferCreateInfo = {};
       bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
       bufferCreateInfo.size =
-          impl->width * impl->height * impl->depth * formatSize(impl->format);
+          width * height * depth * formatSize(imageFormat);
       bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
       bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -288,23 +267,21 @@ protected:
     }
   }
 
-  void Write(ImageData_T *image, StagingData_T *staging, char *data)
+  void Write(uint32_t index, char *data)
   {
         VkCommandBuffer commandBuffer = ResourceManager::beginSingleTimeCommands();
-    Write(commandBuffer, image, staging, data);
+    Write(commandBuffer, index, data);
     ResourceManager::endSingleTimeCommands(commandBuffer);
   }
-  void Write(VkCommandBuffer commandBuffer, ImageData_T *image,
-             StagingData_T *staging, char *data)
+  void Write(VkCommandBuffer commandBuffer, uint32_t index, char *data)
              {
-                    
     
     // TODO adjust the size depending on the format
     void *mappedData;
-    vkMapMemory(vkZero_core->device, staging->memory, 0,
-                impl->width * impl->height * impl->depth * formatSize(impl->format), 0, &mappedData);
-    memcpy(mappedData, data, impl->width * impl->height * impl->depth * formatSize(impl->format));
-    vkUnmapMemory(vkZero_core->device, staging->memory);
+    vkMapMemory(vkZero_core->device, stageBuffers[index]->memory, 0,
+                width * height * depth * formatSize(imageFormat), 0, &mappedData);
+    memcpy(mappedData, data, width * height * depth * formatSize(imageFormat));
+    vkUnmapMemory(vkZero_core->device, stageBuffers[index]->memory);
     VkBufferImageCopy region = {};
     region.bufferOffset = 0;
     region.bufferRowLength = 0;
@@ -314,8 +291,8 @@ protected:
     region.imageSubresource.baseArrayLayer = 0;
     region.imageSubresource.layerCount = 1;
     region.imageOffset = {0, 0, 0};
-    region.imageExtent = {impl->width, impl->height, impl->depth};
-    vkCmdCopyBufferToImage(commandBuffer, staging->buffer, image->image,
+    region.imageExtent = {width, height, depth};
+    vkCmdCopyBufferToImage(commandBuffer, stageBuffers[index]->buffer, images[index]->image,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
              }
   void WriteDescriptor(VkDevice device, VkDescriptorSet descriptorSet,
@@ -332,106 +309,180 @@ protected:
     descriptorWrite.pNext = nullptr;
 
     VkDescriptorImageInfo imageInfo;
-    imageInfo.imageLayout = impl->imageLayout;
+    imageInfo.imageLayout = imageLayout;
     imageInfo.imageView = image->view;
-    imageInfo.sampler = impl->sampler;
+    imageInfo.sampler = sampler;
     
     descriptorWrite.pImageInfo = &imageInfo;
 
     vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
                        }
-  void changeLayout(ImageData_T *image, VkImageLayout newLayout, int mipLevels)
+  void changeLayout(size_t index, VkImageLayout newLayout, int mipLevels)
   {
         VkCommandBuffer commandBuffer = ResourceManager::beginSingleTimeCommands();
-    changeLayout(commandBuffer, image, newLayout, mipLevels);
+    changeLayout(commandBuffer, index, newLayout, mipLevels);
   ResourceManager::endSingleTimeCommands(commandBuffer);
   }
-  void changeLayout(VkCommandBuffer commandBuffer, ImageData_T *image,
+  void changeLayout(VkCommandBuffer commandBuffer, size_t index,
                     VkImageLayout newLayout, int mipLevels)
                     {
-                            transitionImageLayout(commandBuffer, image->image, impl->format, impl->imageLayout, newLayout, mipLevels);
+                            transitionImageLayout(commandBuffer, images[index]->image, imageFormat, imageLayout, newLayout, mipLevels);
                     }
 
-  ImageImpl_T *impl;
+  std::vector<ImageData_T*> images;
+  std::vector<StagingData_T*> stageBuffers;
+  uint32_t width, height, depth;
+  VkSampler sampler;
+  VkImageLayout imageLayout;
+  VkFormat imageFormat;
 };
 
-template <int MaxImageCount> class ImageBase : public BindResource, Image {
-public:
-  ImageBase(uint32_t width, uint32_t height, uint32_t depth, Format format,
-            VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
-      : Image(width, height, depth, format, usage, properties, images,
-              MaxImageCount) {}
+struct MultiImageImpl_T : public BindResource, Image
+{
+  MultiImageImpl_T(uint32_t width, uint32_t height, uint32_t depth, Format format, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t imageCount) : Image(width, height, depth, format, usage, properties, imageCount, false)
+  {
 
-  ImageBase(VkImage *vk_images, VkImageView *imageViews, size_t imageCount)
-      : Image(vk_images, imageViews, imageCount, images) {}
-
-  void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,
-                       uint32_t binding, uint32_t element,
-                       VkDescriptorType type, int frame) override {
-    frame = std::min(frame, maxImages - 1);
-    Image::WriteDescriptor(device, descriptorSet, binding, element, type,
-                           images[frame]);
   }
 
-  void changeLayout(ImageLayout newLayout, uint32_t index) {
-    Image::changeLayout(images[index], newLayout, 1);
+  MultiImageImpl_T(VkImage* vk_images, VkImageView* imageViews, size_t imageCount) : Image(vk_images, imageViews, imageCount)
+  {
+
+  }
+
+    void changeLayout(ImageLayout newLayout, uint32_t index) {
+    Image::changeLayout(index, (VkImageLayout)newLayout, 1);
   }
 
   void changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,
                     uint32_t index) {
-    Image::changeLayout(commandBuffer, images[index], newLayout, 1);
+    Image::changeLayout(commandBuffer, index, (VkImageLayout)newLayout, 1);
   }
 
-  ImageData_T *images[MaxImageCount];
+    void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,
+                       uint32_t binding, uint32_t element,
+                       VkDescriptorType type, int frame) override {
+    frame = std::min(frame, (int)images.size() - 1);
+    Image::WriteDescriptor(device, descriptorSet, binding, element, type,
+                           images[frame]);
+  }
+};
+
+struct MultiImageBase
+{
+  MultiImageBase(uint32_t width, uint32_t height, uint32_t depth, Format format, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t imageCount)
+  {
+    impl = new MultiImageImpl_T(width, height, depth, format, usage, properties, imageCount);
+  }
+
+  MultiImageBase(VkImage* vk_images, VkImageView* imageViews, size_t imageCount)
+  {
+    impl = new MultiImageImpl_T(vk_images, imageViews, imageCount);
+  }
+
+  void changeLayout(ImageLayout newLayout, uint32_t index) {
+    impl->changeLayout(newLayout, index);
+  }
+
+  void changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,
+                    uint32_t index) {
+    impl->changeLayout(commandBuffer, newLayout, index);
+  }
+
+  struct MultiImageImpl_T* impl;
+};
+
+template <int MaxImageCount> class MultiImage : public MultiImageBase {
+public:
+  MultiImage(uint32_t width, uint32_t height, uint32_t depth, Format format,
+            VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
+      : MultiImageBase(width, height, depth, format, usage, properties,
+              MaxImageCount) {}
+
+  MultiImage(VkImage *vk_images, VkImageView *imageViews, size_t imageCount)
+      : MultiImageBase(vk_images, imageViews, imageCount) {}
 
   static constexpr int maxImages = MaxImageCount;
 };
 
-template <int MaxImageCount>
-class StagedImageBase : public BindResource, Image {
-public:
-  StagedImageBase(uint32_t width, uint32_t height, uint32_t depth,
-                  Format format, VkImageUsageFlags usage,
-                  VkMemoryPropertyFlags properties)
-      : Image(width, height, depth, format, usage, properties, images, staging,
-              MaxImageCount) {}
+struct MultiStagedImageImpl_T : public BindResource, Image
+{
+  MultiStagedImageImpl_T(uint32_t width, uint32_t height, uint32_t depth, Format format, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t imageCount): Image(width, height, depth, format, usage, properties, imageCount, true)
+  {
 
-  void changeLayout(ImageLayout newLayout, uint32_t index) {
-    Image::changeLayout(images[index], (VkImageLayout)newLayout, 1);
+  }
+
+    void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,
+                       uint32_t binding, uint32_t element,
+                       VkDescriptorType type, int frame) override {
+    frame = std::min(frame, (int)images.size() - 1);
+    Image::WriteDescriptor(device, descriptorSet, binding, element, type,
+                           images[frame]);
+  }
+
+      void changeLayout(ImageLayout newLayout, uint32_t index) {
+    Image::changeLayout(index, (VkImageLayout)newLayout, 1);
   }
 
   void changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,
                     uint32_t index) {
-    Image::changeLayout(commandBuffer, images[index], (VkImageLayout)newLayout,
-                        1);
-  }
-
-  void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,
-                       uint32_t binding, uint32_t element,
-                       VkDescriptorType type, int frame) override {
-    frame = std::min(frame, maxImages - 1);
-    Image::WriteDescriptor(device, descriptorSet, binding, element, type,
-                           images[frame]);
+    Image::changeLayout(commandBuffer, index, (VkImageLayout)newLayout, 1);
   }
 
   void write(char *data, uint32_t index) {
-    Image::Write(images[index], staging[index], data);
+    Image::Write(index, data);
   }
 
   void write(VkCommandBuffer commandBuffer, char *data, uint32_t index) {
-    Image::Write(commandBuffer, images[index], staging[index], data);
+    Image::Write(commandBuffer, index, data);
   }
 
-  ImageData_T *images[MaxImageCount];
-  StagingData_T *staging[MaxImageCount];
 
+};
+
+struct MultiStagedImageBase
+{
+  MultiStagedImageBase(uint32_t width, uint32_t height, uint32_t depth, Format format, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t imageCount)
+  {
+    impl = new MultiStagedImageImpl_T(width, height, depth, format, usage, properties, imageCount);
+  }
+
+  void changeLayout(ImageLayout newLayout, uint32_t index) {
+    impl->changeLayout(newLayout, index);
+  }
+
+  void changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,
+                    uint32_t index) {
+    impl->changeLayout(commandBuffer, newLayout, index);
+  }
+
+    void write(char *data, uint32_t index) {
+    impl->write(data, index);
+  }
+
+  void write(VkCommandBuffer commandBuffer, char *data, uint32_t index) {
+    impl->write(commandBuffer, data, index);
+  }
+
+  struct MultiStagedImageImpl_T* impl;
+};
+
+template <int MaxImageCount>
+class MultiStagedImage : public MultiStagedImageBase {
+public:
+  MultiStagedImage(uint32_t width, uint32_t height, uint32_t depth,
+                  Format format, VkImageUsageFlags usage,
+                  VkMemoryPropertyFlags properties) : MultiStagedImageBase(width, height, depth, format, usage, properties, MaxImageCount)
+                  {
+
+                  }
+  
   static constexpr int maxImages = MaxImageCount;
 };
 
-using SwapImage = class ImageBase<2>;
-using SharedImage = class ImageBase<1>;
-using StagedSwapImage = class StagedImageBase<2>;
-using StagedSharedImage = class StagedImageBase<1>;
-using AttachmentImage = class ImageBase<3>;
-using StagedAttachmentImage = class StagedImageBase<3>;
+using SwapImage = class MultiImage<2>;
+using SharedImage = class MultiImage<1>;
+using StagedSwapImage = class MultiStagedImage<2>;
+using StagedSharedImage = class MultiStagedImage<1>;
+using AttachmentImage = class MultiImage<3>;
+using StagedAttachmentImage = class MultiStagedImage<3>;
 } // namespace VkZero

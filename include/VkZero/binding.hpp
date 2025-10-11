@@ -50,7 +50,7 @@ struct ResourceBinding : public ResourceBindingBase {
             [&]() {
               std::vector<BindResource *> bindings;
               for (int i = 0; i < DescriptorCount; ++i) {
-                bindings.push_back(&info[i]);
+                bindings.push_back(info[i].impl);
               }
               return std::move(bindings);
             }(),

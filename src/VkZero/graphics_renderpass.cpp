@@ -184,7 +184,7 @@ void GraphicsRenderpassImpl_T::createRenderPass(
     // Collect Attachments
     for (auto att : requiredAttachments) {
       attachments.push_back(
-          resources->resources[att->name]->image->images[i]->view);
+          resources->resources[att->name]->image->impl->images[i]->view);
     }
 
     VkFramebufferCreateInfo framebufferInfo{};
@@ -215,7 +215,7 @@ void GraphicsRenderpassImpl_T::recreateSwapchain(WindowImpl_T* window) {
   // size_t numImages = window->swapchainImageCount;
   // framebuffers.resize(numImages);
   for (size_t i = 0; i < framebuffers.size(); i++) {
-    VkImageView attachments[] = {window->swapchainImages.images[i]->view};
+    VkImageView attachments[] = {window->swapchainImages.impl->images[i]->view};
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebufferInfo.renderPass = renderPass;
