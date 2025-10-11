@@ -7,6 +7,9 @@
 #include <stdexcept>
 #include <vector>
 
+namespace VkZero
+{
+
 struct UniformBufferImpl_T
 {
     UniformBufferImpl_T(void* ubo)
@@ -29,12 +32,8 @@ struct UniformBufferBase
 
 template <typename Structure>
 class UniformBuffer : public VkZero::BindResource {
-  UniformBuffer(Structure &ubo) : ubo(ubo) {}
-
-  void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,
-                       uint32_t binding, uint32_t element,
-                       VkDescriptorType type, int frame) override {
-
+public:
+  UniformBuffer(Structure &ubo) : ubo(ubo) {
     uniformBuffer.resize(MAX_FRAMES_IN_FLIGHT);
     uniformBufferMemory.resize(MAX_FRAMES_IN_FLIGHT);
     uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
@@ -78,6 +77,17 @@ class UniformBuffer : public VkZero::BindResource {
     }
   }
 
+  void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,
+                       uint32_t binding, uint32_t element,
+                       VkDescriptorType type, int frame) override {
+
+  }
+
+  void update(int currentFrame)
+  {
+    memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(Structure));
+  }
+
   Structure &ubo;
 
   std::vector<VkBuffer> uniformBuffer;
@@ -85,3 +95,5 @@ class UniformBuffer : public VkZero::BindResource {
 
   std::vector<void *> uniformBuffersMapped;
 };
+
+}

@@ -357,7 +357,7 @@ BindingsList	include/VkZero/shader.hpp	/^        using BindingsList = Bindings;$
 Building	README.md	/^## Building$/;"	s	chapter:VoxelEngine
 CalculateFractalBounding	include/FastNoiseLite.hpp	/^  void CalculateFractalBounding() {$/;"	f	class:FastNoiseLite	typeref:typename:void
 Camera	include/Camera.hpp	/^class Camera {$/;"	c
-Camera	src/Camera.cpp	/^Camera::Camera(std::unique_ptr<VkZero::Window> &window) {$/;"	f	class:Camera
+Camera	src/Camera.cpp	/^Camera::Camera(std::unique_ptr<VkZero::Window> &window) : uniformBuffer(ubo) {$/;"	f	class:Camera
 CellularDistanceFunction	include/FastNoiseLite.hpp	/^  enum CellularDistanceFunction {$/;"	g	class:FastNoiseLite
 CellularDistanceFunction_Euclidean	include/FastNoiseLite.hpp	/^    CellularDistanceFunction_Euclidean,$/;"	e	enum:FastNoiseLite::CellularDistanceFunction
 CellularDistanceFunction_EuclideanSq	include/FastNoiseLite.hpp	/^    CellularDistanceFunction_EuclideanSq,$/;"	e	enum:FastNoiseLite::CellularDistanceFunction
@@ -849,6 +849,12 @@ TransformType3D_None	include/FastNoiseLite.hpp	/^    TransformType3D_None,$/;"	e
 TransformUBO	include/Camera.hpp	/^struct TransformUBO {$/;"	s
 Undefined	include/VkZero/types.hpp	/^        Undefined = 0,$/;"	e	enum:VkZero::Format
 Undefined	include/VkZero/types.hpp	/^        Undefined = 0,$/;"	e	enum:VkZero::ImageLayout
+UniformBuffer	include/VkZero/uniform_buffer.hpp	/^  UniformBuffer(Structure &ubo) : ubo(ubo) {$/;"	f	class:VkZero::UniformBuffer
+UniformBuffer	include/VkZero/uniform_buffer.hpp	/^class UniformBuffer : public VkZero::BindResource {$/;"	c	namespace:VkZero
+UniformBufferBase	include/VkZero/uniform_buffer.hpp	/^    UniformBufferBase(void* ubo)$/;"	f	struct:VkZero::UniformBufferBase
+UniformBufferBase	include/VkZero/uniform_buffer.hpp	/^struct UniformBufferBase$/;"	s	namespace:VkZero
+UniformBufferImpl_T	include/VkZero/uniform_buffer.hpp	/^    UniformBufferImpl_T(void* ubo)$/;"	f	struct:VkZero::UniformBufferImpl_T
+UniformBufferImpl_T	include/VkZero/uniform_buffer.hpp	/^struct UniformBufferImpl_T$/;"	s	namespace:VkZero
 UpdateTransformType3D	include/FastNoiseLite.hpp	/^  void UpdateTransformType3D() {$/;"	f	class:FastNoiseLite	typeref:typename:void
 UpdateWarpTransformType3D	include/FastNoiseLite.hpp	/^  void UpdateWarpTransformType3D() {$/;"	f	class:FastNoiseLite	typeref:typename:void
 ValCoord	include/FastNoiseLite.hpp	/^  static float ValCoord(int seed, int xPrimed, int yPrimed) {$/;"	f	class:FastNoiseLite	typeref:typename:float
@@ -892,6 +898,7 @@ VkZero	include/VkZero/shader_library.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/shader_resource_set.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/shader_types.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/types.hpp	/^namespace VkZero$/;"	n
+VkZero	include/VkZero/uniform_buffer.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/window.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZeroObjects.hpp	/^namespace VkZero{$/;"	n
 VkZeroCoreImpl_T	include/VkZero/Internal/core_internal.hpp	/^  struct VkZeroCoreImpl_T$/;"	s	namespace:VkZero
@@ -1185,6 +1192,7 @@ impl	include/VkZero/shader.hpp	/^        struct ShaderImpl_T* impl;$/;"	m	class:
 impl	include/VkZero/shader_group.hpp	/^  struct ShaderGroupImpl* impl;$/;"	m	struct:VkZero::ShaderGroupBase	typeref:struct:ShaderGroupImpl *
 impl	include/VkZero/shader_group.hpp	/^  struct ShaderPushConstantsImpl_T *impl;$/;"	m	struct:VkZero::ShaderPushConstantsBase	typeref:struct:ShaderPushConstantsImpl_T *
 impl	include/VkZero/shader_resource_set.hpp	/^  struct ShaderResourceSetImpl_T *impl;$/;"	m	struct:VkZero::ShaderResourceSetBase	typeref:struct:ShaderResourceSetImpl_T *
+impl	include/VkZero/uniform_buffer.hpp	/^    struct UniformBufferImpl_T* impl;$/;"	m	struct:VkZero::UniformBufferBase	typeref:struct:UniformBufferImpl_T *
 impl	include/VkZero/window.hpp	/^    WindowImpl impl;$/;"	m	class:VkZero::Window	typeref:typename:WindowImpl
 inFlightFences	include/VkZero/frame.hpp	/^  std::vector<VkFence> inFlightFences;$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:std::vector<VkFence>
 inQueue	include/VoxelWorld.hpp	/^    bool inQueue;$/;"	m	struct:VoxelWorld::VoxelChunk	typeref:typename:bool
@@ -1436,10 +1444,14 @@ type	src/VkZero/descriptor_pool.cpp	/^    using type = std::conditional_t<$/;"	t
 types	include/VkZero/shader_library.hpp	/^        using types = std::tuple<Shaders...>;$/;"	t	class:VkZero::ShaderLibrary	typeref:typename:std::tuple<Shaders...>
 types	src/VkZero/descriptor_pool.cpp	/^    using types = typename unique_types<DescriptorTypes<get_shader_bindings<GlobalShaderLibrary:/;"	t	function:DescriptorPool::DescriptorPool	typeref:typename:unique_types<DescriptorTypes<get_shader_bindings<GlobalShaderLibrary::types>::type>::type>::type	file:
 ubo	include/Camera.hpp	/^  TransformUBO ubo{};$/;"	m	class:Camera	typeref:typename:TransformUBO
-uniformBuffer	include/Camera.hpp	/^  std::vector<VkBuffer> uniformBuffer;$/;"	m	class:Camera	typeref:typename:std::vector<VkBuffer>
-uniformBufferMemory	include/Camera.hpp	/^  std::vector<VkDeviceMemory> uniformBufferMemory;$/;"	m	class:Camera	typeref:typename:std::vector<VkDeviceMemory>
-uniformBuffersMapped	include/Camera.hpp	/^  std::vector<void *> uniformBuffersMapped;$/;"	m	class:Camera	typeref:typename:std::vector<void * >
+ubo	include/VkZero/uniform_buffer.hpp	/^    void* ubo;$/;"	m	struct:VkZero::UniformBufferImpl_T	typeref:typename:void *
+ubo	include/VkZero/uniform_buffer.hpp	/^  Structure &ubo;$/;"	m	class:VkZero::UniformBuffer	typeref:typename:Structure &
+uniformBuffer	include/Camera.hpp	/^  VkZero::UniformBuffer<TransformUBO> uniformBuffer;$/;"	m	class:Camera	typeref:typename:VkZero::UniformBuffer<TransformUBO>
+uniformBuffer	include/VkZero/uniform_buffer.hpp	/^  std::vector<VkBuffer> uniformBuffer;$/;"	m	class:VkZero::UniformBuffer	typeref:typename:std::vector<VkBuffer>
+uniformBufferMemory	include/VkZero/uniform_buffer.hpp	/^  std::vector<VkDeviceMemory> uniformBufferMemory;$/;"	m	class:VkZero::UniformBuffer	typeref:typename:std::vector<VkDeviceMemory>
+uniformBuffersMapped	include/VkZero/uniform_buffer.hpp	/^  std::vector<void *> uniformBuffersMapped;$/;"	m	class:VkZero::UniformBuffer	typeref:typename:std::vector<void * >
 unique_types	src/VkZero/descriptor_pool.cpp	/^struct unique_types<std::tuple<First, Rest...>> {$/;"	s	file:
+update	include/VkZero/uniform_buffer.hpp	/^  void update(int currentFrame)$/;"	f	class:VkZero::UniformBuffer	typeref:typename:void
 update	src/Camera.cpp	/^void Camera::update(std::unique_ptr<VkZero::Window> &Window,$/;"	f	class:Camera	typeref:typename:void
 updateVoxelChunkMap	src/VoxelWorld.cpp	/^void VoxelWorld::updateVoxelChunkMap(int modValue, int offset) {$/;"	f	class:VoxelWorld	typeref:typename:void
 updateVoxels	src/VoxelWorld.cpp	/^void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,$/;"	f	class:VoxelWorld	typeref:typename:void
@@ -1494,6 +1506,7 @@ write	src/VkZero/binding.cpp	/^  void ResourceBindingImpl_T::write(VkDevice devi
 writeAll	src/VkZero/binding.cpp	/^  void ResourceBindingImpl_T::writeAll(VkDevice device, std::vector<VkDescriptorSet> descriptorS/;"	f	class:ResourceBindingImpl_T	typeref:typename:void
 writeDescriptor	include/VkZero/image.hpp	/^        void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet, uint32_t binding, u/;"	f	class:VkZero::ImageBase	typeref:typename:void
 writeDescriptor	include/VkZero/image.hpp	/^        void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet, uint32_t binding, u/;"	f	class:VkZero::StagedImageBase	typeref:typename:void
+writeDescriptor	include/VkZero/uniform_buffer.hpp	/^  void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,$/;"	f	class:VkZero::UniformBuffer	typeref:typename:void
 yaw	include/Camera.hpp	/^  float yaw = -90.0f; \/\/ Rotation around the Y-axis (left\/right)$/;"	m	class:Camera	typeref:typename:float
 ~Camera	src/Camera.cpp	/^Camera::~Camera() {}$/;"	f	class:Camera
 ~PushConstantDataImpl_T	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  ~PushConstantDataImpl_T() { delete data; }$/;"	f	struct:VkZero::PushConstantDataImpl_T
