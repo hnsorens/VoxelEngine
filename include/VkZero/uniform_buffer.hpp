@@ -13,7 +13,7 @@ namespace VkZero
 
 struct UniformBufferImpl_T : public BindResource
 {
-    UniformBufferImpl_T(void* ubo, size_t size) : size(size)
+    UniformBufferImpl_T(void* ubo, size_t size) : size(size), ubo(ubo)
     {
         uniformBuffer.resize(MAX_FRAMES_IN_FLIGHT);
     uniformBufferMemory.resize(MAX_FRAMES_IN_FLIGHT);
@@ -66,7 +66,7 @@ struct UniformBufferImpl_T : public BindResource
 
       void update(int currentFrame)
   {
-    memcpy(uniformBuffersMapped[currentFrame], &ubo, size);
+    memcpy(uniformBuffersMapped[currentFrame], ubo, size);
   }
     
   size_t size;

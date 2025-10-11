@@ -858,7 +858,7 @@ UniformBuffer	include/VkZero/uniform_buffer.hpp	/^  UniformBuffer(Structure &ubo
 UniformBuffer	include/VkZero/uniform_buffer.hpp	/^class UniformBuffer : public UniformBufferBase {$/;"	c	namespace:VkZero
 UniformBufferBase	include/VkZero/uniform_buffer.hpp	/^    UniformBufferBase(void* ubo, size_t size)$/;"	f	struct:VkZero::UniformBufferBase
 UniformBufferBase	include/VkZero/uniform_buffer.hpp	/^struct UniformBufferBase$/;"	s	namespace:VkZero
-UniformBufferImpl_T	include/VkZero/uniform_buffer.hpp	/^    UniformBufferImpl_T(void* ubo, size_t size) : size(size)$/;"	f	struct:VkZero::UniformBufferImpl_T
+UniformBufferImpl_T	include/VkZero/uniform_buffer.hpp	/^    UniformBufferImpl_T(void* ubo, size_t size) : size(size), ubo(ubo)$/;"	f	struct:VkZero::UniformBufferImpl_T
 UniformBufferImpl_T	include/VkZero/uniform_buffer.hpp	/^struct UniformBufferImpl_T : public BindResource$/;"	s	namespace:VkZero
 UpdateTransformType3D	include/FastNoiseLite.hpp	/^  void UpdateTransformType3D() {$/;"	f	class:FastNoiseLite	typeref:typename:void
 UpdateWarpTransformType3D	include/FastNoiseLite.hpp	/^  void UpdateWarpTransformType3D() {$/;"	f	class:FastNoiseLite	typeref:typename:void
