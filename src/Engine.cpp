@@ -97,6 +97,6 @@ void VoxelEngine::mainLoop() {
 
 void VoxelEngine::drawFrame() {
   // Wait for the previous frame to finish with a timeout
-  camera->update(Window, voxelWorld, obj->frame.impl->currentFrame);
+  camera->update(Window, voxelWorld, obj->frame.getFrame());
   obj->draw();
 }

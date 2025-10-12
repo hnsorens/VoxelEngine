@@ -86,7 +86,7 @@ public:
   PipelineRenderPassResources graphicsRenderpassAttachmentSet;
   PipelineRenderPass graphicsRenderPass;
 
-  VkZero::frame<RaytracingRenderPass_t, PipelineRenderPass> frame;
+  VkZero::Frame<RaytracingRenderPass_t, PipelineRenderPass> frame;
 
   void draw();
 };

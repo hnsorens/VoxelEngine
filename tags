@@ -448,6 +448,12 @@ FractalType_PingPong	include/FastNoiseLite.hpp	/^    FractalType_PingPong,$/;"	e
 FractalType_Ridged	include/FastNoiseLite.hpp	/^    FractalType_Ridged,$/;"	e	enum:FastNoiseLite::FractalType
 FragmentDensityMapOptimal	include/VkZero/types.hpp	/^        FragmentDensityMapOptimal = 1000218000,$/;"	e	enum:VkZero::ImageLayout
 FragmentShadingRateAttachmentOptimal	include/VkZero/types.hpp	/^        FragmentShadingRateAttachmentOptimal = 1000164003,$/;"	e	enum:VkZero::ImageLayout
+Frame	include/VkZero/frame.hpp	/^  Frame(Renderpasses &...renderpasses, WindowImpl_T* window)$/;"	f	class:VkZero::Frame
+Frame	include/VkZero/frame.hpp	/^template <typename... Renderpasses> class Frame : public FrameBase {$/;"	c	namespace:VkZero
+FrameBase	include/VkZero/frame.hpp	/^struct FrameBase {$/;"	s	namespace:VkZero
+FrameBase	src/VkZero/frame.cpp	/^FrameBase::FrameBase(std::vector<struct RenderpassImpl_T *> renderpasses, WindowImpl_T* window) /;"	f	class:FrameBase
+FrameImpl_T	include/VkZero/Internal/frame_internal.hpp	/^struct FrameImpl_T {$/;"	s	namespace:VkZero
+FrameImpl_T	src/VkZero/frame.cpp	/^FrameImpl_T::FrameImpl_T(std::vector<RenderpassImpl_T *> renderpasses, WindowImpl_T* window)$/;"	f	class:FrameImpl_T
 G10X6B10X6G10X6R10X6422Unorm4Pack16	include/VkZero/types.hpp	/^        G10X6B10X6G10X6R10X6422Unorm4Pack16 = 1000156010,$/;"	e	enum:VkZero::Format
 G10X6B10X6R10X62Plane420Unorm3Pack16	include/VkZero/types.hpp	/^        G10X6B10X6R10X62Plane420Unorm3Pack16 = 1000156013,$/;"	e	enum:VkZero::Format
 G10X6B10X6R10X62Plane422Unorm3Pack16	include/VkZero/types.hpp	/^        G10X6B10X6R10X62Plane422Unorm3Pack16 = 1000156015,$/;"	e	enum:VkZero::Format
@@ -876,6 +882,7 @@ VkZero	include/Engine.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/bind_resource_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/binding_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/core_internal.hpp	/^namespace VkZero$/;"	n
+VkZero	include/VkZero/Internal/frame_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/graphics_pipeline_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/image_internal.hpp	/^namespace VkZero$/;"	n
@@ -1013,9 +1020,9 @@ chunkUpdateQueue	include/VoxelWorld.hpp	/^  std::vector<uint16_t> chunkUpdateQue
 chunkWorker	src/VoxelWorld.cpp	/^void VoxelWorld::chunkWorker() {$/;"	f	class:VoxelWorld	typeref:typename:void
 clean	Makefile	/^clean:$/;"	t
 cleanupSwapChain	src/VkZero/window.cpp	/^void WindowImpl_T::cleanupSwapChain() {$/;"	f	class:WindowImpl_T	typeref:typename:void
-commandBuffers	include/VkZero/frame.hpp	/^  std::vector<VkCommandBuffer> commandBuffers[MAX_FRAMES_IN_FLIGHT];$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:std::vector<VkCommandBuffer>[]
+commandBuffers	include/VkZero/Internal/frame_internal.hpp	/^  std::vector<VkCommandBuffer> commandBuffers[MAX_FRAMES_IN_FLIGHT];$/;"	m	struct:VkZero::FrameImpl_T	typeref:typename:std::vector<VkCommandBuffer>[]
 commandPool	include/VkZero/Internal/core_internal.hpp	/^    VkCommandPool commandPool = 0;$/;"	m	struct:VkZero::VkZeroCoreImpl_T	typeref:typename:VkCommandPool
-commandPool	include/VkZero/frame.hpp	/^  VkCommandPool commandPool;$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:VkCommandPool
+commandPool	include/VkZero/Internal/frame_internal.hpp	/^  VkCommandPool commandPool;$/;"	m	struct:VkZero::FrameImpl_T	typeref:typename:VkCommandPool
 commonAttachments	include/VkZero/render_pass.hpp	/^  using commonAttachments =$/;"	t	class:VkZero::GraphicsRenderpass	typeref:typename:RenderPassDetails::get_common_attachments<allAttachments>::value
 contains	src/VkZero/descriptor_pool.cpp	/^struct contains<T, std::tuple<U, Rest...>> $/;"	s	file:
 contains_attachment	include/VkZero/render_pass.hpp	/^struct contains_attachment<T, std::tuple<First, Rest...>>$/;"	s	namespace:VkZero::RenderPassDetails
@@ -1030,7 +1037,7 @@ create_init_list	include/VkZero/binding.hpp	/^  static constexpr auto create_ini
 create_pipeline	src/VkZero/graphics_pipeline.cpp	/^  void GraphicsPipelineImpl_T::create_pipeline(VkDevice device, VkRenderPass renderPass) {$/;"	f	class:GraphicsPipelineImpl_T	typeref:typename:void
 cross_set_binding_validity_checker	include/VkZero/graphics_pipeline.hpp	/^constexpr bool cross_set_binding_validity_checker() {$/;"	f	namespace:VkZero::PipelineDetails	typeref:typename:bool
 currentFrame	include/Engine.hpp	/^  static uint32_t currentFrame;$/;"	m	class:VoxelEngine	typeref:typename:uint32_t
-currentFrame	include/VkZero/frame.hpp	/^  int currentFrame = 0;$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:int
+currentFrame	include/VkZero/Internal/frame_internal.hpp	/^  int currentFrame = 0;$/;"	m	struct:VkZero::FrameImpl_T	typeref:typename:int
 currentFrame	src/Engine.cpp	/^uint32_t VoxelEngine::currentFrame = 0;$/;"	m	class:VoxelEngine	typeref:typename:uint32_t
 current_binding	include/VkZero/binding.hpp	/^    static constexpr int current_binding = First::get_binding();$/;"	m	struct:VkZero::CombinedBindings::filter_duplicates	typeref:typename:int
 data	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  char* data;$/;"	m	struct:VkZero::PushConstantDataImpl_T	typeref:typename:char *
@@ -1066,8 +1073,8 @@ directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngin
 directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:7
 directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:8
 directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:9
-draw	include/VkZero/frame.hpp	/^  void draw() { impl->draw(); }$/;"	f	struct:VkZero::frameBase	typeref:typename:void
-draw	include/VkZero/frame.hpp	/^  void draw() {$/;"	f	struct:VkZero::frameImpl_T	typeref:typename:void
+draw	src/VkZero/frame.cpp	/^void FrameBase::draw() { impl->draw(); }$/;"	f	class:FrameBase	typeref:typename:void
+draw	src/VkZero/frame.cpp	/^void FrameImpl_T::draw() {$/;"	f	class:FrameImpl_T	typeref:typename:void
 draw	src/VkZeroObjects.cpp	/^void VkZeroObjects::draw() { frame.draw(); }$/;"	f	class:VkZeroObjects	typeref:typename:void
 drawFrame	src/Engine.cpp	/^void VoxelEngine::drawFrame() {$/;"	f	class:VoxelEngine	typeref:typename:void
 duplicate_binding_checker	include/VkZero/shader.hpp	/^        struct duplicate_binding_checker<> {$/;"	s	namespace:VkZero::ShaderDetails
@@ -1106,14 +1113,9 @@ format	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  VkFormat for
 formatSize	include/VkZero/Internal/image_internal.hpp	/^  size_t formatSize(VkFormat format) {$/;"	f	class:VkZero::Image	typeref:typename:size_t
 formats	include/VkZero/Internal/window_internal.hpp	/^    std::vector<VkSurfaceFormatKHR> formats;$/;"	m	struct:VkZero::WindowImpl_T::SwapChainSupportDetails	typeref:typename:std::vector<VkSurfaceFormatKHR>
 frame	include/Camera.hpp	/^  std::vector<int> frame;$/;"	m	class:Camera	typeref:typename:std::vector<int>
-frame	include/VkZero/frame.hpp	/^  frame(Renderpasses &...renderpasses, WindowImpl_T* window)$/;"	f	class:VkZero::frame
-frame	include/VkZero/frame.hpp	/^template <typename... Renderpasses> class frame : public frameBase {$/;"	c	namespace:VkZero
-frame	include/VkZeroObjects.hpp	/^  VkZero::frame<RaytracingRenderPass_t, PipelineRenderPass> frame;$/;"	m	class:VkZeroObjects	typeref:typename:VkZero::frame<RaytracingRenderPass_t,PipelineRenderPass>
+frame	include/VkZeroObjects.hpp	/^  VkZero::Frame<RaytracingRenderPass_t, PipelineRenderPass> frame;$/;"	m	class:VkZeroObjects	typeref:typename:VkZero::Frame<RaytracingRenderPass_t,PipelineRenderPass>
 frame	include/shaders.hpp	/^  uint32_t frame;$/;"	m	struct:RaytracingPushConstant	typeref:typename:uint32_t
-frameBase	include/VkZero/frame.hpp	/^  frameBase(std::vector<struct RenderpassImpl_T *> renderpasses, WindowImpl_T* window) {$/;"	f	struct:VkZero::frameBase
-frameBase	include/VkZero/frame.hpp	/^struct frameBase {$/;"	s	namespace:VkZero
-frameImpl_T	include/VkZero/frame.hpp	/^  frameImpl_T(std::vector<RenderpassImpl_T *> renderpasses, WindowImpl_T* window)$/;"	f	struct:VkZero::frameImpl_T
-frameImpl_T	include/VkZero/frame.hpp	/^struct frameImpl_T {$/;"	s	namespace:VkZero
+frame_t	include/VkZero/frame.hpp	/^using frame_t = uint32_t;$/;"	t	namespace:VkZero	typeref:typename:uint32_t
 framebufferCount	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  int framebufferCount = 3;$/;"	m	struct:VkZero::RenderPassResourceSetImpl_T	typeref:typename:int
 framebufferResizeCallback	src/VkZero/window.cpp	/^static void framebufferResizeCallback(GLFWwindow *window, int width,$/;"	f	typeref:typename:void	file:
 framebufferResized	include/VkZero/Internal/window_internal.hpp	/^  bool framebufferResized = false;$/;"	m	struct:VkZero::WindowImpl_T	typeref:typename:bool
@@ -1127,6 +1129,7 @@ getChunk	src/VoxelWorld.cpp	/^uint8_t *VoxelWorld::getChunk(glm::vec3 position) 
 getChunkID	src/VoxelWorld.cpp	/^uint16_t VoxelWorld::getChunkID(glm::vec3 position) {$/;"	f	class:VoxelWorld	typeref:typename:uint16_t
 getCursorPos	src/VkZero/window.cpp	/^void Window::getCursorPos(double *currentMouseX, double *currentMouseY) {$/;"	f	class:Window	typeref:typename:void
 getDeltaTime	src/VkZero/window.cpp	/^double Window::getDeltaTime() const { return impl->deltaTime; }$/;"	f	class:Window	typeref:typename:double
+getFrame	src/VkZero/frame.cpp	/^frame_t FrameBase::getFrame()$/;"	f	class:FrameBase	typeref:typename:frame_t
 getFramebufferSize	src/VkZero/window.cpp	/^void Window::getFramebufferSize(int *width, int *height) {$/;"	f	class:Window	typeref:typename:void
 getFramebuffers	src/VkZero/graphics_renderpass.cpp	/^GraphicsRenderpassImpl_T::getFramebuffers() const {$/;"	f	class:GraphicsRenderpassImpl_T	typeref:typename:const std::vector<VkFramebuffer> &
 getInstance	include/VkZero/Internal/core_internal.hpp	/^    static VkZeroCoreImpl_T* getInstance()$/;"	f	struct:VkZero::VkZeroCoreImpl_T	typeref:typename:VkZeroCoreImpl_T *
@@ -1180,12 +1183,12 @@ hideCursor	src/VkZero/window.cpp	/^void Window::hideCursor() {$/;"	f	class:Windo
 hitRegion	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkStridedDeviceAddressRegionKHR hitRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
 image	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  AttachmentImage *image;$/;"	m	struct:VkZero::RenderPassResourceImpl_T	typeref:typename:AttachmentImage *
 image	include/VkZero/Internal/image_internal.hpp	/^  VkImage image;$/;"	m	struct:VkZero::ImageData_T	typeref:typename:VkImage
-imageAvailableSemaphores	include/VkZero/frame.hpp	/^  std::vector<VkSemaphore> imageAvailableSemaphores;$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:std::vector<VkSemaphore>
+imageAvailableSemaphores	include/VkZero/Internal/frame_internal.hpp	/^  std::vector<VkSemaphore> imageAvailableSemaphores;$/;"	m	struct:VkZero::FrameImpl_T	typeref:typename:std::vector<VkSemaphore>
 imageFormat	include/VkZero/Internal/image_internal.hpp	/^  VkFormat imageFormat;$/;"	m	class:VkZero::Image	typeref:typename:VkFormat
 imageLayout	include/VkZero/Internal/image_internal.hpp	/^  VkImageLayout imageLayout;$/;"	m	class:VkZero::Image	typeref:typename:VkImageLayout
 images	include/VkZero/Internal/image_internal.hpp	/^  std::vector<ImageData_T*> images;$/;"	m	class:VkZero::Image	typeref:typename:std::vector<ImageData_T * >
 impl	include/VkZero/binding.hpp	/^  struct ResourceBindingImpl_T* impl;$/;"	m	struct:VkZero::ResourceBindingBase	typeref:struct:ResourceBindingImpl_T *
-impl	include/VkZero/frame.hpp	/^  struct frameImpl_T *impl;$/;"	m	struct:VkZero::frameBase	typeref:struct:frameImpl_T *
+impl	include/VkZero/frame.hpp	/^  struct FrameImpl_T *impl;$/;"	m	struct:VkZero::FrameBase	typeref:struct:FrameImpl_T *
 impl	include/VkZero/graphics_pipeline.hpp	/^  struct GraphicsPipelineImpl_T *impl;$/;"	m	struct:VkZero::GraphicsPipelineBase	typeref:struct:GraphicsPipelineImpl_T *
 impl	include/VkZero/image.hpp	/^  struct MultiImageImpl_T *impl;$/;"	m	struct:VkZero::MultiImageBase	typeref:struct:MultiImageImpl_T *
 impl	include/VkZero/image.hpp	/^  struct MultiStagedImageImpl_T *impl;$/;"	m	struct:VkZero::MultiStagedImageBase	typeref:struct:MultiStagedImageImpl_T *
@@ -1202,7 +1205,7 @@ impl	include/VkZero/shader_group.hpp	/^  struct ShaderPushConstantsImpl_T *impl;
 impl	include/VkZero/shader_resource_set.hpp	/^  struct ShaderResourceSetImpl_T *impl;$/;"	m	struct:VkZero::ShaderResourceSetBase	typeref:struct:ShaderResourceSetImpl_T *
 impl	include/VkZero/uniform_buffer.hpp	/^    struct UniformBufferImpl_T* impl;$/;"	m	struct:VkZero::UniformBufferBase	typeref:struct:UniformBufferImpl_T *
 impl	include/VkZero/window.hpp	/^    WindowImpl impl;$/;"	m	class:VkZero::Window	typeref:typename:WindowImpl
-inFlightFences	include/VkZero/frame.hpp	/^  std::vector<VkFence> inFlightFences;$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:std::vector<VkFence>
+inFlightFences	include/VkZero/Internal/frame_internal.hpp	/^  std::vector<VkFence> inFlightFences;$/;"	m	struct:VkZero::FrameImpl_T	typeref:typename:std::vector<VkFence>
 inQueue	include/VoxelWorld.hpp	/^    bool inQueue;$/;"	m	struct:VoxelWorld::VoxelChunk	typeref:typename:bool
 infoType	include/VkZero/binding.hpp	/^  using infoType = Resource *;$/;"	t	struct:VkZero::ShaderBinding	typeref:typename:Resource *
 infoType	include/VkZero/binding.hpp	/^  using infoType = typename type::infoType;$/;"	t	struct:VkZero::Bind	typeref:typename:type::infoType
@@ -1366,9 +1369,9 @@ recreateSwapchain	include/VkZero/Internal/raytracing_renderpass_internal.hpp	/^ 
 recreateSwapchain	src/VkZero/graphics_renderpass.cpp	/^void GraphicsRenderpassImpl_T::recreateSwapchain(WindowImpl_T* window) {$/;"	f	class:GraphicsRenderpassImpl_T	typeref:typename:void
 recreateSwapchain	src/VkZero/window.cpp	/^void WindowImpl_T::recreateSwapchain() {$/;"	f	class:WindowImpl_T	typeref:typename:void
 recreateWindow	src/VkZero/window.cpp	/^void WindowImpl_T::recreateWindow() {$/;"	f	class:WindowImpl_T	typeref:typename:void
-renderFinishedSemaphores	include/VkZero/frame.hpp	/^  std::vector<VkSemaphore> renderFinishedSemaphores;$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:std::vector<VkSemaphore>
+renderFinishedSemaphores	include/VkZero/Internal/frame_internal.hpp	/^  std::vector<VkSemaphore> renderFinishedSemaphores;$/;"	m	struct:VkZero::FrameImpl_T	typeref:typename:std::vector<VkSemaphore>
 renderPass	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  VkRenderPass renderPass;$/;"	m	struct:VkZero::GraphicsRenderpassImpl_T	typeref:typename:VkRenderPass
-renderpasses	include/VkZero/frame.hpp	/^  std::vector<RenderpassImpl_T *> renderpasses;$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:std::vector<RenderpassImpl_T * >
+renderpasses	include/VkZero/Internal/frame_internal.hpp	/^  std::vector<RenderpassImpl_T *> renderpasses;$/;"	m	struct:VkZero::FrameImpl_T	typeref:typename:std::vector<RenderpassImpl_T * >
 requestChunk	src/VoxelWorld.cpp	/^void VoxelWorld::requestChunk(uint16_t chunkID, float priority) {$/;"	f	class:VoxelWorld	typeref:typename:void
 resourceType	include/VkZero/binding.hpp	/^  using resourceType = Resource *;$/;"	t	struct:VkZero::ResourceBinding	typeref:typename:Resource *
 resource_matches	include/VkZero/graphics_pipeline.hpp	/^constexpr bool resource_matches() {$/;"	f	namespace:VkZero::PipelineDetails	typeref:typename:bool
@@ -1505,8 +1508,8 @@ voxel_mat	include/VoxelWorld.hpp	/^#define voxel_mat(/;"	d
 width	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  uint32_t width, height;$/;"	m	struct:VkZero::GraphicsRenderpassImpl_T	typeref:typename:uint32_t
 width	include/VkZero/Internal/image_internal.hpp	/^  uint32_t width, height, depth;$/;"	m	class:VkZero::Image	typeref:typename:uint32_t
 width	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  uint32_t width;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:uint32_t
+window	include/VkZero/Internal/frame_internal.hpp	/^  WindowImpl_T *window;$/;"	m	struct:VkZero::FrameImpl_T	typeref:typename:WindowImpl_T *
 window	include/VkZero/Internal/window_internal.hpp	/^  GLFWwindow *window;$/;"	m	struct:VkZero::WindowImpl_T	typeref:typename:GLFWwindow *
-window	include/VkZero/frame.hpp	/^  WindowImpl_T *window;$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:WindowImpl_T *
 workers	include/VoxelWorld.hpp	/^  std::vector<std::thread> workers;$/;"	m	class:VoxelWorld	typeref:typename:std::vector<std::thread>
 write	src/VkZero/binding.cpp	/^  void ResourceBindingImpl_T::write(VkDevice device, VkDescriptorSet &descriptorSet, int element/;"	f	class:ResourceBindingImpl_T	typeref:typename:void
 write	src/VkZero/image.cpp	/^  void MultiStagedImageImpl_T::write(VkCommandBuffer commandBuffer, char *data, uint32_t index) /;"	f	class:MultiStagedImageImpl_T	typeref:typename:void
