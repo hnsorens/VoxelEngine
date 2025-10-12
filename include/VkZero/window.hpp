@@ -4,7 +4,6 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <vector>
-#include <vulkan/vulkan_core.h>
 
 namespace VkZero
 {

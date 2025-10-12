@@ -4,7 +4,6 @@
 #include "shader_group.hpp"
 #include "shader_resource_set.hpp"
 #include <vector>
-#include <vulkan/vulkan_core.h>
 
 #define ALIGN_UP(value, alignment)                                             \
   (((value) + (alignment) - 1) & ~((alignment) - 1))

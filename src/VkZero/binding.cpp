@@ -5,7 +5,7 @@ using namespace VkZero;
 
 ResourceBindingImpl_T::ResourceBindingImpl_T(std::vector<BindResource*> resources,
                         VkDescriptorType type, uint32_t descriptorCount,
-                        uint32_t binding, VkShaderStageFlags stages)
+                        uint32_t binding, uint32_t stages)
       : resources(resources), descriptorCount(descriptorCount), type(type),
         binding(binding), stages(stages) {}
 
@@ -29,10 +29,10 @@ ResourceBindingImpl_T::ResourceBindingImpl_T(std::vector<BindResource*> resource
   }
 
 ResourceBindingBase::ResourceBindingBase(std::vector<BindResource *> resources,
-                                         VkDescriptorType type,
+                                         DescriptorType type,
                                          uint32_t descriptorCount,
                                          uint32_t binding,
-                                         VkShaderStageFlags stages) {
-  impl = new ResourceBindingImpl_T(resources, type, descriptorCount, binding,
+                                         uint32_t stages) {
+  impl = new ResourceBindingImpl_T(resources, (VkDescriptorType)type, descriptorCount, binding,
                                    stages);
 }

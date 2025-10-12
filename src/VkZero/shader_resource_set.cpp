@@ -1,6 +1,7 @@
 #include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/Internal/shader_resource_set_internal.hpp"
 #include "VkZero/Internal/binding_internal.hpp"
+#include "VkZero/Internal/descriptor_pool_internal.hpp"
 
 using namespace VkZero;
 

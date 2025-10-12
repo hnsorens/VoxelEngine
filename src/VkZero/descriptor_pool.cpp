@@ -1,4 +1,4 @@
-#include "VkZero/descriptor_pool.hpp"
+#include "VkZero/Internal/descriptor_pool_internal.hpp"
 #include "VkZero/Internal/core_internal.hpp"
 #include "shaders.hpp"
 #include <tuple>
@@ -51,7 +51,7 @@ template <typename First, typename... Rest>
 struct DescriptorTypes<std::tuple<First, Rest...>> {
     using type = decltype(
         std::tuple_cat(
-            std::tuple<DescriptorTypeObject<First::type()>>{},
+            std::tuple<DescriptorTypeObject<(VkDescriptorType)First::type()>>{},
             typename DescriptorTypes<std::tuple<Rest...>>::type{}
         )
     );

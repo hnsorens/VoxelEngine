@@ -1,13 +1,11 @@
 #pragma once
 
 #include "VkZero/binding.hpp"
-#include "VkZero/descriptor_pool.hpp"
 #include "VkZero/info.hpp"
 #include <memory>
 #include <stdexcept>
 #include <tuple>
 #include <vector>
-#include <vulkan/vulkan_core.h>
 
 namespace VkZero {
 namespace ShaderResourceSetDetails {

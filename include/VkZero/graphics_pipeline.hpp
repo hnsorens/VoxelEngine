@@ -4,7 +4,6 @@
 #include "shader_resource_set.hpp"
 #include <tuple>
 #include <vector>
-#include <vulkan/vulkan_core.h>
 
 namespace VkZero {
 namespace PipelineDetails {

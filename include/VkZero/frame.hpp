@@ -2,7 +2,6 @@
 
 #include "VkZero/info.hpp"
 #include <iostream>
-#include <vulkan/vulkan_core.h>
 #include <vector>
 
 namespace VkZero {

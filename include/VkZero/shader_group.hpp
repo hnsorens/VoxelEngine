@@ -3,7 +3,7 @@
 #include "shader.hpp"
 #include <tuple>
 #include <vector>
-#include <vulkan/vulkan_core.h>
+
 namespace VkZero {
 namespace ShaderGroupDetails {
 /**
