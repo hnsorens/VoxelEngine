@@ -1,5 +1,5 @@
 #include "Camera.hpp"
-#include "VkZero/window.hpp"
+#include "VkZero/vk_zero.hpp"
 #include "VoxelWorld.hpp"
 #include <cstdio>
 #include <cstring>

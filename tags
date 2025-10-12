@@ -1117,10 +1117,13 @@ VkZero	include/VkZero/shader_resource_set.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/shader_types.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/types.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/uniform_buffer.hpp	/^namespace VkZero$/;"	n
+VkZero	include/VkZero/vk_zero.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/window.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZeroObjects.hpp	/^namespace VkZero{$/;"	n
+VkZero	src/VkZero/vk_zero.cpp	/^namespace VkZero$/;"	n	file:
 VkZeroCoreImpl_T	include/VkZero/Internal/core_internal.hpp	/^  struct VkZeroCoreImpl_T$/;"	s	namespace:VkZero
 VkZeroCoreImpl_T	src/VkZero/core.cpp	/^VkZeroCoreImpl_T::VkZeroCoreImpl_T() $/;"	f	class:VkZeroCoreImpl_T
+VkZeroInit	src/VkZero/vk_zero.cpp	/^  void VkZeroInit()$/;"	f	namespace:VkZero	typeref:typename:void
 VkZeroObjects	include/VkZeroObjects.hpp	/^class VkZeroObjects {$/;"	c
 VkZeroObjects	src/VkZeroObjects.cpp	/^VkZeroObjects::VkZeroObjects($/;"	f	class:VkZeroObjects
 VoxelChunk	include/VoxelWorld.hpp	/^  struct VoxelChunk {$/;"	s	class:VoxelWorld

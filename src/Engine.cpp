@@ -1,15 +1,11 @@
 #include "Engine.hpp"
 #include "Camera.hpp"
-#include "VkZero/Internal/core_internal.hpp"
-#include "VkZero/frame.hpp"
+#include "VkZero/vk_zero.hpp"
 #include "VkZeroObjects.hpp"
 #include "VoxelWorld.hpp"
 #include "shaders.hpp"
-#include <chrono>
-#include <cstdio>
 #include <iostream> // Added for debug output
 #include <memory>
-#include <thread>
 
 // Static member definitions
 std::unique_ptr<VkZero::Window> VoxelEngine::Window;
@@ -30,7 +26,7 @@ void VoxelEngine::run() {
 void VoxelEngine::initWindow() {}
 
 void VoxelEngine::initVulkan() {
-  VkZero::vkZero_core = new VkZero::VkZeroCoreImpl_T();
+  VkZero::VkZeroInit();
   Window = std::make_unique<VkZero::Window>(WIDTH, HEIGHT, "Voxel Engine");
 
   shaders = std::make_unique<GlobalShaderLibrary>();
@@ -64,9 +60,6 @@ void VoxelEngine::mainLoop() {
       frameCount++;
     }
   }
-
-  std::cout << "Shutting down..." << std::endl;
-  vkDeviceWaitIdle(VkZero::vkZero_core->device);
 }
 
 void VoxelEngine::drawFrame() {
