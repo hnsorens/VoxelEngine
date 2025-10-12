@@ -2,6 +2,7 @@
 #include "Camera.hpp"
 #include "VkZero/render_pass.hpp"
 #include "VkZero/resource_manager.hpp"
+#include "VkZero/Internal/uniform_buffer_internal.hpp"
 #include "VoxelWorld.hpp"
 #include "VkZero/image.hpp"
 #include <memory>
