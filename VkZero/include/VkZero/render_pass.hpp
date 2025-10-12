@@ -1,0 +1,319 @@
+#pragma once
+
+#include "VkZero/fixed_string.hpp"
+#include "VkZero/shader_group.hpp"
+#include "VkZero/types.hpp"
+#include "VkZero/window.hpp"
+#include <cstdint>
+#include <cstdio>
+#include <functional>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#define RAYTRACE_HEIGHT 1080
+#define RAYTRACE_WIDTH 1920
+
+#define ALIGN_UP(value, alignment)                                             \
+  (((value) + (alignment) - 1) & ~((alignment) - 1))
+
+namespace VkZero {
+
+struct RenderPassResourceBase {
+  RenderPassResourceBase(const char *name, AttachmentImage *image);
+
+  struct RenderPassResourceImpl_T *impl;
+};
+
+template <FixedString Name>
+class RenderPassResource : public RenderPassResourceBase {
+public:
+  RenderPassResource(AttachmentImage *image)
+      : RenderPassResourceBase(name, image) {}
+
+  static constexpr const char *name = Name.value;
+};
+
+namespace RenderPassResourceSetDetails {
+// Compile-time name matching to find resource index
+template <FixedString TargetName, typename Tuple, std::size_t Index = 0>
+constexpr std::size_t findResourceIndex() {
+  if constexpr (Index >= std::tuple_size_v<Tuple>) {
+    static_assert(Index < std::tuple_size_v<Tuple>,
+                  "Resource not found for attachment");
+    return Index;
+  } else {
+    using Element = std::tuple_element_t<Index, Tuple>;
+    if constexpr (Element::name == TargetName) {
+      return Index;
+    } else {
+      return findResourceIndex<TargetName, Tuple, Index + 1>();
+    }
+  }
+}
+}; // namespace RenderPassResourceSetDetails
+//
+
+struct RenderPassResourceSetBase {
+  RenderPassResourceSetBase(std::vector<RenderPassResourceImpl_T *> resources);
+
+  struct RenderPassResourceSetImpl_T *impl;
+};
+
+template <typename... Resources>
+class RenderPassResourceSet : public RenderPassResourceSetBase {
+public:
+  RenderPassResourceSet(Resources... resources)
+      : RenderPassResourceSetBase({resources.impl...}) {}
+};
+
+struct AttachmentBase {
+  enum class AttachmentType {
+    ATTACHMENT_COLOR,
+    ATTACHMENT_DEPTH,
+    ATTACHMENT_PRESERVE,
+    ATTACHMENT_INPUT,
+  };
+
+  AttachmentBase(const char *name, Format format, int location,
+                 AttachmentType type);
+
+  AttachmentBase(const char *name);
+  struct AttachmentImpl_T *impl;
+};
+
+template <FixedString Name, Format Format, int Location>
+struct ColorAttachment : public AttachmentBase {
+
+  ColorAttachment()
+      : AttachmentBase(name.value, Format, Location,
+                       AttachmentBase::AttachmentType::ATTACHMENT_COLOR) {}
+
+  static constexpr FixedString name = Name.value;
+  static constexpr enum Format get_format() { return Format; }
+  static constexpr int get_location() { return Location; }
+};
+
+template <FixedString Name, Format Format, int Location>
+struct DepthAttachment : public AttachmentBase {
+
+  DepthAttachment()
+      : AttachmentBase(name.value, Format, Location,
+                       AttachmentBase::AttachmentType::ATTACHMENT_DEPTH) {}
+
+  static constexpr FixedString name = Name.value;
+  static constexpr enum Format get_format() { return Format; }
+  static constexpr int get_location() { return Location; }
+};
+
+template <FixedString Name> struct PreserveAttachment : public AttachmentBase {
+
+  PreserveAttachment() : AttachmentBase(name.value) {}
+
+  static constexpr FixedString name = Name.value;
+};
+
+template <FixedString Name, Format Format, int Location>
+struct InputAttachment : public AttachmentBase {
+
+  InputAttachment()
+      : AttachmentBase(name.value, Format, Location,
+                       AttachmentBase::AttachmentType::ATTACHMENT_INPUT) {}
+
+  static constexpr FixedString name = Name.value;
+  static constexpr enum Format get_format() { return Format; }
+  static constexpr int get_location() { return Location; }
+};
+namespace RenderPassDetails {
+template <typename Pipelines> struct get_all_attachments;
+
+template <> struct get_all_attachments<std::tuple<>> {
+  using value = std::tuple<>;
+};
+
+template <typename First, typename... Rest>
+struct get_all_attachments<std::tuple<First, Rest...>> {
+  using value = decltype(std::tuple_cat(
+      std::declval<typename First::Attachments>(),
+      std::declval<
+          typename get_all_attachments<std::tuple<Rest...>>::value>()));
+};
+
+// Helper to append to a tuple
+template <typename Tuple, typename T> struct tuple_push_back;
+
+template <typename... Ts, typename T>
+struct tuple_push_back<std::tuple<Ts...>, T> {
+  using type = std::tuple<Ts..., T>;
+};
+
+// Check if a tuple contains an attachment with same name/type (for
+// InputAttachment, also check format)
+template <typename T, typename Tuple> struct contains_attachment;
+
+template <typename T>
+struct contains_attachment<T, std::tuple<>> : std::false_type {};
+
+template <typename T, typename First, typename... Rest>
+struct contains_attachment<T, std::tuple<First, Rest...>>
+    : std::conditional_t<
+          std::is_same_v<T, First> ||
+              (T::name == First::name && std::is_same_v<T, First>) ||
+              (std::is_same_v<T, InputAttachment<T::name, T::get_format(),
+                                                 T::get_location()>> &&
+               std::is_same_v<First,
+                              InputAttachment<First::name, First::get_format(),
+                                              First::get_location()>> &&
+               T::get_format() == First::get_format()),
+          std::true_type, contains_attachment<T, std::tuple<Rest...>>> {};
+
+// Meta-function to filter preserve/input attachments
+template <typename Attachments, typename Tuple> struct filter_preserve_input;
+
+template <typename Tuple> struct filter_preserve_input<std::tuple<>, Tuple> {
+  using type = std::tuple<>;
+};
+
+template <typename First, typename... Rest, typename All>
+struct filter_preserve_input<std::tuple<First, Rest...>, All> {
+  using tail = typename filter_preserve_input<std::tuple<Rest...>, All>::type;
+  using type = std::conditional_t<
+      std::is_same_v<First, PreserveAttachment<First::name>> ||
+          std::is_same_v<First,
+                         InputAttachment<First::name, First::get_format(),
+                                         First::get_location()>>,
+      std::conditional_t<contains_attachment<First, All>::value,
+                         typename tuple_push_back<tail, First>::type, tail>,
+      typename tuple_push_back<tail, First>::type>;
+};
+
+// Assign global locations
+template <typename Tuple, int Start = 0> struct assign_global_locations;
+
+template <int Start> struct assign_global_locations<std::tuple<>, Start> {
+  using type = std::tuple<>;
+};
+
+template <typename First, typename... Rest, int Start>
+struct assign_global_locations<std::tuple<First, Rest...>, Start> {
+  // Produce new type with updated location
+  using new_first = First;
+  template <typename T> struct update_location {
+    using type = T;
+  };
+
+  template <FixedString N, Format F, int L>
+  struct update_location<ColorAttachment<N, F, L>> {
+    using type = ColorAttachment<N, F, Start>;
+  };
+
+  template <FixedString N, Format F, int L>
+  struct update_location<DepthAttachment<N, F, L>> {
+    using type = DepthAttachment<N, F, Start>;
+  };
+
+  template <FixedString N, Format F, int L>
+  struct update_location<InputAttachment<N, F, L>> {
+    using type = InputAttachment<N, F, Start>;
+  };
+
+  using type = decltype(std::tuple_cat(
+      std::tuple<typename update_location<First>::type>{},
+      typename assign_global_locations<std::tuple<Rest...>,
+                                       Start + 1>::type{}));
+};
+
+// The main meta-function
+template <typename AllAttachments> struct get_common_attachments {
+  // Filter preserves/inputs
+  using filtered =
+      typename filter_preserve_input<AllAttachments, AllAttachments>::type;
+
+  // Assign global locations
+  using value = typename assign_global_locations<filtered>::type;
+};
+}; // namespace RenderPassDetails
+
+// Compile-time tuple iteration
+template <typename Tuple, typename Func, std::size_t... I>
+constexpr void tuple_for_each_impl(Tuple &&t, Func &&f,
+                                   std::index_sequence<I...>) {
+  (f(std::get<I>(t)), ...);
+}
+
+template <typename Tuple, typename Func>
+constexpr void tuple_for_each(Tuple &&t, Func &&f) {
+  tuple_for_each_impl(
+      std::forward<Tuple>(t), std::forward<Func>(f),
+      std::make_index_sequence<
+          std::tuple_size<std::remove_reference_t<Tuple>>::value>{});
+}
+
+struct GraphicsRenderpassBase {
+  GraphicsRenderpassBase(uint32_t width, uint32_t height,
+                 RenderPassResourceSetImpl_T *resources,
+                 std::vector<struct GraphicsPipelineImpl_T *> pipelines,
+                 std::vector<struct AttachmentImpl_T *> requiredAttachments);
+
+  struct GraphicsRenderpassImpl_T *impl;
+};
+
+template <typename Resources, typename... Pipelines>
+class GraphicsRenderpass : public GraphicsRenderpassBase {
+public:
+  using allAttachments =
+      RenderPassDetails::get_all_attachments<std::tuple<Pipelines...>>::value;
+  using commonAttachments =
+      RenderPassDetails::get_common_attachments<allAttachments>::value;
+
+  static_assert(std::tuple_size<allAttachments>::value > 0,
+                "RenderPass must have at least one attachment.");
+
+  GraphicsRenderpass(uint32_t width, uint32_t height, Resources &resource,
+             Pipelines &...pipelines)
+      : GraphicsRenderpassBase(width, height, resource.impl, {pipelines.impl...},
+                       GetAttachments<commonAttachments>::get()) {}
+};
+
+
+struct PushConstantDataBase {
+  PushConstantDataBase(size_t size);
+
+  struct PushConstantDataImpl_T* impl;
+};
+
+template <typename... Structures> struct PushConstantData : public PushConstantDataBase {
+  PushConstantData() : PushConstantDataBase((sizeof(Structures) + ...)) {}
+};
+
+template <typename PushConstant, typename Pipeline>
+struct RaytracingRenderPassPipeline {
+public:
+  RaytracingRenderPassPipeline(Pipeline &pipeline, PushConstant &pushConstants)
+      : pipeline(pipeline), pushConstantData(pushConstants) {}
+
+  Pipeline &pipeline;
+  PushConstant &pushConstantData;
+
+  template <typename... RaytracingPipelines> friend class RaytracingRenderPass;
+};
+
+
+struct RaytracingRenderpassBase {
+  RaytracingRenderpassBase(
+      std::vector<
+          std::pair<struct RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
+          pipelines, std::function<void(void*, uint32_t)> before, std::function<void(void*, uint32_t)> after);
+
+  struct RaytracingRenderpassImpl_T *impl;
+};
+
+template <typename... RaytracingPipelines>
+class RaytracingRenderPass : public RaytracingRenderpassBase {
+public:
+  RaytracingRenderPass(std::function<void(void*, uint32_t)> before, RaytracingPipelines... pipelines, std::function<void(void*, uint32_t)> after)
+      : RaytracingRenderpassBase(
+            {{pipelines.pipeline.impl, pipelines.pushConstantData.impl}...}, before, after) {}
+  static void NO_FUNCTION(void* commandBuffer, uint32_t currentFrame) {}
+};
+} // namespace VkZero
