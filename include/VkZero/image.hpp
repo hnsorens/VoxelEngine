@@ -3,7 +3,7 @@
 #include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/Internal/bind_resource_internal.hpp"
 #include "VkZero/info.hpp"
-#include "VkZero/resource_manager.hpp"
+#include "VkZero/Internal/resource_manager_internal.hpp"
 #include "VkZero/types.hpp"
 #include "image.hpp"
 #include <algorithm>

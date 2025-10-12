@@ -1,6 +1,6 @@
 #include "VoxelWorld.hpp"
 #include "VkZero/image.hpp"
-#include "VkZero/resource_manager.hpp"
+#include "VkZero/Internal/resource_manager_internal.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstring>

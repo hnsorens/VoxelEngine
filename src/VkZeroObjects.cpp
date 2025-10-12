@@ -5,7 +5,7 @@
 #include "VkZero/Internal/uniform_buffer_internal.hpp"
 #include "VkZero/image.hpp"
 #include "VkZero/render_pass.hpp"
-#include "VkZero/resource_manager.hpp"
+#include "VkZero/Internal/resource_manager_internal.hpp"
 #include "VkZero/window.hpp"
 #include "VoxelWorld.hpp"
 #include "shaders.hpp"

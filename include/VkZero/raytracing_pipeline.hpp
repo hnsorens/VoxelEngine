@@ -1,7 +1,7 @@
 #pragma once
 
 #include "VkZero/Internal/shader_resource_set_internal.hpp"
-#include "VkZero/resource_manager.hpp"
+#include "VkZero/Internal/resource_manager_internal.hpp"
 #include "graphics_pipeline.hpp"
 #include "shader_group.hpp"
 #include "shader_resource_set.hpp"

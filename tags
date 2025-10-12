@@ -747,7 +747,7 @@ ResourceBindingBase	include/VkZero/binding.hpp	/^struct ResourceBindingBase {$/;
 ResourceBindingBase	src/VkZero/binding.cpp	/^ResourceBindingBase::ResourceBindingBase(std::vector<BindResource *> resources,$/;"	f	class:ResourceBindingBase
 ResourceBindingImpl_T	include/VkZero/Internal/binding_internal.hpp	/^struct ResourceBindingImpl_T {$/;"	s	namespace:VkZero
 ResourceBindingImpl_T	src/VkZero/binding.cpp	/^ResourceBindingImpl_T::ResourceBindingImpl_T(std::vector<BindResource*> resources,$/;"	f	class:ResourceBindingImpl_T
-ResourceManager	include/VkZero/resource_manager.hpp	/^  class ResourceManager {$/;"	c	namespace:VkZero
+ResourceManager	include/VkZero/Internal/resource_manager_internal.hpp	/^  class ResourceManager {$/;"	c	namespace:VkZero
 RotationType3D	include/FastNoiseLite.hpp	/^  enum RotationType3D {$/;"	g	class:FastNoiseLite
 RotationType3D_ImproveXYPlanes	include/FastNoiseLite.hpp	/^    RotationType3D_ImproveXYPlanes,$/;"	e	enum:FastNoiseLite::RotationType3D
 RotationType3D_ImproveXZPlanes	include/FastNoiseLite.hpp	/^    RotationType3D_ImproveXZPlanes$/;"	e	enum:FastNoiseLite::RotationType3D
@@ -882,6 +882,7 @@ VkZero	include/VkZero/Internal/image_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/raytracing_renderpass_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/renderpass_internal.hpp	/^namespace VkZero {$/;"	n
+VkZero	include/VkZero/Internal/resource_manager_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/shader_group_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/shader_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/shader_resource_set_internal.hpp	/^namespace VkZero {$/;"	n
@@ -896,7 +897,6 @@ VkZero	include/VkZero/graphics_pipeline.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/image.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/raytracing_pipeline.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/render_pass.hpp	/^namespace VkZero {$/;"	n
-VkZero	include/VkZero/resource_manager.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/shader.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/shader_bindings.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/shader_group.hpp	/^namespace VkZero {$/;"	n

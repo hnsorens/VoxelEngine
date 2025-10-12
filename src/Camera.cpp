@@ -1,7 +1,7 @@
 #include "Camera.hpp"
 #include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/info.hpp"
-#include "VkZero/resource_manager.hpp"
+#include "VkZero/Internal/resource_manager_internal.hpp"
 #include "VkZero/window.hpp"
 #include "VoxelWorld.hpp"
 #include <cstdio>
