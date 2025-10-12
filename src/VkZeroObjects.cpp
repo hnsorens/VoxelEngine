@@ -2,16 +2,13 @@
 #include "VkZeroObjects.hpp"
 #include "Camera.hpp"
 #include "Engine.hpp"
-#include "VkZero/Internal/uniform_buffer_internal.hpp"
 #include "VkZero/image.hpp"
 #include "VkZero/render_pass.hpp"
-#include "VkZero/Internal/resource_manager_internal.hpp"
 #include "VkZero/window.hpp"
 #include "VoxelWorld.hpp"
 #include "shaders.hpp"
 #include <memory>
 #include <stdexcept>
-#include <vulkan/vulkan_core.h>
 
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920

@@ -1,9 +1,6 @@
 #include "Engine.hpp"
 #include "Camera.hpp"
 #include "VkZero/Internal/core_internal.hpp"
-#include "VkZero/Internal/graphics_renderpass_internal.hpp"
-#include "VkZero/Internal/raytracing_renderpass_internal.hpp"
-#include "VkZero/Internal/window_internal.hpp"
 #include "VkZero/frame.hpp"
 #include "VkZeroObjects.hpp"
 #include "VoxelWorld.hpp"
@@ -55,20 +52,9 @@ void VoxelEngine::mainLoop() {
 
   std::cout << "Starting main loop. Press ESC to exit." << std::endl;
 
-  while (!Window->impl->shouldClose()) {
-    double currentTime = glfwGetTime();
-    double deltaTime = currentTime - lastFrameTime;
+  while (!Window->shouldClose()) {
 
-    // Limit frame rate
-    if (deltaTime < targetFrameTime) {
-      double sleepTime = targetFrameTime - deltaTime;
-      if (sleepTime > 0.001) { // Only sleep if more than 1ms
-        std::this_thread::sleep_for(std::chrono::duration<double>(sleepTime));
-      }
-      continue;
-    }
-
-    Window->impl->pollEvents();
+    Window->pollEvents();
 
     // Check if window is minimized
     int width, height;
@@ -77,18 +63,6 @@ void VoxelEngine::mainLoop() {
       drawFrame();
       frameCount++;
     }
-
-    lastFrameTime = currentTime;
-
-    // Print FPS every second
-    if (currentTime - lastFPSUpdate >= 1.0) {
-      std::cout << "FPS: " << frameCount << std::endl;
-      frameCount = 0;
-      lastFPSUpdate = currentTime;
-    }
-
-    // Add a small delay to prevent excessive CPU usage
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
   }
 
   std::cout << "Shutting down..." << std::endl;

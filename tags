@@ -487,6 +487,189 @@ G8B8R82Plane444Unorm	include/VkZero/types.hpp	/^        G8B8R82Plane444Unorm = 1
 G8B8R83Plane420Unorm	include/VkZero/types.hpp	/^        G8B8R83Plane420Unorm = 1000156002,$/;"	e	enum:VkZero::Format
 G8B8R83Plane422Unorm	include/VkZero/types.hpp	/^        G8B8R83Plane422Unorm = 1000156004,$/;"	e	enum:VkZero::Format
 G8B8R83Plane444Unorm	include/VkZero/types.hpp	/^        G8B8R83Plane444Unorm = 1000156006,$/;"	e	enum:VkZero::Format
+GLFW_GAMEPAD_AXIS_LAST	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_AXIS_LAST /;"	d
+GLFW_GAMEPAD_AXIS_LEFT_TRIGGER	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_AXIS_LEFT_TRIGGER /;"	d
+GLFW_GAMEPAD_AXIS_LEFT_X	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_AXIS_LEFT_X /;"	d
+GLFW_GAMEPAD_AXIS_LEFT_Y	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_AXIS_LEFT_Y /;"	d
+GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER /;"	d
+GLFW_GAMEPAD_AXIS_RIGHT_X	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_AXIS_RIGHT_X /;"	d
+GLFW_GAMEPAD_AXIS_RIGHT_Y	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_AXIS_RIGHT_Y /;"	d
+GLFW_GAMEPAD_BUTTON_A	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_A /;"	d
+GLFW_GAMEPAD_BUTTON_B	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_B /;"	d
+GLFW_GAMEPAD_BUTTON_BACK	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_BACK /;"	d
+GLFW_GAMEPAD_BUTTON_CIRCLE	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_CIRCLE /;"	d
+GLFW_GAMEPAD_BUTTON_CROSS	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_CROSS /;"	d
+GLFW_GAMEPAD_BUTTON_DPAD_DOWN	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_DPAD_DOWN /;"	d
+GLFW_GAMEPAD_BUTTON_DPAD_LEFT	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_DPAD_LEFT /;"	d
+GLFW_GAMEPAD_BUTTON_DPAD_RIGHT	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_DPAD_RIGHT /;"	d
+GLFW_GAMEPAD_BUTTON_DPAD_UP	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_DPAD_UP /;"	d
+GLFW_GAMEPAD_BUTTON_GUIDE	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_GUIDE /;"	d
+GLFW_GAMEPAD_BUTTON_LAST	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_LAST /;"	d
+GLFW_GAMEPAD_BUTTON_LEFT_BUMPER	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_LEFT_BUMPER /;"	d
+GLFW_GAMEPAD_BUTTON_LEFT_THUMB	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_LEFT_THUMB /;"	d
+GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER /;"	d
+GLFW_GAMEPAD_BUTTON_RIGHT_THUMB	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_RIGHT_THUMB /;"	d
+GLFW_GAMEPAD_BUTTON_SQUARE	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_SQUARE /;"	d
+GLFW_GAMEPAD_BUTTON_START	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_START /;"	d
+GLFW_GAMEPAD_BUTTON_TRIANGLE	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_TRIANGLE /;"	d
+GLFW_GAMEPAD_BUTTON_X	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_X /;"	d
+GLFW_GAMEPAD_BUTTON_Y	include/VkZero/types.hpp	/^#define GLFW_GAMEPAD_BUTTON_Y /;"	d
+GLFW_JOYSTICK_1	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_1 /;"	d
+GLFW_JOYSTICK_10	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_10 /;"	d
+GLFW_JOYSTICK_11	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_11 /;"	d
+GLFW_JOYSTICK_12	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_12 /;"	d
+GLFW_JOYSTICK_13	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_13 /;"	d
+GLFW_JOYSTICK_14	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_14 /;"	d
+GLFW_JOYSTICK_15	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_15 /;"	d
+GLFW_JOYSTICK_16	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_16 /;"	d
+GLFW_JOYSTICK_2	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_2 /;"	d
+GLFW_JOYSTICK_3	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_3 /;"	d
+GLFW_JOYSTICK_4	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_4 /;"	d
+GLFW_JOYSTICK_5	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_5 /;"	d
+GLFW_JOYSTICK_6	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_6 /;"	d
+GLFW_JOYSTICK_7	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_7 /;"	d
+GLFW_JOYSTICK_8	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_8 /;"	d
+GLFW_JOYSTICK_9	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_9 /;"	d
+GLFW_JOYSTICK_LAST	include/VkZero/types.hpp	/^#define GLFW_JOYSTICK_LAST /;"	d
+GLFW_KEY_0	include/VkZero/types.hpp	/^#define GLFW_KEY_0 /;"	d
+GLFW_KEY_1	include/VkZero/types.hpp	/^#define GLFW_KEY_1 /;"	d
+GLFW_KEY_2	include/VkZero/types.hpp	/^#define GLFW_KEY_2 /;"	d
+GLFW_KEY_3	include/VkZero/types.hpp	/^#define GLFW_KEY_3 /;"	d
+GLFW_KEY_4	include/VkZero/types.hpp	/^#define GLFW_KEY_4 /;"	d
+GLFW_KEY_5	include/VkZero/types.hpp	/^#define GLFW_KEY_5 /;"	d
+GLFW_KEY_6	include/VkZero/types.hpp	/^#define GLFW_KEY_6 /;"	d
+GLFW_KEY_7	include/VkZero/types.hpp	/^#define GLFW_KEY_7 /;"	d
+GLFW_KEY_8	include/VkZero/types.hpp	/^#define GLFW_KEY_8 /;"	d
+GLFW_KEY_9	include/VkZero/types.hpp	/^#define GLFW_KEY_9 /;"	d
+GLFW_KEY_A	include/VkZero/types.hpp	/^#define GLFW_KEY_A /;"	d
+GLFW_KEY_APOSTROPHE	include/VkZero/types.hpp	/^#define GLFW_KEY_APOSTROPHE /;"	d
+GLFW_KEY_B	include/VkZero/types.hpp	/^#define GLFW_KEY_B /;"	d
+GLFW_KEY_BACKSLASH	include/VkZero/types.hpp	/^#define GLFW_KEY_BACKSLASH /;"	d
+GLFW_KEY_BACKSPACE	include/VkZero/types.hpp	/^#define GLFW_KEY_BACKSPACE /;"	d
+GLFW_KEY_C	include/VkZero/types.hpp	/^#define GLFW_KEY_C /;"	d
+GLFW_KEY_CAPS_LOCK	include/VkZero/types.hpp	/^#define GLFW_KEY_CAPS_LOCK /;"	d
+GLFW_KEY_COMMA	include/VkZero/types.hpp	/^#define GLFW_KEY_COMMA /;"	d
+GLFW_KEY_D	include/VkZero/types.hpp	/^#define GLFW_KEY_D /;"	d
+GLFW_KEY_DELETE	include/VkZero/types.hpp	/^#define GLFW_KEY_DELETE /;"	d
+GLFW_KEY_DOWN	include/VkZero/types.hpp	/^#define GLFW_KEY_DOWN /;"	d
+GLFW_KEY_E	include/VkZero/types.hpp	/^#define GLFW_KEY_E /;"	d
+GLFW_KEY_END	include/VkZero/types.hpp	/^#define GLFW_KEY_END /;"	d
+GLFW_KEY_ENTER	include/VkZero/types.hpp	/^#define GLFW_KEY_ENTER /;"	d
+GLFW_KEY_EQUAL	include/VkZero/types.hpp	/^#define GLFW_KEY_EQUAL /;"	d
+GLFW_KEY_ESCAPE	include/VkZero/types.hpp	/^#define GLFW_KEY_ESCAPE /;"	d
+GLFW_KEY_F	include/VkZero/types.hpp	/^#define GLFW_KEY_F /;"	d
+GLFW_KEY_F1	include/VkZero/types.hpp	/^#define GLFW_KEY_F1 /;"	d
+GLFW_KEY_F10	include/VkZero/types.hpp	/^#define GLFW_KEY_F10 /;"	d
+GLFW_KEY_F11	include/VkZero/types.hpp	/^#define GLFW_KEY_F11 /;"	d
+GLFW_KEY_F12	include/VkZero/types.hpp	/^#define GLFW_KEY_F12 /;"	d
+GLFW_KEY_F13	include/VkZero/types.hpp	/^#define GLFW_KEY_F13 /;"	d
+GLFW_KEY_F14	include/VkZero/types.hpp	/^#define GLFW_KEY_F14 /;"	d
+GLFW_KEY_F15	include/VkZero/types.hpp	/^#define GLFW_KEY_F15 /;"	d
+GLFW_KEY_F16	include/VkZero/types.hpp	/^#define GLFW_KEY_F16 /;"	d
+GLFW_KEY_F17	include/VkZero/types.hpp	/^#define GLFW_KEY_F17 /;"	d
+GLFW_KEY_F18	include/VkZero/types.hpp	/^#define GLFW_KEY_F18 /;"	d
+GLFW_KEY_F19	include/VkZero/types.hpp	/^#define GLFW_KEY_F19 /;"	d
+GLFW_KEY_F2	include/VkZero/types.hpp	/^#define GLFW_KEY_F2 /;"	d
+GLFW_KEY_F20	include/VkZero/types.hpp	/^#define GLFW_KEY_F20 /;"	d
+GLFW_KEY_F21	include/VkZero/types.hpp	/^#define GLFW_KEY_F21 /;"	d
+GLFW_KEY_F22	include/VkZero/types.hpp	/^#define GLFW_KEY_F22 /;"	d
+GLFW_KEY_F23	include/VkZero/types.hpp	/^#define GLFW_KEY_F23 /;"	d
+GLFW_KEY_F24	include/VkZero/types.hpp	/^#define GLFW_KEY_F24 /;"	d
+GLFW_KEY_F25	include/VkZero/types.hpp	/^#define GLFW_KEY_F25 /;"	d
+GLFW_KEY_F3	include/VkZero/types.hpp	/^#define GLFW_KEY_F3 /;"	d
+GLFW_KEY_F4	include/VkZero/types.hpp	/^#define GLFW_KEY_F4 /;"	d
+GLFW_KEY_F5	include/VkZero/types.hpp	/^#define GLFW_KEY_F5 /;"	d
+GLFW_KEY_F6	include/VkZero/types.hpp	/^#define GLFW_KEY_F6 /;"	d
+GLFW_KEY_F7	include/VkZero/types.hpp	/^#define GLFW_KEY_F7 /;"	d
+GLFW_KEY_F8	include/VkZero/types.hpp	/^#define GLFW_KEY_F8 /;"	d
+GLFW_KEY_F9	include/VkZero/types.hpp	/^#define GLFW_KEY_F9 /;"	d
+GLFW_KEY_G	include/VkZero/types.hpp	/^#define GLFW_KEY_G /;"	d
+GLFW_KEY_GRAVE_ACCENT	include/VkZero/types.hpp	/^#define GLFW_KEY_GRAVE_ACCENT /;"	d
+GLFW_KEY_H	include/VkZero/types.hpp	/^#define GLFW_KEY_H /;"	d
+GLFW_KEY_HOME	include/VkZero/types.hpp	/^#define GLFW_KEY_HOME /;"	d
+GLFW_KEY_I	include/VkZero/types.hpp	/^#define GLFW_KEY_I /;"	d
+GLFW_KEY_INSERT	include/VkZero/types.hpp	/^#define GLFW_KEY_INSERT /;"	d
+GLFW_KEY_J	include/VkZero/types.hpp	/^#define GLFW_KEY_J /;"	d
+GLFW_KEY_K	include/VkZero/types.hpp	/^#define GLFW_KEY_K /;"	d
+GLFW_KEY_KP_0	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_0 /;"	d
+GLFW_KEY_KP_1	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_1 /;"	d
+GLFW_KEY_KP_2	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_2 /;"	d
+GLFW_KEY_KP_3	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_3 /;"	d
+GLFW_KEY_KP_4	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_4 /;"	d
+GLFW_KEY_KP_5	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_5 /;"	d
+GLFW_KEY_KP_6	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_6 /;"	d
+GLFW_KEY_KP_7	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_7 /;"	d
+GLFW_KEY_KP_8	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_8 /;"	d
+GLFW_KEY_KP_9	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_9 /;"	d
+GLFW_KEY_KP_ADD	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_ADD /;"	d
+GLFW_KEY_KP_DECIMAL	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_DECIMAL /;"	d
+GLFW_KEY_KP_DIVIDE	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_DIVIDE /;"	d
+GLFW_KEY_KP_ENTER	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_ENTER /;"	d
+GLFW_KEY_KP_EQUAL	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_EQUAL /;"	d
+GLFW_KEY_KP_MULTIPLY	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_MULTIPLY /;"	d
+GLFW_KEY_KP_SUBTRACT	include/VkZero/types.hpp	/^#define GLFW_KEY_KP_SUBTRACT /;"	d
+GLFW_KEY_L	include/VkZero/types.hpp	/^#define GLFW_KEY_L /;"	d
+GLFW_KEY_LAST	include/VkZero/types.hpp	/^#define GLFW_KEY_LAST /;"	d
+GLFW_KEY_LEFT	include/VkZero/types.hpp	/^#define GLFW_KEY_LEFT /;"	d
+GLFW_KEY_LEFT_ALT	include/VkZero/types.hpp	/^#define GLFW_KEY_LEFT_ALT /;"	d
+GLFW_KEY_LEFT_BRACKET	include/VkZero/types.hpp	/^#define GLFW_KEY_LEFT_BRACKET /;"	d
+GLFW_KEY_LEFT_CONTROL	include/VkZero/types.hpp	/^#define GLFW_KEY_LEFT_CONTROL /;"	d
+GLFW_KEY_LEFT_SHIFT	include/VkZero/types.hpp	/^#define GLFW_KEY_LEFT_SHIFT /;"	d
+GLFW_KEY_LEFT_SUPER	include/VkZero/types.hpp	/^#define GLFW_KEY_LEFT_SUPER /;"	d
+GLFW_KEY_M	include/VkZero/types.hpp	/^#define GLFW_KEY_M /;"	d
+GLFW_KEY_MENU	include/VkZero/types.hpp	/^#define GLFW_KEY_MENU /;"	d
+GLFW_KEY_MINUS	include/VkZero/types.hpp	/^#define GLFW_KEY_MINUS /;"	d
+GLFW_KEY_N	include/VkZero/types.hpp	/^#define GLFW_KEY_N /;"	d
+GLFW_KEY_NUM_LOCK	include/VkZero/types.hpp	/^#define GLFW_KEY_NUM_LOCK /;"	d
+GLFW_KEY_O	include/VkZero/types.hpp	/^#define GLFW_KEY_O /;"	d
+GLFW_KEY_P	include/VkZero/types.hpp	/^#define GLFW_KEY_P /;"	d
+GLFW_KEY_PAGE_DOWN	include/VkZero/types.hpp	/^#define GLFW_KEY_PAGE_DOWN /;"	d
+GLFW_KEY_PAGE_UP	include/VkZero/types.hpp	/^#define GLFW_KEY_PAGE_UP /;"	d
+GLFW_KEY_PAUSE	include/VkZero/types.hpp	/^#define GLFW_KEY_PAUSE /;"	d
+GLFW_KEY_PERIOD	include/VkZero/types.hpp	/^#define GLFW_KEY_PERIOD /;"	d
+GLFW_KEY_PRINT_SCREEN	include/VkZero/types.hpp	/^#define GLFW_KEY_PRINT_SCREEN /;"	d
+GLFW_KEY_Q	include/VkZero/types.hpp	/^#define GLFW_KEY_Q /;"	d
+GLFW_KEY_R	include/VkZero/types.hpp	/^#define GLFW_KEY_R /;"	d
+GLFW_KEY_RIGHT	include/VkZero/types.hpp	/^#define GLFW_KEY_RIGHT /;"	d
+GLFW_KEY_RIGHT_ALT	include/VkZero/types.hpp	/^#define GLFW_KEY_RIGHT_ALT /;"	d
+GLFW_KEY_RIGHT_BRACKET	include/VkZero/types.hpp	/^#define GLFW_KEY_RIGHT_BRACKET /;"	d
+GLFW_KEY_RIGHT_CONTROL	include/VkZero/types.hpp	/^#define GLFW_KEY_RIGHT_CONTROL /;"	d
+GLFW_KEY_RIGHT_SHIFT	include/VkZero/types.hpp	/^#define GLFW_KEY_RIGHT_SHIFT /;"	d
+GLFW_KEY_RIGHT_SUPER	include/VkZero/types.hpp	/^#define GLFW_KEY_RIGHT_SUPER /;"	d
+GLFW_KEY_S	include/VkZero/types.hpp	/^#define GLFW_KEY_S /;"	d
+GLFW_KEY_SCROLL_LOCK	include/VkZero/types.hpp	/^#define GLFW_KEY_SCROLL_LOCK /;"	d
+GLFW_KEY_SEMICOLON	include/VkZero/types.hpp	/^#define GLFW_KEY_SEMICOLON /;"	d
+GLFW_KEY_SLASH	include/VkZero/types.hpp	/^#define GLFW_KEY_SLASH /;"	d
+GLFW_KEY_SPACE	include/VkZero/types.hpp	/^#define GLFW_KEY_SPACE /;"	d
+GLFW_KEY_T	include/VkZero/types.hpp	/^#define GLFW_KEY_T /;"	d
+GLFW_KEY_TAB	include/VkZero/types.hpp	/^#define GLFW_KEY_TAB /;"	d
+GLFW_KEY_U	include/VkZero/types.hpp	/^#define GLFW_KEY_U /;"	d
+GLFW_KEY_UP	include/VkZero/types.hpp	/^#define GLFW_KEY_UP /;"	d
+GLFW_KEY_V	include/VkZero/types.hpp	/^#define GLFW_KEY_V /;"	d
+GLFW_KEY_W	include/VkZero/types.hpp	/^#define GLFW_KEY_W /;"	d
+GLFW_KEY_WORLD_1	include/VkZero/types.hpp	/^#define GLFW_KEY_WORLD_1 /;"	d
+GLFW_KEY_WORLD_2	include/VkZero/types.hpp	/^#define GLFW_KEY_WORLD_2 /;"	d
+GLFW_KEY_X	include/VkZero/types.hpp	/^#define GLFW_KEY_X /;"	d
+GLFW_KEY_Y	include/VkZero/types.hpp	/^#define GLFW_KEY_Y /;"	d
+GLFW_KEY_Z	include/VkZero/types.hpp	/^#define GLFW_KEY_Z /;"	d
+GLFW_MOD_ALT	include/VkZero/types.hpp	/^#define GLFW_MOD_ALT /;"	d
+GLFW_MOD_CAPS_LOCK	include/VkZero/types.hpp	/^#define GLFW_MOD_CAPS_LOCK /;"	d
+GLFW_MOD_CONTROL	include/VkZero/types.hpp	/^#define GLFW_MOD_CONTROL /;"	d
+GLFW_MOD_NUM_LOCK	include/VkZero/types.hpp	/^#define GLFW_MOD_NUM_LOCK /;"	d
+GLFW_MOD_SHIFT	include/VkZero/types.hpp	/^#define GLFW_MOD_SHIFT /;"	d
+GLFW_MOD_SUPER	include/VkZero/types.hpp	/^#define GLFW_MOD_SUPER /;"	d
+GLFW_MOUSE_BUTTON_1	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_1 /;"	d
+GLFW_MOUSE_BUTTON_2	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_2 /;"	d
+GLFW_MOUSE_BUTTON_3	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_3 /;"	d
+GLFW_MOUSE_BUTTON_4	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_4 /;"	d
+GLFW_MOUSE_BUTTON_5	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_5 /;"	d
+GLFW_MOUSE_BUTTON_6	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_6 /;"	d
+GLFW_MOUSE_BUTTON_7	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_7 /;"	d
+GLFW_MOUSE_BUTTON_8	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_8 /;"	d
+GLFW_MOUSE_BUTTON_LAST	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_LAST /;"	d
+GLFW_MOUSE_BUTTON_LEFT	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_LEFT /;"	d
+GLFW_MOUSE_BUTTON_MIDDLE	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_MIDDLE /;"	d
+GLFW_MOUSE_BUTTON_RIGHT	include/VkZero/types.hpp	/^#define GLFW_MOUSE_BUTTON_RIGHT /;"	d
 GenFractalFBm	include/FastNoiseLite.hpp	/^  float GenFractalFBm(FNfloat x, FNfloat y, FNfloat z) const {$/;"	f	class:FastNoiseLite	typeref:typename:float
 GenFractalFBm	include/FastNoiseLite.hpp	/^  template <typename FNfloat> float GenFractalFBm(FNfloat x, FNfloat y) const {$/;"	f	class:FastNoiseLite	typeref:typename:float
 GenFractalPingPong	include/FastNoiseLite.hpp	/^  float GenFractalPingPong(FNfloat x, FNfloat y) const {$/;"	f	class:FastNoiseLite	typeref:typename:float
@@ -1335,6 +1518,7 @@ pipelineLayout	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkPi
 pipelines	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  std::vector<GraphicsPipelineImpl_T *> pipelines;$/;"	m	struct:VkZero::GraphicsRenderpassImpl_T	typeref:typename:std::vector<GraphicsPipelineImpl_T * >
 pipelines	include/VkZero/Internal/raytracing_renderpass_internal.hpp	/^      pipelines;$/;"	m	struct:VkZero::RaytracingRenderpassImpl_T	typeref:typename:std::vector<std::pair<RaytracingPipelineImpl_T *,PushConstantDataImpl_T * >>
 pitch	include/Camera.hpp	/^  float pitch = 0.0f; \/\/ Rotation around the X-axis (up\/down)$/;"	m	class:Camera	typeref:typename:float
+pollEvents	src/VkZero/window.cpp	/^void Window::pollEvents()$/;"	f	class:Window	typeref:typename:void
 pollEvents	src/VkZero/window.cpp	/^void WindowImpl_T::pollEvents() {$/;"	f	class:WindowImpl_T	typeref:typename:void
 pool	include/VkZero/Internal/descriptor_pool_internal.hpp	/^        VkDescriptorPool pool;$/;"	m	class:VkZero::DescriptorPool	typeref:typename:VkDescriptorPool
 populateDebugMessengerCreateInfo	src/VkZero/core.cpp	/^void VkZeroCoreImpl_T::populateDebugMessengerCreateInfo($/;"	f	class:VkZeroCoreImpl_T	typeref:typename:void
@@ -1417,6 +1601,7 @@ shaders	include/VkZero/shader_group.hpp	/^    using shaders = std::tuple<Shaders
 shaders	include/VkZero/shader_library.hpp	/^        std::tuple<Shaders...> shaders;$/;"	m	class:VkZero::ShaderLibrary	typeref:typename:std::tuple<Shaders...>
 shaders	src/Engine.cpp	/^std::unique_ptr<GlobalShaderLibrary> VoxelEngine::shaders;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<GlobalShaderLibrary>
 shift	src/Camera.cpp	/^    int lowerBound, upperBound, offset, modValue, shift;$/;"	m	struct:Camera::update::__anona64332f60108	typeref:typename:int	file:
+shouldClose	src/VkZero/window.cpp	/^bool Window::shouldClose()$/;"	f	class:Window	typeref:typename:bool
 shouldClose	src/VkZero/window.cpp	/^bool WindowImpl_T::shouldClose() const {$/;"	f	class:WindowImpl_T	typeref:typename:bool
 showCursor	src/VkZero/window.cpp	/^void Window::showCursor() {$/;"	f	class:Window	typeref:typename:void
 size	include/VkZero/Internal/uniform_buffer_internal.hpp	/^  size_t size;$/;"	m	struct:VkZero::UniformBufferImpl_T	typeref:typename:size_t
@@ -1475,7 +1660,7 @@ update	src/Camera.cpp	/^void Camera::update(std::unique_ptr<VkZero::Window> &Win
 update	src/VkZero/uniform_buffer.cpp	/^void UniformBufferBase::update(int currentFrame)$/;"	f	class:UniformBufferBase	typeref:typename:void
 update	src/VkZero/uniform_buffer.cpp	/^void UniformBufferImpl_T::update(int currentFrame)$/;"	f	class:UniformBufferImpl_T	typeref:typename:void
 updateVoxelChunkMap	src/VoxelWorld.cpp	/^void VoxelWorld::updateVoxelChunkMap(int modValue, int offset) {$/;"	f	class:VoxelWorld	typeref:typename:void
-updateVoxels	src/VoxelWorld.cpp	/^void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer, int currentImage) {$/;"	f	class:VoxelWorld	typeref:typename:void
+updateVoxels	src/VoxelWorld.cpp	/^void VoxelWorld::updateVoxels(void* commandBuffer, int currentImage) {$/;"	f	class:VoxelWorld	typeref:typename:void
 update_location	include/VkZero/render_pass.hpp	/^  struct update_location<ColorAttachment<N, F, L>> {$/;"	s	struct:VkZero::RenderPassDetails::assign_global_locations
 update_location	include/VkZero/render_pass.hpp	/^  struct update_location<DepthAttachment<N, F, L>> {$/;"	s	struct:VkZero::RenderPassDetails::assign_global_locations
 update_location	include/VkZero/render_pass.hpp	/^  struct update_location<InputAttachment<N, F, L>> {$/;"	s	struct:VkZero::RenderPassDetails::assign_global_locations

@@ -4,7 +4,6 @@
 #include <memory>
 #include <vector>
 
-#include <GLFW/glfw3.h>
 
 struct TransformUBO {
   glm::mat4 view;

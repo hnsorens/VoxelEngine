@@ -11,7 +11,6 @@
 #include "shaders.hpp"
 #include <memory>
 #include <vector>
-#include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

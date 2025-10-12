@@ -1,6 +1,5 @@
 #include "VoxelWorld.hpp"
 #include "VkZero/image.hpp"
-#include "VkZero/Internal/resource_manager_internal.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -198,7 +197,7 @@ void VoxelWorld::updateVoxelChunkMap(int modValue, int offset) {
     }
   }
 }
-void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer, int currentImage) {
+void VoxelWorld::updateVoxels(void* commandBuffer, int currentImage) {
   voxelChunkMapImage.changeLayout(commandBuffer,
                                   VkZero::ImageLayout::TransferDstOptimal, 0);
 

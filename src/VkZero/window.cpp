@@ -314,3 +314,13 @@ AttachmentImage& Window::getSwapChainImages()
 {
   return impl->swapchainImages;
 }
+
+void Window::pollEvents()
+{
+  impl->pollEvents();
+}
+
+bool Window::shouldClose()
+{
+  return impl->shouldClose();
+}

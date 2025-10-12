@@ -10,7 +10,6 @@
 #include <thread>
 #include <unordered_set>
 #include <vector>
-#include <GLFW/glfw3.h>
 
 //=================
 //  Materials
@@ -46,7 +45,7 @@ public:
   void requestChunk(uint16_t chunkID, float priority);
   void sortChunks();
   void updateVoxelChunkMap(int modValue, int offset);
-  void updateVoxels(VkCommandBuffer commandBuffer,
+  void updateVoxels(void* commandBuffer,
                     int currentImage);
   void chunkWorker();
   void generateChunk(VoxelChunk &chunk);

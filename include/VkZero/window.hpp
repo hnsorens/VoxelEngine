@@ -18,6 +18,8 @@ namespace VkZero
     void getCursorPos(double *currentMouseX, double *currentMouseY);
     void showCursor();
     void getFramebufferSize(int *width, int *height);
+    void pollEvents();
+    bool shouldClose();
     uint32_t getWidth();
     uint32_t getHeight();
     AttachmentImage& getSwapChainImages();
