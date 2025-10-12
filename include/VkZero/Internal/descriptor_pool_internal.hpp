@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VkZero/types.hpp"
+#include <vector>
 #include <vulkan/vulkan_core.h>
 
 namespace VkZero
@@ -14,6 +16,8 @@ namespace VkZero
             static DescriptorPool instance;
             return instance;
         }
+
+        void build(std::vector<DescriptorType> types);
 
         VkDescriptorPool get()
         {
