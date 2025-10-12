@@ -1,9 +1,6 @@
 #include "Camera.hpp"
-#include "VkZero/Internal/core_internal.hpp"
-#include "VkZero/resource_manager.hpp"
+#include "VkZero/vk_zero.hpp"
 #include "VoxelWorld.hpp"
-#include "VkZero/info.hpp"
-#include "VkZero/window.hpp"
 #include <cstdio>
 #include <cstring>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -11,56 +8,14 @@
 #include <memory>
 #include <stdexcept>
 
-Camera::Camera(std::unique_ptr<VkZero::Window> &window) {
-  uniformBuffer.resize(MAX_FRAMES_IN_FLIGHT);
-  uniformBufferMemory.resize(MAX_FRAMES_IN_FLIGHT);
-  uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-  for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    VkDeviceSize bufferSize = sizeof(TransformUBO);
-
-    VkBufferCreateInfo bufferInfo = {};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = bufferSize;
-    bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(VkZero::vkZero_core->device, &bufferInfo, nullptr,
-                       &uniformBuffer[i]) != VK_SUCCESS) {
-      throw std::runtime_error("failed to create uniform buffer");
-    }
-
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(VkZero::vkZero_core->device, uniformBuffer[i],
-                                  &memRequirements);
-
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = VkZero::ResourceManager::findMemoryType(
-        VkZero::vkZero_core->physicalDevice, memRequirements.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    if (vkAllocateMemory(VkZero::vkZero_core->device, &allocInfo, nullptr,
-                         &uniformBufferMemory[i]) != VK_SUCCESS) {
-      throw std::runtime_error("Failed to allocate uniform buffer memory!");
-    }
-
-    vkBindBufferMemory(VkZero::vkZero_core->device, uniformBuffer[i],
-                       uniformBufferMemory[i], 0);
-
-    vkMapMemory(VkZero::vkZero_core->device, uniformBufferMemory[i], 0,
-                sizeof(TransformUBO), 0, &uniformBuffersMapped[i]);
-    memcpy(uniformBuffersMapped[i], &ubo, sizeof(TransformUBO));
-    ubo.view = glm::mat4(1.0);
-    ubo.proj =
-        glm::perspective(glm::radians(70.0f),
-                         window->getSwapChainExtent().width /
-                             (float)window->getSwapChainExtent().height,
-                         0.1f, 1000.0f);
-    ubo.proj[1][1] *= -1;
-    ubo.proj = glm::inverse(ubo.proj);
-  }
+Camera::Camera(std::unique_ptr<VkZero::Window> &window) : uniformBuffer(ubo) {
+  ubo.view = glm::mat4(1.0);
+  ubo.proj = glm::perspective(glm::radians(70.0f),
+                              window->getWidth() /
+                                  (float)window->getHeight(),
+                              0.1f, 1000.0f);
+  ubo.proj[1][1] *= -1;
+  ubo.proj = glm::inverse(ubo.proj);
 }
 Camera::~Camera() {}
 void Camera::update(std::unique_ptr<VkZero::Window> &Window,
@@ -77,7 +32,6 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
   ;
   glm::ivec3 intCameraPosition = glm::ivec3(cameraPosition) * -1;
 
-
 #define voxChunk(chunk, x, y, z)                                               \
   chunk[((z) % 128) * 128 * 128 + ((y) % 128) * 128 + ((x) % 128)]
   // floor
@@ -90,13 +44,14 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
       is_grounded |= (MAT_HAS_COLLISION(voxel_mat(voxChunk(
           voxelWorld->voxelData[voxelWorld->voxelChunkMapData[chunkID]].data,
           intCameraPosition.x + x, intCameraPosition.y + y,
-          intCameraPosition.z + 15)))); // MAT_HAS_COLLISION(voxel_mat(vox(intCameraPosition.x
-                                        // + x, intCameraPosition.y + y,
-                                        // intCameraPosition.z + 30)));
+          intCameraPosition.z +
+              15)))); // MAT_HAS_COLLISION(voxel_mat(vox(intCameraPosition.x
+                      // + x, intCameraPosition.y + y,
+                      // intCameraPosition.z + 30)));
     }
   }
   // // ceiling
-   
+
   bool is_ouch = false;
 
   if (is_grounded) {
@@ -107,7 +62,7 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
     cameraVelocity.z -= 20 * 7 * Window->getDeltaTime();
     ;
   }
- 
+
   if (Window->isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
     // Hide the cursor and capture mouse movement
 
@@ -115,8 +70,7 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
 
     float deltaTime = 0.1f;
 
-    movementSpeed =
-        Window->isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
+    movementSpeed = Window->isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
     bool reset = false;
     if (Window->isKeyPressed(GLFW_KEY_S)) {
       reset = true;
@@ -207,10 +161,10 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
     Window->showCursor();
     firstMouse = true;
   }
- 
+
   ubo.view = glm::inverse(glm::lookAt(cameraPosition, cameraTargetPoint,
                                       glm::vec3(0.0f, 0.0f, 1.0f)));
- 
+
   for (auto &check : checks) {
     if (check.pos < check.lowerBound) {
       check.pos += check.offset;
@@ -221,7 +175,7 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
                                       check.modValue - check.shift);
     }
   }
- 
+
   voxelWorld->sortChunks();
 
   // Raycast and print distance
@@ -258,8 +212,8 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
       voxelWorld->chunkUpdateQueue[++voxelWorld->chunkUpdateQueue[0]] = chunkID;
     }
   }
- 
-  memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(TransformUBO));
+
+  uniformBuffer.update(currentFrame);
 }
 
 void Camera::onMouseMove(double xPos, double yPos) {

@@ -2,9 +2,9 @@
 
 using namespace VkZero;
 
-ShaderBase::ShaderBase(std::string path, VkShaderStageFlagBits type)
+ShaderBase::ShaderBase(std::string path, uint32_t type)
 {
-    impl = new ShaderImpl_T(path, type);
+    impl = new ShaderImpl_T(path, (VkShaderStageFlagBits)type);
 }
 
 ShaderImpl_T::ShaderImpl_T(std::string path, VkShaderStageFlagBits type)

@@ -56,10 +56,11 @@ namespace VkZero
 
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
-    VkPhysicalDevice physicalDevice;
-    VkDevice device;
+    VkPhysicalDevice physicalDevice = 0;
+    VkDevice device = 0;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
+    VkCommandPool commandPool = 0;
     QueueFamilyIndices queueFamilyIndices;
   };
 

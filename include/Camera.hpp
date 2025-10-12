@@ -1,9 +1,9 @@
 #pragma once
+#include "VkZero/uniform_buffer.hpp"
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
 
-#include <GLFW/glfw3.h>
 
 struct TransformUBO {
   glm::mat4 view;
@@ -36,11 +36,8 @@ public:
   bool rayIntersectsCube(glm::vec3 corner, float size, glm::vec3 rayOrigin,
                          glm::vec3 rayDir, float &tMin, float &tMax);
 
-  std::vector<VkBuffer> uniformBuffer;
-  std::vector<VkDeviceMemory> uniformBufferMemory;
+  VkZero::UniformBuffer<TransformUBO> uniformBuffer;
   TransformUBO ubo{};
-
-  std::vector<void *> uniformBuffersMapped;
 
   glm::vec3 cameraTargetPoint = glm::vec3(1.0f, 0.0f, 0.0f);
   glm::vec3 cameraPosition =

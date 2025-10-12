@@ -1,16 +1,9 @@
 #pragma once
 
-#include "VkZero/Internal/shader_resource_set_internal.hpp"
-#include "VkZero/resource_manager.hpp"
 #include "graphics_pipeline.hpp"
 #include "shader_group.hpp"
 #include "shader_resource_set.hpp"
-#include <cstring>
-#include <memory>
-#include <stdexcept>
-#include <tuple>
 #include <vector>
-#include <vulkan/vulkan_core.h>
 
 #define ALIGN_UP(value, alignment)                                             \
   (((value) + (alignment) - 1) & ~((alignment) - 1))

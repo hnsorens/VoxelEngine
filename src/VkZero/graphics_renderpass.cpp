@@ -1,5 +1,8 @@
 #include "VkZero/Internal/graphics_renderpass_internal.hpp"
 #include "VkZero/Internal/window_internal.hpp"
+#include "VkZero/Internal/graphics_pipeline_internal.hpp"
+#include "VkZero/Internal/shader_group_internal.hpp"
+#include "VkZero/Internal/image_internal.hpp"
 
 using namespace VkZero;
 RenderPassResourceBase::RenderPassResourceBase(const char *name,
@@ -17,9 +20,9 @@ RenderPassResourceSetBase::RenderPassResourceSetBase(
   impl = new RenderPassResourceSetImpl_T(std::move(resourceMap));
 }
 
-AttachmentBase::AttachmentBase(const char *name, VkFormat format, int location,
+AttachmentBase::AttachmentBase(const char *name, Format format, int location,
                                AttachmentType type) {
-  impl = new AttachmentImpl_T(name, format, location, (int)type);
+  impl = new AttachmentImpl_T(name, (VkFormat)format, location, (int)type);
 }
 
 AttachmentBase::AttachmentBase(const char *name) {
@@ -184,7 +187,7 @@ void GraphicsRenderpassImpl_T::createRenderPass(
     // Collect Attachments
     for (auto att : requiredAttachments) {
       attachments.push_back(
-          resources->resources[att->name]->image->images[i]->view);
+          resources->resources[att->name]->image->impl->images[i]->view);
     }
 
     VkFramebufferCreateInfo framebufferInfo{};
@@ -215,7 +218,7 @@ void GraphicsRenderpassImpl_T::recreateSwapchain(WindowImpl_T* window) {
   // size_t numImages = window->swapchainImageCount;
   // framebuffers.resize(numImages);
   for (size_t i = 0; i < framebuffers.size(); i++) {
-    VkImageView attachments[] = {window->swapchainImages.images[i]->view};
+    VkImageView attachments[] = {window->swapchainImages.impl->images[i]->view};
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebufferInfo.renderPass = renderPass;

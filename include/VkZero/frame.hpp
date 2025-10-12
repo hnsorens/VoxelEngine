@@ -1,159 +1,26 @@
 #pragma once
 
-#include "VkZero/Internal/core_internal.hpp"
-#include "VkZero/Internal/renderpass_internal.hpp"
-#include "VkZero/Internal/window_internal.hpp"
 #include "VkZero/info.hpp"
 #include <iostream>
-#include <vulkan/vulkan_core.h>
+#include <vector>
+
 namespace VkZero {
 
-struct frameImpl_T {
-  frameImpl_T(std::vector<RenderpassImpl_T *> renderpasses, WindowImpl_T* window)
-      : renderpasses(renderpasses), window(window) {
-    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+using frame_t = uint32_t;
 
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+struct FrameBase {
+  FrameBase(std::vector<struct RenderpassImpl_T *> renderpasses, struct WindowImpl_T* window);
 
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+  void draw();
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-      if (vkCreateSemaphore(VkZero::vkZero_core->device, &semaphoreInfo,
-                            nullptr,
-                            &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-          vkCreateSemaphore(VkZero::vkZero_core->device, &semaphoreInfo,
-                            nullptr,
-                            &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-          vkCreateFence(VkZero::vkZero_core->device, &fenceInfo, nullptr,
-                        &inFlightFences[i]) != VK_SUCCESS) {
-        throw std::runtime_error(
-            "failed to create synchronization objects for a frame!");
-      }
-    }
+  frame_t getFrame();
 
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex =
-        VkZero::vkZero_core->queueFamilyIndices.graphicsFamily.value();
-
-    if (vkCreateCommandPool(VkZero::vkZero_core->device, &poolInfo, nullptr,
-                            &commandPool) != VK_SUCCESS) {
-      throw std::runtime_error("failed to create command pool!");
-    }
-
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t)renderpasses.size();
-
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-      commandBuffers[i].resize(renderpasses.size());
-      if (vkAllocateCommandBuffers(VkZero::vkZero_core->device, &allocInfo,
-                                   commandBuffers[i].data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate command buffers!");
-      }
-    }
-  }
-
-  void draw() {
-    VkResult fenceResult = vkWaitForFences(
-        VkZero::vkZero_core->device, 1, &inFlightFences[currentFrame], VK_TRUE,
-        1000000000); // 1 second timeout
-
-    if (fenceResult == VK_TIMEOUT) {
-      std::cout << "Warning: Frame fence timeout, continuing anyway"
-                << std::endl;
-    }
-    uint32_t imageIndex;
-    if (window->nextImage(imageIndex, imageAvailableSemaphores[currentFrame])) {
-      for (auto r : renderpasses) {
-        r->recreateSwapchain(window);
-      }
-      return;
-    }
-
-    vkResetFences(VkZero::vkZero_core->device, 1, &inFlightFences[currentFrame]);
-
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    for (int i = 0; i < renderpasses.size(); i++) {
-      vkResetCommandBuffer(commandBuffers[currentFrame][i], 0);
-      if (vkBeginCommandBuffer(commandBuffers[currentFrame][i], &beginInfo) !=
-          VK_SUCCESS) {
-        throw std::runtime_error("failed to begin recording command buffer!");
-      }
-
-      renderpasses[i]->record(commandBuffers[currentFrame][i], window,
-                              currentFrame, imageIndex);
-
-      if (vkEndCommandBuffer(commandBuffers[currentFrame][i]) != VK_SUCCESS) {
-        throw std::runtime_error("failed to record raytracing command buffer!");
-      }
-    }
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-    VkPipelineStageFlags waitStages[] = {
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-    std::vector<VkCommandBuffer> commands;
-
-    submitInfo.commandBufferCount = commandBuffers[currentFrame].size();
-    submitInfo.pCommandBuffers = commandBuffers[currentFrame].data();
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    if (vkQueueSubmit(VkZero::vkZero_core->graphicsQueue, 1, &submitInfo,
-                      inFlightFences[currentFrame]) != VK_SUCCESS) {
-      throw std::runtime_error("failed to submit draw command buffer!");
-    }
-
-    if (window->present(imageIndex, renderFinishedSemaphores[currentFrame])) {
-      for (auto r : renderpasses)
-      {
-        r->recreateSwapchain(window);
-      }
-    }
-
-    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-  }
-
-  std::vector<VkSemaphore> imageAvailableSemaphores;
-  std::vector<VkSemaphore> renderFinishedSemaphores;
-  std::vector<VkFence> inFlightFences;
-  int currentFrame = 0;
-  std::vector<RenderpassImpl_T *> renderpasses;
-  std::vector<VkCommandBuffer> commandBuffers[MAX_FRAMES_IN_FLIGHT];
-  WindowImpl_T *window;
-  VkCommandPool commandPool;
+  struct FrameImpl_T *impl;
 };
 
-struct frameBase {
-  frameBase(std::vector<struct RenderpassImpl_T *> renderpasses, WindowImpl_T* window) {
-    impl = new frameImpl_T(std::move(renderpasses), window);
-  }
-
-  void draw() { impl->draw(); }
-
-  struct frameImpl_T *impl;
-};
-
-template <typename... Renderpasses> class frame : public frameBase {
+template <typename... Renderpasses> class Frame : public FrameBase {
 public:
-  frame(Renderpasses &...renderpasses, WindowImpl_T* window)
-      : frameBase({(struct RenderpassImpl_T *)(renderpasses.impl)...}, window) {}
+  Frame(Renderpasses &...renderpasses, WindowImpl_T* window)
+      : FrameBase({(struct RenderpassImpl_T *)(renderpasses.impl)...}, window) {}
 };
 } // namespace VkZero

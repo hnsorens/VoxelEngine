@@ -25,8 +25,6 @@ public:
   }
 
   static std::unique_ptr<VkZero::Window> Window;
-  static std::unique_ptr<class SyncManager> syncManager;
-  static std::unique_ptr<class CommandManager> commandManager;
   static std::unique_ptr<class VkZeroObjects> obj;
   static std::unique_ptr<class VoxelWorld> voxelWorld;
   static std::unique_ptr<class Camera> camera;
@@ -55,7 +53,6 @@ public:
                                 uint32_t imageIndex, uint8_t section);
   static void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
   static void drawFrame();
-  static VkZero::SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
   static VKAPI_ATTR VkBool32 VKAPI_CALL
   debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

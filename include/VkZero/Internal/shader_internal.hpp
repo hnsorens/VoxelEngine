@@ -2,7 +2,7 @@
 
 #include "VkZero/shader.hpp"
 #include "VkZero/Internal/core_internal.hpp"
-#include "VkZero/resource_manager.hpp"
+#include "VkZero/Internal/resource_manager_internal.hpp"
 #include <string>
 #include <vulkan/vulkan_core.h>
 namespace VkZero

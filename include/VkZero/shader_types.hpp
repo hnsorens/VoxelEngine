@@ -1,21 +1,13 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
-#include <tuple>
-#include <memory>
-
 namespace VkZero
 {
     enum ShaderType
     {
-        SHADER_VERTEX = VK_SHADER_STAGE_VERTEX_BIT,
-        SHADER_FRAGMENT = VK_SHADER_STAGE_FRAGMENT_BIT,
-        SHADER_GEOMETRY = VK_SHADER_STAGE_GEOMETRY_BIT,
-        SHADER_RMISS = VK_SHADER_STAGE_MISS_BIT_KHR,
-        SHADER_RGEN = VK_SHADER_STAGE_RAYGEN_BIT_KHR,
+        SHADER_VERTEX = 0x00000001,
+        SHADER_FRAGMENT = 0x00000010,
+        SHADER_GEOMETRY = 0x00000008,
+        SHADER_RMISS = 0x00000800,
+        SHADER_RGEN = 0x00000100,
     };
-
-    // Forward declarations for ShaderTypes class
-    template <typename... Shaders>
-    class ShaderTypes;
 }

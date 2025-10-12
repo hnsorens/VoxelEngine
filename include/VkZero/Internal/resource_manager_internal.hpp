@@ -1,9 +1,9 @@
 #pragma once
-#include "CommandManager.hpp"
 #include <cstdint>
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 namespace VkZero
 {
@@ -16,9 +16,11 @@ namespace VkZero
     transitionImageLayout(VkCommandBuffer commandBuffer,
                           VkImage image, VkFormat format, VkImageLayout oldLayout,
                           VkImageLayout newLayout, uint32_t mipLevels);
-    static void transitionImageLayout(std::unique_ptr<CommandManager> &commandManager,
+    static void transitionImageLayout(
                                     VkImage image, VkFormat format, VkImageLayout oldLayout,
                                     VkImageLayout newLayout, uint32_t mipLevels);
     static std::vector<char> readFile(const std::string &filename);
+    static VkCommandBuffer beginSingleTimeCommands();
+    static void endSingleTimeCommands(VkCommandBuffer commandBuffer);
   };  
 }

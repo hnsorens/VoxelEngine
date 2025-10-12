@@ -1,10 +1,11 @@
 #include "VkZero/Internal/binding_internal.hpp"
+#include "VkZero/Internal/bind_resource_internal.hpp"
 
 using namespace VkZero;
 
 ResourceBindingImpl_T::ResourceBindingImpl_T(std::vector<BindResource*> resources,
                         VkDescriptorType type, uint32_t descriptorCount,
-                        uint32_t binding, VkShaderStageFlags stages)
+                        uint32_t binding, uint32_t stages)
       : resources(resources), descriptorCount(descriptorCount), type(type),
         binding(binding), stages(stages) {}
 
@@ -15,8 +16,6 @@ ResourceBindingImpl_T::ResourceBindingImpl_T(std::vector<BindResource*> resource
   uint32_t binding;
   
   void ResourceBindingImpl_T::writeAll(VkDevice device, std::vector<VkDescriptorSet> descriptorSets) {
-    if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-      return;
     for (int i = 0; i < descriptorCount; i++) {
       for (int frame = 0; frame < descriptorSets.size(); frame++)
         write(device, descriptorSets[frame], i, frame);
@@ -30,10 +29,10 @@ ResourceBindingImpl_T::ResourceBindingImpl_T(std::vector<BindResource*> resource
   }
 
 ResourceBindingBase::ResourceBindingBase(std::vector<BindResource *> resources,
-                                         VkDescriptorType type,
+                                         DescriptorType type,
                                          uint32_t descriptorCount,
                                          uint32_t binding,
-                                         VkShaderStageFlags stages) {
-  impl = new ResourceBindingImpl_T(resources, type, descriptorCount, binding,
+                                         uint32_t stages) {
+  impl = new ResourceBindingImpl_T(resources, (VkDescriptorType)type, descriptorCount, binding,
                                    stages);
 }

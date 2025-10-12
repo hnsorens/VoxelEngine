@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VkZero/shader_group.hpp"
+#include <vulkan/vulkan_core.h>
 
 namespace VkZero {
 

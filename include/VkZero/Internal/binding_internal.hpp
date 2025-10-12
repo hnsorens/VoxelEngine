@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VkZero/binding.hpp"
+#include <vulkan/vulkan_core.h>
 
 namespace VkZero {
 struct ResourceBindingImpl_T {
