@@ -2,6 +2,8 @@
 
 #include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/image.hpp"
+#include "VkZero/Internal/resource_manager_internal.hpp"
+#include "VkZero/Internal/bind_resource_internal.hpp"
 
 namespace VkZero
 {

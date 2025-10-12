@@ -1,17 +1,9 @@
 #pragma once
 
-#include "VkZero/Internal/core_internal.hpp"
-#include "VkZero/Internal/bind_resource_internal.hpp"
-#include "VkZero/info.hpp"
-#include "VkZero/Internal/resource_manager_internal.hpp"
 #include "VkZero/types.hpp"
-#include "image.hpp"
-#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <memory>
-#include <vector>
 #include <vulkan/vulkan_core.h>
 
 namespace VkZero {

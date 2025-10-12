@@ -1,5 +1,8 @@
 #include "VkZero/Internal/graphics_renderpass_internal.hpp"
 #include "VkZero/Internal/window_internal.hpp"
+#include "VkZero/Internal/graphics_pipeline_internal.hpp"
+#include "VkZero/Internal/shader_group_internal.hpp"
+#include "VkZero/Internal/image_internal.hpp"
 
 using namespace VkZero;
 RenderPassResourceBase::RenderPassResourceBase(const char *name,

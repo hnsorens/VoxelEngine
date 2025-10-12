@@ -1,5 +1,6 @@
 #include "VkZero/Internal/raytracing_renderpass_internal.hpp"
 #include "VkZero/Internal/graphics_renderpass_internal.hpp"
+#include "VkZero/Internal/raytracing_pipeline_internal.hpp"
 
 using namespace VkZero;
 

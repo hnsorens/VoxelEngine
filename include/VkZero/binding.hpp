@@ -1,9 +1,9 @@
 #pragma once
 
-#include "VkZero/Internal/bind_resource_internal.hpp"
 #include <cstring>
 #include <type_traits>
 #include <vector>
+#include <vulkan/vulkan_core.h>
 
 namespace VkZero {
 
@@ -21,7 +21,7 @@ struct ShaderBinding {
 
 struct ResourceBindingBase {
 public:
-  ResourceBindingBase(std::vector<BindResource *> resources,
+  ResourceBindingBase(std::vector<struct BindResource *> resources,
                       VkDescriptorType type, uint32_t descriptorCount,
                       uint32_t binding, VkShaderStageFlags stages);
 
@@ -41,16 +41,16 @@ struct ResourceBinding : public ResourceBindingBase {
   template <std::size_t... Is>
   static constexpr auto create_init_list(Resource *info,
                                          std::index_sequence<Is...>) {
-    return std::initializer_list<BindResource *>{
-        static_cast<BindResource *>(&info[Is])...};
+    return std::initializer_list<struct BindResource *>{
+        static_cast<struct BindResource *>(&info[Is])...};
   }
 
   ResourceBinding(Resource *info)
       : ResourceBindingBase(
             [&]() {
-              std::vector<BindResource *> bindings;
+              std::vector<struct BindResource*> bindings;
               for (int i = 0; i < DescriptorCount; ++i) {
-                bindings.push_back(info[i].impl);
+                bindings.push_back((BindResource*)info[i].impl);
               }
               return std::move(bindings);
             }(),

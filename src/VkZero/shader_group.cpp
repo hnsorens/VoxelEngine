@@ -1,4 +1,5 @@
 #include "VkZero/Internal/shader_group_internal.hpp"
+#include "VkZero/Internal/shader_internal.hpp"
 
 using namespace VkZero;
 

@@ -1028,7 +1028,6 @@ contains	src/VkZero/descriptor_pool.cpp	/^struct contains<T, std::tuple<U, Rest.
 contains_attachment	include/VkZero/render_pass.hpp	/^struct contains_attachment<T, std::tuple<First, Rest...>>$/;"	s	namespace:VkZero::RenderPassDetails
 createInstance	src/VkZero/core.cpp	/^void VkZeroCoreImpl_T::createInstance() {$/;"	f	class:VkZeroCoreImpl_T	typeref:typename:void
 createLogicalDevice	src/VkZero/core.cpp	/^void VkZeroCoreImpl_T::createLogicalDevice(WindowImpl_T* window) {$/;"	f	class:VkZeroCoreImpl_T	typeref:typename:void
-createRaytracingPipeline	src/VkZeroObjects.cpp	/^void VkZeroObjects::createRaytracingPipeline($/;"	f	class:VkZeroObjects	typeref:typename:void
 createRenderPass	src/VkZero/graphics_renderpass.cpp	/^void GraphicsRenderpassImpl_T::createRenderPass($/;"	f	class:GraphicsRenderpassImpl_T	typeref:typename:void
 createShaderModule	src/VkZero/shader.cpp	/^VkShaderModule ShaderImpl_T::createShaderModule(VkDevice device,$/;"	f	class:ShaderImpl_T	typeref:typename:VkShaderModule
 createSwapChain	src/VkZero/window.cpp	/^void WindowImpl_T::createSwapChain(VkSwapchainKHR& swapChain) {$/;"	f	class:WindowImpl_T	typeref:typename:void
@@ -1364,7 +1363,6 @@ raytracingStorageImage	include/VkZeroObjects.hpp	/^  VkZero::SwapImage raytracin
 readFile	src/VkZero/resource_manager.cpp	/^std::vector<char> ResourceManager::readFile(const std::string &filename) {$/;"	f	class:ResourceManager	typeref:typename:std::vector<char>
 record	src/VkZero/graphics_renderpass.cpp	/^void GraphicsRenderpassImpl_T::record(VkCommandBuffer commandBuffer,$/;"	f	class:GraphicsRenderpassImpl_T	typeref:typename:void
 record	src/VkZero/raytracing_renderpass.cpp	/^void RaytracingRenderpassImpl_T::record(VkCommandBuffer commandBuffer,$/;"	f	class:RaytracingRenderpassImpl_T	typeref:typename:void
-recordRaytracingCommandBuffer	src/VkZeroObjects.cpp	/^void VkZeroObjects::recordRaytracingCommandBuffer(VkCommandBuffer commandBuffer,$/;"	f	class:VkZeroObjects	typeref:typename:void
 recreateSwapchain	include/VkZero/Internal/raytracing_renderpass_internal.hpp	/^  void recreateSwapchain(WindowImpl_T* window) override {}$/;"	f	struct:VkZero::RaytracingRenderpassImpl_T	typeref:typename:void
 recreateSwapchain	src/VkZero/graphics_renderpass.cpp	/^void GraphicsRenderpassImpl_T::recreateSwapchain(WindowImpl_T* window) {$/;"	f	class:GraphicsRenderpassImpl_T	typeref:typename:void
 recreateSwapchain	src/VkZero/window.cpp	/^void WindowImpl_T::recreateSwapchain() {$/;"	f	class:WindowImpl_T	typeref:typename:void

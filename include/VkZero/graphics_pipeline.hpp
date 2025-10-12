@@ -1,11 +1,7 @@
 #pragma once
 
-#include "VkZero/Internal/shader_group_internal.hpp"
-#include "VkZero/Internal/shader_resource_set_internal.hpp"
 #include "shader_group.hpp"
 #include "shader_resource_set.hpp"
-#include <memory>
-#include <stdexcept>
 #include <tuple>
 #include <vector>
 #include <vulkan/vulkan_core.h>

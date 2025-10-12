@@ -1,6 +1,5 @@
 #pragma once
 
-#include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/binding.hpp"
 #include "VkZero/descriptor_pool.hpp"
 #include "VkZero/info.hpp"

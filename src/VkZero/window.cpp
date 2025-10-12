@@ -2,6 +2,7 @@
 #include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/Internal/window_internal.hpp"
 #include "VkZero/image.hpp"
+#include "VkZero/info.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <cstdio>

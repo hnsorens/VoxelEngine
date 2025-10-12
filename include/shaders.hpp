@@ -2,9 +2,9 @@
 
 
 #include "VkZero/render_pass.hpp"
-#include "VkZero/shader_builder.hpp"
 #include <vulkan/vulkan_core.h>
 #include "VkZero/binding.hpp"
+#include "VkZero/shader_library.hpp"
 
 struct RaytracingPushConstant {
   uint32_t flag;

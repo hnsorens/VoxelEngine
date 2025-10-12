@@ -1,4 +1,6 @@
 #include "VkZero/Internal/frame_internal.hpp"
+#include "VkZero/Internal/window_internal.hpp"
+#include "VkZero/Internal/renderpass_internal.hpp"
 
 using namespace VkZero;
 

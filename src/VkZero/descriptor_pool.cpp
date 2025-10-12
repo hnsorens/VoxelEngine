@@ -1,4 +1,5 @@
 #include "VkZero/descriptor_pool.hpp"
+#include "VkZero/Internal/core_internal.hpp"
 #include "shaders.hpp"
 #include <tuple>
 #include <utility>

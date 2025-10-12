@@ -2,6 +2,8 @@
 #pragma once
 #include "Camera.hpp"
 #include "VkZero/frame.hpp"
+#include "VkZero/raytracing_pipeline.hpp"
+#include "VkZero/shader_resource_set.hpp"
 #include "VkZero/uniform_buffer.hpp"
 #include "VoxelWorld.hpp"
 #include "VkZero/image.hpp"
@@ -24,22 +26,7 @@ public:
             std::unique_ptr<VoxelWorld> &voxelWorld,
             std::unique_ptr<class Camera> &camera, std::unique_ptr<VkZero::Window> &window, std::function<void(VkCommandBuffer, uint32_t)> after);
   ~VkZeroObjects();
-
-  void createRaytracingPipeline(
-      VkDevice device, std::vector<VkBuffer> &uniformBuffer,
-      VkZero::StagedSharedImage* voxelImage,
-      VkZero::StagedSharedImage* voxelChunkMapImage);
-  void createRaytracingResources(
-      std::unique_ptr<class CommandManager> &commandManager);
-  void recordRaytracingCommandBuffer(VkCommandBuffer commandBuffer,
-                                     uint32_t imageIndex, uint8_t section);
-
-  const VkPipeline &getPipeline() const;
-  const VkPipelineLayout &getPipelineLayout() const;
-  const VkDescriptorSet &getDescriptorSet(int i) const;
-  VkZero::SwapImage* getStorageImage();
-
-// private:
+  
 
   using RaytracingPushConstants = VkZero::ShaderPushConstants<VkZero::PushConstant<RaytracingPushConstant, VkZero::SHADER_RGEN>>;
   using RaytracingShaderGroup = VkZero::ShaderGroup<RaytracingPushConstants, main_rmiss, main_rgen>;

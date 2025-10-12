@@ -1,4 +1,5 @@
 #include "VkZero/Internal/binding_internal.hpp"
+#include "VkZero/Internal/bind_resource_internal.hpp"
 
 using namespace VkZero;
 

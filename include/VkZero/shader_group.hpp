@@ -1,6 +1,5 @@
 #pragma once
 
-#include "VkZero/Internal/shader_internal.hpp"
 #include "shader.hpp"
 #include <tuple>
 #include <vector>

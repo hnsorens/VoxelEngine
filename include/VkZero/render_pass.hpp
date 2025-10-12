@@ -1,10 +1,7 @@
 #pragma once
 
-#include "VkZero/Internal/core_internal.hpp"
-#include "VkZero/Internal/graphics_pipeline_internal.hpp"
-#include "VkZero/Internal/image_internal.hpp"
-#include "VkZero/Internal/raytracing_pipeline_internal.hpp"
 #include "VkZero/fixed_string.hpp"
+#include "VkZero/shader_group.hpp"
 #include "VkZero/window.hpp"
 #include <cstdint>
 #include <cstdio>
@@ -257,8 +254,8 @@ constexpr void tuple_for_each(Tuple &&t, Func &&f) {
 struct GraphicsRenderpassBase {
   GraphicsRenderpassBase(uint32_t width, uint32_t height,
                  RenderPassResourceSetImpl_T *resources,
-                 std::vector<GraphicsPipelineImpl_T *> pipelines,
-                 std::vector<AttachmentImpl_T *> requiredAttachments);
+                 std::vector<struct GraphicsPipelineImpl_T *> pipelines,
+                 std::vector<struct AttachmentImpl_T *> requiredAttachments);
 
   struct GraphicsRenderpassImpl_T *impl;
 };
@@ -307,7 +304,7 @@ public:
 struct RaytracingRenderpassBase {
   RaytracingRenderpassBase(
       std::vector<
-          std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
+          std::pair<struct RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
           pipelines, std::function<void(VkCommandBuffer, uint32_t)> before, std::function<void(VkCommandBuffer, uint32_t)> after);
 
   struct RaytracingRenderpassImpl_T *impl;

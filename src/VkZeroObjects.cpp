@@ -94,36 +94,4 @@ VkZeroObjects::VkZeroObjects(
 
 VkZeroObjects::~VkZeroObjects() {}
 
-void VkZeroObjects::createRaytracingPipeline(
-    VkDevice device, std::vector<VkBuffer> &uniformBuffer,
-    VkZero::StagedSharedImage *voxelImage,
-    VkZero::StagedSharedImage *voxelChunkMapImage) {
-
-  for (int i = 0; i < 2; i++) {
-
-    VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = uniformBuffer[i];
-    bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(TransformUBO);
-
-    VkWriteDescriptorSet writeTransformDescriptorSet = {};
-    writeTransformDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeTransformDescriptorSet.dstSet =
-        raytracingResourceSet.impl->descriptorSets[i];
-    writeTransformDescriptorSet.dstBinding = 1;
-    writeTransformDescriptorSet.dstArrayElement = 0;
-    writeTransformDescriptorSet.descriptorType =
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writeTransformDescriptorSet.descriptorCount = 1;
-    writeTransformDescriptorSet.pBufferInfo = &bufferInfo;
-
-    vkUpdateDescriptorSets(VkZero::vkZero_core->device, 1,
-                           &writeTransformDescriptorSet, 0, nullptr);
-  }
-}
-
-void VkZeroObjects::recordRaytracingCommandBuffer(VkCommandBuffer commandBuffer,
-                                                  uint32_t imageIndex,
-                                                  uint8_t section) {}
-
 void VkZeroObjects::draw() { frame.draw(); }

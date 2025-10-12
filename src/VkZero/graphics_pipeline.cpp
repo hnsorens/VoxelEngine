@@ -1,4 +1,7 @@
+#include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/Internal/graphics_pipeline_internal.hpp"
+#include "VkZero/Internal/shader_group_internal.hpp"
+#include "VkZero/Internal/shader_resource_set_internal.hpp"
 
 using namespace VkZero;
 
