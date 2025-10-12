@@ -15,8 +15,6 @@ ResourceBindingImpl_T::ResourceBindingImpl_T(std::vector<BindResource*> resource
   uint32_t binding;
   
   void ResourceBindingImpl_T::writeAll(VkDevice device, std::vector<VkDescriptorSet> descriptorSets) {
-    if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-      return;
     for (int i = 0; i < descriptorCount; i++) {
       for (int frame = 0; frame < descriptorSets.size(); frame++)
         write(device, descriptorSets[frame], i, frame);

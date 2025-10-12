@@ -61,7 +61,22 @@ for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 void UniformBufferImpl_T::writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,
                   uint32_t binding, uint32_t element,
                   VkDescriptorType type, int frame) {
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = uniformBuffer[frame];
+    bufferInfo.offset = 0;
+    bufferInfo.range = size;
 
+    VkWriteDescriptorSet writeTransformDescriptorSet = {};
+    writeTransformDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeTransformDescriptorSet.dstSet = descriptorSet;
+    writeTransformDescriptorSet.dstBinding = binding;
+    writeTransformDescriptorSet.dstArrayElement = element;
+    writeTransformDescriptorSet.descriptorType = type;
+    writeTransformDescriptorSet.descriptorCount = 1;
+    writeTransformDescriptorSet.pBufferInfo = &bufferInfo;
+
+    vkUpdateDescriptorSets(VkZero::vkZero_core->device, 1,
+                           &writeTransformDescriptorSet, 0, nullptr);
 }
 
 void UniformBufferImpl_T::update(int currentFrame)

@@ -1,6 +1,8 @@
 
 #pragma once
+#include "Camera.hpp"
 #include "VkZero/frame.hpp"
+#include "VkZero/uniform_buffer.hpp"
 #include "VoxelWorld.hpp"
 #include "VkZero/image.hpp"
 #include "shaders.hpp"
@@ -43,7 +45,7 @@ public:
   using RaytracingShaderGroup = VkZero::ShaderGroup<RaytracingPushConstants, main_rmiss, main_rgen>;
   using RaytracingResourceSet = VkZero::ShaderResourceSet<
     VkZero::ResourceBinding<VkZero::SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VkZero::SHADER_RGEN, 0, 1>,
-    VkZero::ResourceBinding<VkZero::SwapImage, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VkZero::SHADER_RGEN, 1, 1>,
+    VkZero::ResourceBinding<VkZero::UniformBuffer<TransformUBO>, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VkZero::SHADER_RGEN, 1, 1>,
     VkZero::ResourceBinding<VkZero::SwapImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VkZero::SHADER_RGEN, 2, 1>,
     VkZero::ResourceBinding<VkZero::StagedSharedImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VkZero::SHADER_RGEN, 3, 512>,
     VkZero::ResourceBinding<VkZero::StagedSharedImage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VkZero::SHADER_RGEN, 4, 1>,

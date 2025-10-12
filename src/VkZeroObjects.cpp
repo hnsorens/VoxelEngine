@@ -70,7 +70,7 @@ VkZeroObjects::VkZeroObjects(
                             VoxelEngine::get_shader<"main_rmiss">(),
                             VoxelEngine::get_shader<"main_rgen">()),
       raytracingResourceSet{
-          {&raytracingStorageImage},         {&raytracingStorageImage},
+          {&raytracingStorageImage},         {&camera->uniformBuffer},
           {&raytracingPositionStorageImage}, {voxelWorld->voxelImages.data()},
           {&voxelWorld->voxelChunkMapImage}, {&raytracingLightStorageImageX},
           {&raytracingLightStorageImageY},   {&raytracingLightStorageImageZ},
@@ -90,9 +90,6 @@ VkZeroObjects::VkZeroObjects(
                          window->getSwapChainExtent().height,
                          graphicsRenderpassAttachmentSet, graphicsPipeline},
       frame{raytracingRenderPass, graphicsRenderPass, window->impl} {
-  createRaytracingPipeline(
-      VkZero::vkZero_core->device, camera->uniformBuffer.impl->uniformBuffer,
-      voxelWorld->voxelImages.data(), &voxelWorld->voxelChunkMapImage);
 }
 
 VkZeroObjects::~VkZeroObjects() {}
