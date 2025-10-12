@@ -377,8 +377,8 @@ ColorAttachment	include/VkZero/render_pass.hpp	/^struct ColorAttachment : public
 ColorAttachmentOptimal	include/VkZero/types.hpp	/^        ColorAttachmentOptimal = 2,$/;"	e	enum:VkZero::ImageLayout
 CombinedBindings	include/VkZero/binding.hpp	/^template <typename... Shaders> struct CombinedBindings {$/;"	s	namespace:VkZero
 CreateDebugUtilsMessengerEXT	src/VkZero/core.cpp	/^VkResult VkZeroCoreImpl_T::CreateDebugUtilsMessengerEXT($/;"	f	class:VkZeroCoreImpl_T	typeref:typename:VkResult
-CreateImages	include/VkZero/image.hpp	/^  void CreateImages(VkImageUsageFlags usage, VkMemoryPropertyFlags properties,$/;"	f	class:VkZero::Image	typeref:typename:void
-CreateStagingBuffer	include/VkZero/image.hpp	/^  void CreateStagingBuffer(struct StagingData_T **staging, size_t imageCount) {$/;"	f	class:VkZero::Image	typeref:typename:void
+CreateImages	include/VkZero/Internal/image_internal.hpp	/^  void CreateImages(VkImageUsageFlags usage, VkMemoryPropertyFlags properties,$/;"	f	class:VkZero::Image	typeref:typename:void
+CreateStagingBuffer	include/VkZero/Internal/image_internal.hpp	/^  void CreateStagingBuffer(struct StagingData_T **staging, size_t imageCount) {$/;"	f	class:VkZero::Image	typeref:typename:void
 CubicLerp	include/FastNoiseLite.hpp	/^  static float CubicLerp(float a, float b, float c, float d, float t) {$/;"	f	class:FastNoiseLite	typeref:typename:float
 D16Unorm	include/VkZero/types.hpp	/^        D16Unorm = 124,$/;"	e	enum:VkZero::Format
 D16UnormS8Uint	include/VkZero/types.hpp	/^        D16UnormS8Uint = 128,$/;"	e	enum:VkZero::Format
@@ -514,10 +514,10 @@ GraphicsRenderpassImpl_T	src/VkZero/graphics_renderpass.cpp	/^GraphicsRenderpass
 HEIGHT	include/Engine.hpp	/^const uint32_t HEIGHT = 1280;$/;"	v	typeref:typename:const uint32_t
 Hash	include/FastNoiseLite.hpp	/^  static int Hash(int seed, int xPrimed, int yPrimed) {$/;"	f	class:FastNoiseLite	typeref:typename:int
 Hash	include/FastNoiseLite.hpp	/^  static int Hash(int seed, int xPrimed, int yPrimed, int zPrimed) {$/;"	f	class:FastNoiseLite	typeref:typename:int
-Image	include/VkZero/image.hpp	/^  Image(VkImage *vk_images, VkImageView *imageViews, size_t imageCount) {$/;"	f	class:VkZero::Image
-Image	include/VkZero/image.hpp	/^  Image(uint32_t width, uint32_t height, uint32_t depth, Format format,$/;"	f	class:VkZero::Image
-Image	include/VkZero/image.hpp	/^class Image {$/;"	c	namespace:VkZero
-ImageData_T	include/VkZero/image.hpp	/^struct ImageData_T {$/;"	s	namespace:VkZero
+Image	include/VkZero/Internal/image_internal.hpp	/^  Image(VkImage *vk_images, VkImageView *imageViews, size_t imageCount) {$/;"	f	class:VkZero::Image
+Image	include/VkZero/Internal/image_internal.hpp	/^  Image(uint32_t width, uint32_t height, uint32_t depth, Format format,$/;"	f	class:VkZero::Image
+Image	include/VkZero/Internal/image_internal.hpp	/^class Image {$/;"	c	namespace:VkZero
+ImageData_T	include/VkZero/Internal/image_internal.hpp	/^struct ImageData_T {$/;"	s	namespace:VkZero
 ImageLayout	include/VkZero/types.hpp	/^    enum class ImageLayout : uint32_t {$/;"	g	namespace:VkZero	typeref:typename:uint32_t
 InputAttachment	include/VkZero/render_pass.hpp	/^  InputAttachment()$/;"	f	struct:VkZero::InputAttachment
 InputAttachment	include/VkZero/render_pass.hpp	/^struct InputAttachment : public AttachmentBase {$/;"	s	namespace:VkZero
@@ -543,18 +543,18 @@ MAX_POOL_SETS	src/VkZero/descriptor_pool.cpp	/^#define MAX_POOL_SETS /;"	d	file:
 MultiImage	include/VkZero/image.hpp	/^  MultiImage(VkImage *vk_images, VkImageView *imageViews, size_t imageCount)$/;"	f	class:VkZero::MultiImage
 MultiImage	include/VkZero/image.hpp	/^  MultiImage(uint32_t width, uint32_t height, uint32_t depth, Format format,$/;"	f	class:VkZero::MultiImage
 MultiImage	include/VkZero/image.hpp	/^template <int MaxImageCount> class MultiImage : public MultiImageBase {$/;"	c	namespace:VkZero
-MultiImageBase	include/VkZero/image.hpp	/^  MultiImageBase(VkImage* vk_images, VkImageView* imageViews, size_t imageCount)$/;"	f	struct:VkZero::MultiImageBase
-MultiImageBase	include/VkZero/image.hpp	/^  MultiImageBase(uint32_t width, uint32_t height, uint32_t depth, Format format, VkImageUsageFla/;"	f	struct:VkZero::MultiImageBase
 MultiImageBase	include/VkZero/image.hpp	/^struct MultiImageBase$/;"	s	namespace:VkZero
-MultiImageImpl_T	include/VkZero/image.hpp	/^  MultiImageImpl_T(VkImage* vk_images, VkImageView* imageViews, size_t imageCount) : Image(vk_im/;"	f	struct:VkZero::MultiImageImpl_T
-MultiImageImpl_T	include/VkZero/image.hpp	/^  MultiImageImpl_T(uint32_t width, uint32_t height, uint32_t depth, Format format, VkImageUsageF/;"	f	struct:VkZero::MultiImageImpl_T
-MultiImageImpl_T	include/VkZero/image.hpp	/^struct MultiImageImpl_T : public BindResource, Image$/;"	s	namespace:VkZero
+MultiImageBase	src/VkZero/image.cpp	/^MultiImageBase::MultiImageBase(VkImage* vk_images, VkImageView* imageViews, size_t imageCount)$/;"	f	class:MultiImageBase
+MultiImageBase	src/VkZero/image.cpp	/^MultiImageBase::MultiImageBase(uint32_t width, uint32_t height, uint32_t depth, Format format, V/;"	f	class:MultiImageBase
+MultiImageImpl_T	include/VkZero/Internal/image_internal.hpp	/^struct MultiImageImpl_T : public BindResource, Image$/;"	s	namespace:VkZero
+MultiImageImpl_T	src/VkZero/image.cpp	/^MultiImageImpl_T::MultiImageImpl_T(VkImage* vk_images, VkImageView* imageViews, size_t imageCoun/;"	f	class:MultiImageImpl_T
+MultiImageImpl_T	src/VkZero/image.cpp	/^MultiImageImpl_T::MultiImageImpl_T(uint32_t width, uint32_t height, uint32_t depth, Format forma/;"	f	class:MultiImageImpl_T
 MultiStagedImage	include/VkZero/image.hpp	/^  MultiStagedImage(uint32_t width, uint32_t height, uint32_t depth,$/;"	f	class:VkZero::MultiStagedImage
 MultiStagedImage	include/VkZero/image.hpp	/^class MultiStagedImage : public MultiStagedImageBase {$/;"	c	namespace:VkZero
-MultiStagedImageBase	include/VkZero/image.hpp	/^  MultiStagedImageBase(uint32_t width, uint32_t height, uint32_t depth, Format format, VkImageUs/;"	f	struct:VkZero::MultiStagedImageBase
 MultiStagedImageBase	include/VkZero/image.hpp	/^struct MultiStagedImageBase$/;"	s	namespace:VkZero
-MultiStagedImageImpl_T	include/VkZero/image.hpp	/^  MultiStagedImageImpl_T(uint32_t width, uint32_t height, uint32_t depth, Format format, VkImage/;"	f	struct:VkZero::MultiStagedImageImpl_T
-MultiStagedImageImpl_T	include/VkZero/image.hpp	/^struct MultiStagedImageImpl_T : public BindResource, Image$/;"	s	namespace:VkZero
+MultiStagedImageBase	src/VkZero/image.cpp	/^MultiStagedImageBase::MultiStagedImageBase(uint32_t width, uint32_t height, uint32_t depth, Form/;"	f	class:MultiStagedImageBase
+MultiStagedImageImpl_T	include/VkZero/Internal/image_internal.hpp	/^struct MultiStagedImageImpl_T : public BindResource, Image$/;"	s	namespace:VkZero
+MultiStagedImageImpl_T	src/VkZero/image.cpp	/^  MultiStagedImageImpl_T::MultiStagedImageImpl_T(uint32_t width, uint32_t height, uint32_t depth/;"	f	class:MultiStagedImageImpl_T
 NO_FUNCTION	include/VkZero/render_pass.hpp	/^  static void NO_FUNCTION(VkCommandBuffer commandBuffer, uint32_t currentFrame) {}$/;"	f	class:VkZero::RaytracingRenderPass	typeref:typename:void
 NoiseType	include/FastNoiseLite.hpp	/^  enum NoiseType {$/;"	g	class:FastNoiseLite
 NoiseType_Cellular	include/FastNoiseLite.hpp	/^    NoiseType_Cellular,$/;"	e	enum:FastNoiseLite::NoiseType
@@ -831,7 +831,7 @@ SingleValueCubic	include/FastNoiseLite.hpp	/^  float SingleValueCubic(int seed, 
 StagedAttachmentImage	include/VkZero/image.hpp	/^using StagedAttachmentImage = class MultiStagedImage<3>;$/;"	t	namespace:VkZero	typeref:class:MultiStagedImage<3>
 StagedSharedImage	include/VkZero/image.hpp	/^using StagedSharedImage = class MultiStagedImage<1>;$/;"	t	namespace:VkZero	typeref:class:MultiStagedImage<1>
 StagedSwapImage	include/VkZero/image.hpp	/^using StagedSwapImage = class MultiStagedImage<2>;$/;"	t	namespace:VkZero	typeref:class:MultiStagedImage<2>
-StagingData_T	include/VkZero/image.hpp	/^struct StagingData_T {$/;"	s	namespace:VkZero
+StagingData_T	include/VkZero/Internal/image_internal.hpp	/^struct StagingData_T {$/;"	s	namespace:VkZero
 StencilAttachmentOptimal	include/VkZero/types.hpp	/^        StencilAttachmentOptimal = 1000241002,$/;"	e	enum:VkZero::ImageLayout
 StencilReadOnlyOptimal	include/VkZero/types.hpp	/^        StencilReadOnlyOptimal = 1000241003,$/;"	e	enum:VkZero::ImageLayout
 Structure	include/VkZero/shader_group.hpp	/^  using Structure = T;$/;"	t	struct:VkZero::PushConstant	typeref:typename:T
@@ -858,8 +858,8 @@ UniformBuffer	include/VkZero/uniform_buffer.hpp	/^  UniformBuffer(Structure &ubo
 UniformBuffer	include/VkZero/uniform_buffer.hpp	/^class UniformBuffer : public UniformBufferBase {$/;"	c	namespace:VkZero
 UniformBufferBase	include/VkZero/uniform_buffer.hpp	/^struct UniformBufferBase$/;"	s	namespace:VkZero
 UniformBufferBase	src/VkZero/uniform_buffer.cpp	/^UniformBufferBase::UniformBufferBase(void* ubo, size_t size)$/;"	f	class:UniformBufferBase
-UniformBufferImpl_T	include/VkZero/Internal/uniform_buffer_internal.hpp	/^    UniformBufferImpl_T(void* ubo, size_t size) : size(size), ubo(ubo)$/;"	f	struct:VkZero::UniformBufferImpl_T
 UniformBufferImpl_T	include/VkZero/Internal/uniform_buffer_internal.hpp	/^struct UniformBufferImpl_T : public BindResource$/;"	s	namespace:VkZero
+UniformBufferImpl_T	src/VkZero/uniform_buffer.cpp	/^UniformBufferImpl_T::UniformBufferImpl_T(void* ubo, size_t size) : size(size), ubo(ubo)$/;"	f	class:UniformBufferImpl_T
 UpdateTransformType3D	include/FastNoiseLite.hpp	/^  void UpdateTransformType3D() {$/;"	f	class:FastNoiseLite	typeref:typename:void
 UpdateWarpTransformType3D	include/FastNoiseLite.hpp	/^  void UpdateWarpTransformType3D() {$/;"	f	class:FastNoiseLite	typeref:typename:void
 ValCoord	include/FastNoiseLite.hpp	/^  static float ValCoord(int seed, int xPrimed, int yPrimed) {$/;"	f	class:FastNoiseLite	typeref:typename:float
@@ -877,6 +877,7 @@ VkZero	include/VkZero/Internal/binding_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/core_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/graphics_pipeline_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^namespace VkZero {$/;"	n
+VkZero	include/VkZero/Internal/image_internal.hpp	/^namespace VkZero$/;"	n
 VkZero	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/raytracing_renderpass_internal.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZero/Internal/renderpass_internal.hpp	/^namespace VkZero {$/;"	n
@@ -924,9 +925,9 @@ Window	src/VkZero/window.cpp	/^Window::Window(int width, int height, const char 
 WindowImpl	include/VkZero/window.hpp	/^  using WindowImpl = struct WindowImpl_T*;$/;"	t	namespace:VkZero	typeref:struct:WindowImpl_T *
 WindowImpl_T	include/VkZero/Internal/window_internal.hpp	/^struct WindowImpl_T {$/;"	s	namespace:VkZero
 WindowImpl_T	src/VkZero/window.cpp	/^WindowImpl_T::WindowImpl_T(int width, int height, const char *title) :$/;"	f	class:WindowImpl_T
-Write	include/VkZero/image.hpp	/^  void Write(VkCommandBuffer commandBuffer, uint32_t index, char *data)$/;"	f	class:VkZero::Image	typeref:typename:void
-Write	include/VkZero/image.hpp	/^  void Write(uint32_t index, char *data)$/;"	f	class:VkZero::Image	typeref:typename:void
-WriteDescriptor	include/VkZero/image.hpp	/^  void WriteDescriptor(VkDevice device, VkDescriptorSet descriptorSet,$/;"	f	class:VkZero::Image	typeref:typename:void
+Write	include/VkZero/Internal/image_internal.hpp	/^  void Write(VkCommandBuffer commandBuffer, uint32_t index, char *data)$/;"	f	class:VkZero::Image	typeref:typename:void
+Write	include/VkZero/Internal/image_internal.hpp	/^  void Write(uint32_t index, char *data)$/;"	f	class:VkZero::Image	typeref:typename:void
+WriteDescriptor	include/VkZero/Internal/image_internal.hpp	/^  void WriteDescriptor(VkDevice device, VkDescriptorSet descriptorSet,$/;"	f	class:VkZero::Image	typeref:typename:void
 X8D24UnormPack32	include/VkZero/types.hpp	/^        X8D24UnormPack32 = 125,$/;"	e	enum:VkZero::Format
 __anon03e5b0750102	src/VkZero/descriptor_pool.cpp	/^       ([&](VkDescriptorType type){$/;"	f	function:DescriptorPool::DescriptorPool	file:
 __anon39fbc7830102	src/Engine.cpp	/^                                            voxelWorld, camera, Window, [&](VkCommandBuffer cb, /;"	f	function:VoxelEngine::initVulkan	file:
@@ -980,7 +981,7 @@ binding	src/VkZero/binding.cpp	/^  uint32_t binding;$/;"	v	typeref:typename:uint
 binding_compatibility_checker	include/VkZero/shader_group.hpp	/^  template <typename A, typename B> struct binding_compatibility_checker {$/;"	s	struct:VkZero::ShaderGroupDetails::shader_binding_validator
 bindings	include/VkZero/Internal/shader_resource_set_internal.hpp	/^  std::vector<ResourceBindingBase *> bindings;$/;"	m	struct:VkZero::ShaderResourceSetImpl_T	typeref:typename:std::vector<ResourceBindingBase * >
 bindings_extractor	include/VkZero/shader.hpp	/^        struct bindings_extractor<std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero::ShaderDetails
-buffer	include/VkZero/image.hpp	/^  VkBuffer buffer;$/;"	m	struct:VkZero::StagingData_T	typeref:typename:VkBuffer
+buffer	include/VkZero/Internal/image_internal.hpp	/^  VkBuffer buffer;$/;"	m	struct:VkZero::StagingData_T	typeref:typename:VkBuffer
 callableRegion	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkStridedDeviceAddressRegionKHR callableRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
 camera	include/Engine.hpp	/^  static std::unique_ptr<class Camera> camera;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<class Camera>
 camera	src/Engine.cpp	/^std::unique_ptr<Camera> VoxelEngine::camera;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<Camera>
@@ -988,16 +989,16 @@ cameraPosition	include/Camera.hpp	/^  glm::vec3 cameraPosition =$/;"	m	class:Cam
 cameraTargetPoint	include/Camera.hpp	/^  glm::vec3 cameraTargetPoint = glm::vec3(1.0f, 0.0f, 0.0f);$/;"	m	class:Camera	typeref:typename:glm::vec3
 cameraVelocity	include/Camera.hpp	/^  glm::vec3 cameraVelocity = glm::vec3(0.0f, 0.0f, 0.0f);$/;"	m	class:Camera	typeref:typename:glm::vec3
 capabilities	include/VkZero/Internal/window_internal.hpp	/^    VkSurfaceCapabilitiesKHR capabilities;$/;"	m	struct:VkZero::WindowImpl_T::SwapChainSupportDetails	typeref:typename:VkSurfaceCapabilitiesKHR
-changeLayout	include/VkZero/image.hpp	/^      void changeLayout(ImageLayout newLayout, uint32_t index) {$/;"	f	struct:VkZero::MultiStagedImageImpl_T	typeref:typename:void
-changeLayout	include/VkZero/image.hpp	/^    void changeLayout(ImageLayout newLayout, uint32_t index) {$/;"	f	struct:VkZero::MultiImageImpl_T	typeref:typename:void
-changeLayout	include/VkZero/image.hpp	/^  void changeLayout(ImageLayout newLayout, uint32_t index) {$/;"	f	struct:VkZero::MultiImageBase	typeref:typename:void
-changeLayout	include/VkZero/image.hpp	/^  void changeLayout(ImageLayout newLayout, uint32_t index) {$/;"	f	struct:VkZero::MultiStagedImageBase	typeref:typename:void
-changeLayout	include/VkZero/image.hpp	/^  void changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,$/;"	f	struct:VkZero::MultiImageBase	typeref:typename:void
-changeLayout	include/VkZero/image.hpp	/^  void changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,$/;"	f	struct:VkZero::MultiImageImpl_T	typeref:typename:void
-changeLayout	include/VkZero/image.hpp	/^  void changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,$/;"	f	struct:VkZero::MultiStagedImageBase	typeref:typename:void
-changeLayout	include/VkZero/image.hpp	/^  void changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,$/;"	f	struct:VkZero::MultiStagedImageImpl_T	typeref:typename:void
-changeLayout	include/VkZero/image.hpp	/^  void changeLayout(VkCommandBuffer commandBuffer, size_t index,$/;"	f	class:VkZero::Image	typeref:typename:void
-changeLayout	include/VkZero/image.hpp	/^  void changeLayout(size_t index, VkImageLayout newLayout, int mipLevels)$/;"	f	class:VkZero::Image	typeref:typename:void
+changeLayout	include/VkZero/Internal/image_internal.hpp	/^  void changeLayout(VkCommandBuffer commandBuffer, size_t index,$/;"	f	class:VkZero::Image	typeref:typename:void
+changeLayout	include/VkZero/Internal/image_internal.hpp	/^  void changeLayout(size_t index, VkImageLayout newLayout, int mipLevels)$/;"	f	class:VkZero::Image	typeref:typename:void
+changeLayout	src/VkZero/image.cpp	/^      void MultiStagedImageImpl_T::changeLayout(ImageLayout newLayout, uint32_t index) {$/;"	f	class:MultiStagedImageImpl_T	typeref:typename:void
+changeLayout	src/VkZero/image.cpp	/^  void MultiStagedImageImpl_T::changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout/;"	f	class:MultiStagedImageImpl_T	typeref:typename:void
+changeLayout	src/VkZero/image.cpp	/^void MultiImageBase::changeLayout(ImageLayout newLayout, uint32_t index) {$/;"	f	class:MultiImageBase	typeref:typename:void
+changeLayout	src/VkZero/image.cpp	/^void MultiImageBase::changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,$/;"	f	class:MultiImageBase	typeref:typename:void
+changeLayout	src/VkZero/image.cpp	/^void MultiImageImpl_T::changeLayout(ImageLayout newLayout, uint32_t index) {$/;"	f	class:MultiImageImpl_T	typeref:typename:void
+changeLayout	src/VkZero/image.cpp	/^void MultiImageImpl_T::changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,$/;"	f	class:MultiImageImpl_T	typeref:typename:void
+changeLayout	src/VkZero/image.cpp	/^void MultiStagedImageBase::changeLayout(ImageLayout newLayout, uint32_t index) {$/;"	f	class:MultiStagedImageBase	typeref:typename:void
+changeLayout	src/VkZero/image.cpp	/^void MultiStagedImageBase::changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,$/;"	f	class:MultiStagedImageBase	typeref:typename:void
 checkDeviceExtensionSupport	src/VkZero/core.cpp	/^bool VkZeroCoreImpl_T::checkDeviceExtensionSupport(VkPhysicalDevice device) {$/;"	f	class:VkZeroCoreImpl_T	typeref:typename:bool
 checkValidationLayerSupport	src/VkZero/core.cpp	/^bool VkZeroCoreImpl_T::checkValidationLayerSupport() {$/;"	f	class:VkZeroCoreImpl_T	typeref:typename:bool
 chooseDevice	src/VkZero/core.cpp	/^void VkZeroCoreImpl_T::chooseDevice(WindowImpl_T* window)$/;"	f	class:VkZeroCoreImpl_T	typeref:typename:void
@@ -1039,7 +1040,7 @@ debugCallback	src/VkZero/core.cpp	/^debugCallback(VkDebugUtilsMessageSeverityFla
 debugMessenger	include/VkZero/Internal/core_internal.hpp	/^    VkDebugUtilsMessengerEXT debugMessenger;$/;"	m	struct:VkZero::VkZeroCoreImpl_T	typeref:typename:VkDebugUtilsMessengerEXT
 debugMessenger	include/VkZero/context.hpp	/^    VkDebugUtilsMessengerEXT debugMessenger;$/;"	m	struct:VkZero::VkZeroCoreImpl_T	typeref:typename:VkDebugUtilsMessengerEXT
 deltaTime	include/VkZero/Internal/window_internal.hpp	/^  double deltaTime = 0;$/;"	m	struct:VkZero::WindowImpl_T	typeref:typename:double
-depth	include/VkZero/image.hpp	/^  uint32_t width, height, depth;$/;"	m	class:VkZero::Image	typeref:typename:uint32_t
+depth	include/VkZero/Internal/image_internal.hpp	/^  uint32_t width, height, depth;$/;"	m	class:VkZero::Image	typeref:typename:uint32_t
 descriptorCount	include/VkZero/Internal/binding_internal.hpp	/^  uint32_t descriptorCount;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:uint32_t
 descriptorCount	src/VkZero/binding.cpp	/^  uint32_t descriptorCount;$/;"	v	typeref:typename:uint32_t
 descriptorSetLayout	include/VkZero/Internal/shader_resource_set_internal.hpp	/^  VkDescriptorSetLayout descriptorSetLayout;$/;"	m	struct:VkZero::ShaderResourceSetImpl_T	typeref:typename:VkDescriptorSetLayout
@@ -1102,7 +1103,7 @@ find_binding	include/VkZero/binding.hpp	/^struct find_binding<binding, std::tupl
 firstMouse	include/Camera.hpp	/^  bool firstMouse = true;$/;"	m	class:Camera	typeref:typename:bool
 flag	include/shaders.hpp	/^  uint32_t flag;$/;"	m	struct:RaytracingPushConstant	typeref:typename:uint32_t
 format	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  VkFormat format;$/;"	m	struct:VkZero::AttachmentImpl_T	typeref:typename:VkFormat
-formatSize	include/VkZero/image.hpp	/^  size_t formatSize(VkFormat format) {$/;"	f	class:VkZero::Image	typeref:typename:size_t
+formatSize	include/VkZero/Internal/image_internal.hpp	/^  size_t formatSize(VkFormat format) {$/;"	f	class:VkZero::Image	typeref:typename:size_t
 formats	include/VkZero/Internal/window_internal.hpp	/^    std::vector<VkSurfaceFormatKHR> formats;$/;"	m	struct:VkZero::WindowImpl_T::SwapChainSupportDetails	typeref:typename:std::vector<VkSurfaceFormatKHR>
 frame	include/Camera.hpp	/^  std::vector<int> frame;$/;"	m	class:Camera	typeref:typename:std::vector<int>
 frame	include/VkZero/frame.hpp	/^  frame(Renderpasses &...renderpasses, WindowImpl_T* window)$/;"	f	class:VkZero::frame
@@ -1173,16 +1174,16 @@ graphicsResourceSet	include/VkZeroObjects.hpp	/^  PipelineShaderResources graphi
 graphicsShaderGroup	include/VkZeroObjects.hpp	/^  PipelineShaderGroup graphicsShaderGroup;$/;"	m	class:VkZeroObjects	typeref:typename:PipelineShaderGroup
 has_binding	include/VkZero/binding.hpp	/^template <int binding, typename Tuple> struct has_binding {$/;"	s	namespace:VkZero
 height	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  uint32_t width, height;$/;"	m	struct:VkZero::GraphicsRenderpassImpl_T	typeref:typename:uint32_t
+height	include/VkZero/Internal/image_internal.hpp	/^  uint32_t width, height, depth;$/;"	m	class:VkZero::Image	typeref:typename:uint32_t
 height	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  uint32_t height;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:uint32_t
-height	include/VkZero/image.hpp	/^  uint32_t width, height, depth;$/;"	m	class:VkZero::Image	typeref:typename:uint32_t
 hideCursor	src/VkZero/window.cpp	/^void Window::hideCursor() {$/;"	f	class:Window	typeref:typename:void
 hitRegion	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkStridedDeviceAddressRegionKHR hitRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
 image	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  AttachmentImage *image;$/;"	m	struct:VkZero::RenderPassResourceImpl_T	typeref:typename:AttachmentImage *
-image	include/VkZero/image.hpp	/^  VkImage image;$/;"	m	struct:VkZero::ImageData_T	typeref:typename:VkImage
+image	include/VkZero/Internal/image_internal.hpp	/^  VkImage image;$/;"	m	struct:VkZero::ImageData_T	typeref:typename:VkImage
 imageAvailableSemaphores	include/VkZero/frame.hpp	/^  std::vector<VkSemaphore> imageAvailableSemaphores;$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:std::vector<VkSemaphore>
-imageFormat	include/VkZero/image.hpp	/^  VkFormat imageFormat;$/;"	m	class:VkZero::Image	typeref:typename:VkFormat
-imageLayout	include/VkZero/image.hpp	/^  VkImageLayout imageLayout;$/;"	m	class:VkZero::Image	typeref:typename:VkImageLayout
-images	include/VkZero/image.hpp	/^  std::vector<ImageData_T*> images;$/;"	m	class:VkZero::Image	typeref:typename:std::vector<ImageData_T * >
+imageFormat	include/VkZero/Internal/image_internal.hpp	/^  VkFormat imageFormat;$/;"	m	class:VkZero::Image	typeref:typename:VkFormat
+imageLayout	include/VkZero/Internal/image_internal.hpp	/^  VkImageLayout imageLayout;$/;"	m	class:VkZero::Image	typeref:typename:VkImageLayout
+images	include/VkZero/Internal/image_internal.hpp	/^  std::vector<ImageData_T*> images;$/;"	m	class:VkZero::Image	typeref:typename:std::vector<ImageData_T * >
 impl	include/VkZero/binding.hpp	/^  struct ResourceBindingImpl_T* impl;$/;"	m	struct:VkZero::ResourceBindingBase	typeref:struct:ResourceBindingImpl_T *
 impl	include/VkZero/frame.hpp	/^  struct frameImpl_T *impl;$/;"	m	struct:VkZero::frameBase	typeref:struct:frameImpl_T *
 impl	include/VkZero/graphics_pipeline.hpp	/^  struct GraphicsPipelineImpl_T *impl;$/;"	m	struct:VkZero::GraphicsPipelineBase	typeref:struct:GraphicsPipelineImpl_T *
@@ -1259,8 +1260,8 @@ main_vert	include/shaders.hpp	/^using main_vert = VkZero::Shader<$/;"	t	typeref:
 matches	include/VkZero/shader_library.hpp	/^        static constexpr bool matches = []() {$/;"	m	struct:VkZero::shader_index	typeref:typename:bool
 maxImages	include/VkZero/image.hpp	/^  static constexpr int maxImages = MaxImageCount;$/;"	m	class:VkZero::MultiImage	typeref:typename:int
 maxImages	include/VkZero/image.hpp	/^  static constexpr int maxImages = MaxImageCount;$/;"	m	class:VkZero::MultiStagedImage	typeref:typename:int
-memory	include/VkZero/image.hpp	/^  VkDeviceMemory memory;$/;"	m	struct:VkZero::ImageData_T	typeref:typename:VkDeviceMemory
-memory	include/VkZero/image.hpp	/^  VkDeviceMemory memory;$/;"	m	struct:VkZero::StagingData_T	typeref:typename:VkDeviceMemory
+memory	include/VkZero/Internal/image_internal.hpp	/^  VkDeviceMemory memory;$/;"	m	struct:VkZero::ImageData_T	typeref:typename:VkDeviceMemory
+memory	include/VkZero/Internal/image_internal.hpp	/^  VkDeviceMemory memory;$/;"	m	struct:VkZero::StagingData_T	typeref:typename:VkDeviceMemory
 missRegion	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkStridedDeviceAddressRegionKHR missRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
 modValue	src/Camera.cpp	/^    int lowerBound, upperBound, offset, modValue, shift;$/;"	m	struct:Camera::update::__anona64332f60108	typeref:typename:int	file:
 mouseSensitivity	include/Camera.hpp	/^  float mouseSensitivity = 0.1f;$/;"	m	class:Camera	typeref:typename:float
@@ -1381,7 +1382,7 @@ run	src/Engine.cpp	/^void VoxelEngine::run() {$/;"	f	class:VoxelEngine	typeref:t
 same_count	include/VkZero/shader_group.hpp	/^    static constexpr bool same_count =$/;"	m	struct:VkZero::ShaderGroupDetails::shader_binding_validator::binding_compatibility_checker	typeref:typename:bool
 same_slot	include/VkZero/shader_group.hpp	/^    static constexpr bool same_slot =$/;"	m	struct:VkZero::ShaderGroupDetails::shader_binding_validator::binding_compatibility_checker	typeref:typename:bool
 same_type	include/VkZero/shader_group.hpp	/^    static constexpr bool same_type = A::type() == B::type();$/;"	m	struct:VkZero::ShaderGroupDetails::shader_binding_validator::binding_compatibility_checker	typeref:typename:bool
-sampler	include/VkZero/image.hpp	/^  VkSampler sampler;$/;"	m	class:VkZero::Image	typeref:typename:VkSampler
+sampler	include/VkZero/Internal/image_internal.hpp	/^  VkSampler sampler;$/;"	m	class:VkZero::Image	typeref:typename:VkSampler
 sbtBuffer	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkBuffer sbtBuffer;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkBuffer
 sbtMemory	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkDeviceMemory sbtMemory;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkDeviceMemory
 sbtSize	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkDeviceSize sbtSize;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkDeviceSize
@@ -1407,7 +1408,7 @@ shouldClose	src/VkZero/window.cpp	/^bool WindowImpl_T::shouldClose() const {$/;"
 showCursor	src/VkZero/window.cpp	/^void Window::showCursor() {$/;"	f	class:Window	typeref:typename:void
 size	include/VkZero/Internal/uniform_buffer_internal.hpp	/^  size_t size;$/;"	m	struct:VkZero::UniformBufferImpl_T	typeref:typename:size_t
 sortChunks	src/VoxelWorld.cpp	/^void VoxelWorld::sortChunks() {$/;"	f	class:VoxelWorld	typeref:typename:void
-stageBuffers	include/VkZero/image.hpp	/^  std::vector<StagingData_T*> stageBuffers;$/;"	m	class:VkZero::Image	typeref:typename:std::vector<StagingData_T * >
+stageBuffers	include/VkZero/Internal/image_internal.hpp	/^  std::vector<StagingData_T*> stageBuffers;$/;"	m	class:VkZero::Image	typeref:typename:std::vector<StagingData_T * >
 stages	include/VkZero/Internal/binding_internal.hpp	/^  VkShaderStageFlags stages;$/;"	m	struct:VkZero::ResourceBindingImpl_T	typeref:typename:VkShaderStageFlags
 stages	src/VkZero/binding.cpp	/^  VkShaderStageFlags stages;$/;"	v	typeref:typename:VkShaderStageFlags
 startWorkers	src/VoxelWorld.cpp	/^void VoxelWorld::startWorkers(int numThreads) {$/;"	f	class:VoxelWorld	typeref:typename:void
@@ -1421,8 +1422,8 @@ swapChainImageFormat	include/VkZero/Internal/window_internal.hpp	/^  VkFormat sw
 swapchainImageCount	include/VkZero/Internal/window_internal.hpp	/^  uint32_t swapchainImageCount;$/;"	m	struct:VkZero::WindowImpl_T	typeref:typename:uint32_t
 swapchainImages	include/VkZero/Internal/window_internal.hpp	/^  AttachmentImage swapchainImages;$/;"	m	struct:VkZero::WindowImpl_T	typeref:typename:AttachmentImage
 tail	include/VkZero/render_pass.hpp	/^  using tail = typename filter_preserve_input<std::tuple<Rest...>, All>::type;$/;"	t	struct:VkZero::RenderPassDetails::filter_preserve_input	typeref:typename:filter_preserve_input<std::tuple<Rest...>,All>::type
-transitionImageLayout	include/VkZero/image.hpp	/^  void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,$/;"	f	class:VkZero::Image	typeref:typename:void
-transitionImageLayout	include/VkZero/image.hpp	/^  void transitionImageLayout(VkImage image, VkFormat format,$/;"	f	class:VkZero::Image	typeref:typename:void
+transitionImageLayout	include/VkZero/Internal/image_internal.hpp	/^  void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,$/;"	f	class:VkZero::Image	typeref:typename:void
+transitionImageLayout	include/VkZero/Internal/image_internal.hpp	/^  void transitionImageLayout(VkImage image, VkFormat format,$/;"	f	class:VkZero::Image	typeref:typename:void
 tuple_compatibility_checker	include/VkZero/shader_group.hpp	/^  struct tuple_compatibility_checker<std::tuple<Ts...>> {$/;"	s	struct:VkZero::ShaderGroupDetails::shader_binding_validator
 tuple_for_each	include/VkZero/render_pass.hpp	/^constexpr void tuple_for_each(Tuple &&t, Func &&f) {$/;"	f	namespace:VkZero	typeref:typename:void
 tuple_for_each_impl	include/VkZero/render_pass.hpp	/^constexpr void tuple_for_each_impl(Tuple &&t, Func &&f,$/;"	f	namespace:VkZero	typeref:typename:void
@@ -1451,15 +1452,15 @@ type	src/VkZero/descriptor_pool.cpp	/^    using type = std::conditional_t<$/;"	t
 types	include/VkZero/shader_library.hpp	/^        using types = std::tuple<Shaders...>;$/;"	t	class:VkZero::ShaderLibrary	typeref:typename:std::tuple<Shaders...>
 types	src/VkZero/descriptor_pool.cpp	/^    using types = typename unique_types<DescriptorTypes<get_shader_bindings<GlobalShaderLibrary:/;"	t	function:DescriptorPool::DescriptorPool	typeref:typename:unique_types<DescriptorTypes<get_shader_bindings<GlobalShaderLibrary::types>::type>::type>::type	file:
 ubo	include/Camera.hpp	/^  TransformUBO ubo{};$/;"	m	class:Camera	typeref:typename:TransformUBO
-ubo	include/VkZero/Internal/uniform_buffer_internal.hpp	/^    void* ubo;$/;"	m	struct:VkZero::UniformBufferImpl_T	typeref:typename:void *
+ubo	include/VkZero/Internal/uniform_buffer_internal.hpp	/^  void* ubo;$/;"	m	struct:VkZero::UniformBufferImpl_T	typeref:typename:void *
 uniformBuffer	include/Camera.hpp	/^  VkZero::UniformBuffer<TransformUBO> uniformBuffer;$/;"	m	class:Camera	typeref:typename:VkZero::UniformBuffer<TransformUBO>
-uniformBuffer	include/VkZero/Internal/uniform_buffer_internal.hpp	/^      std::vector<VkBuffer> uniformBuffer;$/;"	m	struct:VkZero::UniformBufferImpl_T	typeref:typename:std::vector<VkBuffer>
+uniformBuffer	include/VkZero/Internal/uniform_buffer_internal.hpp	/^  std::vector<VkBuffer> uniformBuffer;$/;"	m	struct:VkZero::UniformBufferImpl_T	typeref:typename:std::vector<VkBuffer>
 uniformBufferMemory	include/VkZero/Internal/uniform_buffer_internal.hpp	/^  std::vector<VkDeviceMemory> uniformBufferMemory;$/;"	m	struct:VkZero::UniformBufferImpl_T	typeref:typename:std::vector<VkDeviceMemory>
 uniformBuffersMapped	include/VkZero/Internal/uniform_buffer_internal.hpp	/^  std::vector<void *> uniformBuffersMapped;$/;"	m	struct:VkZero::UniformBufferImpl_T	typeref:typename:std::vector<void * >
 unique_types	src/VkZero/descriptor_pool.cpp	/^struct unique_types<std::tuple<First, Rest...>> {$/;"	s	file:
-update	include/VkZero/Internal/uniform_buffer_internal.hpp	/^      void update(int currentFrame)$/;"	f	struct:VkZero::UniformBufferImpl_T	typeref:typename:void
 update	src/Camera.cpp	/^void Camera::update(std::unique_ptr<VkZero::Window> &Window,$/;"	f	class:Camera	typeref:typename:void
 update	src/VkZero/uniform_buffer.cpp	/^void UniformBufferBase::update(int currentFrame)$/;"	f	class:UniformBufferBase	typeref:typename:void
+update	src/VkZero/uniform_buffer.cpp	/^void UniformBufferImpl_T::update(int currentFrame)$/;"	f	class:UniformBufferImpl_T	typeref:typename:void
 updateVoxelChunkMap	src/VoxelWorld.cpp	/^void VoxelWorld::updateVoxelChunkMap(int modValue, int offset) {$/;"	f	class:VoxelWorld	typeref:typename:void
 updateVoxels	src/VoxelWorld.cpp	/^void VoxelWorld::updateVoxels(VkCommandBuffer commandBuffer,$/;"	f	class:VoxelWorld	typeref:typename:void
 update_location	include/VkZero/render_pass.hpp	/^  struct update_location<ColorAttachment<N, F, L>> {$/;"	s	struct:VkZero::RenderPassDetails::assign_global_locations
@@ -1487,7 +1488,7 @@ value	include/VkZero/shader_resource_set.hpp	/^  static constexpr bool value = f
 value	include/VkZero/shader_resource_set.hpp	/^  static constexpr bool value =$/;"	m	struct:VkZero::ShaderResourceSetDetails::duplicate_binding_number_checker	typeref:typename:bool
 value	src/VkZero/descriptor_pool.cpp	/^    static constexpr VkDescriptorType value = Type;$/;"	m	struct:DescriptorTypeObject	typeref:typename:VkDescriptorType	file:
 view	include/Camera.hpp	/^  glm::mat4 view;$/;"	m	struct:TransformUBO	typeref:typename:glm::mat4
-view	include/VkZero/image.hpp	/^  VkImageView view;$/;"	m	struct:VkZero::ImageData_T	typeref:typename:VkImageView
+view	include/VkZero/Internal/image_internal.hpp	/^  VkImageView view;$/;"	m	struct:VkZero::ImageData_T	typeref:typename:VkImageView
 vkCmdTraceRaysKHR	include/VkZero/Internal/raytracing_renderpass_internal.hpp	/^  PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;$/;"	m	struct:VkZero::RaytracingRenderpassImpl_T	typeref:typename:PFN_vkCmdTraceRaysKHR
 vkZero_core	src/VkZero/core.cpp	/^VkZeroCoreImpl_T* VkZero::vkZero_core = NULL;$/;"	m	class:VkZero	typeref:typename:VkZeroCoreImpl_T *
 vox	src/VoxelWorld.cpp	/^#define vox(/;"	d	file:
@@ -1502,20 +1503,20 @@ voxelWorld	src/Engine.cpp	/^std::unique_ptr<VoxelWorld> VoxelEngine::voxelWorld;
 voxel_base	include/VoxelWorld.hpp	/^#define voxel_base(/;"	d
 voxel_mat	include/VoxelWorld.hpp	/^#define voxel_mat(/;"	d
 width	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  uint32_t width, height;$/;"	m	struct:VkZero::GraphicsRenderpassImpl_T	typeref:typename:uint32_t
+width	include/VkZero/Internal/image_internal.hpp	/^  uint32_t width, height, depth;$/;"	m	class:VkZero::Image	typeref:typename:uint32_t
 width	include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  uint32_t width;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:uint32_t
-width	include/VkZero/image.hpp	/^  uint32_t width, height, depth;$/;"	m	class:VkZero::Image	typeref:typename:uint32_t
 window	include/VkZero/Internal/window_internal.hpp	/^  GLFWwindow *window;$/;"	m	struct:VkZero::WindowImpl_T	typeref:typename:GLFWwindow *
 window	include/VkZero/frame.hpp	/^  WindowImpl_T *window;$/;"	m	struct:VkZero::frameImpl_T	typeref:typename:WindowImpl_T *
 workers	include/VoxelWorld.hpp	/^  std::vector<std::thread> workers;$/;"	m	class:VoxelWorld	typeref:typename:std::vector<std::thread>
-write	include/VkZero/image.hpp	/^    void write(char *data, uint32_t index) {$/;"	f	struct:VkZero::MultiStagedImageBase	typeref:typename:void
-write	include/VkZero/image.hpp	/^  void write(VkCommandBuffer commandBuffer, char *data, uint32_t index) {$/;"	f	struct:VkZero::MultiStagedImageBase	typeref:typename:void
-write	include/VkZero/image.hpp	/^  void write(VkCommandBuffer commandBuffer, char *data, uint32_t index) {$/;"	f	struct:VkZero::MultiStagedImageImpl_T	typeref:typename:void
-write	include/VkZero/image.hpp	/^  void write(char *data, uint32_t index) {$/;"	f	struct:VkZero::MultiStagedImageImpl_T	typeref:typename:void
 write	src/VkZero/binding.cpp	/^  void ResourceBindingImpl_T::write(VkDevice device, VkDescriptorSet &descriptorSet, int element/;"	f	class:ResourceBindingImpl_T	typeref:typename:void
+write	src/VkZero/image.cpp	/^  void MultiStagedImageImpl_T::write(VkCommandBuffer commandBuffer, char *data, uint32_t index) /;"	f	class:MultiStagedImageImpl_T	typeref:typename:void
+write	src/VkZero/image.cpp	/^  void MultiStagedImageImpl_T::write(char *data, uint32_t index) {$/;"	f	class:MultiStagedImageImpl_T	typeref:typename:void
+write	src/VkZero/image.cpp	/^void MultiStagedImageBase::write(VkCommandBuffer commandBuffer, char *data, uint32_t index) {$/;"	f	class:MultiStagedImageBase	typeref:typename:void
+write	src/VkZero/image.cpp	/^void MultiStagedImageBase::write(char *data, uint32_t index) {$/;"	f	class:MultiStagedImageBase	typeref:typename:void
 writeAll	src/VkZero/binding.cpp	/^  void ResourceBindingImpl_T::writeAll(VkDevice device, std::vector<VkDescriptorSet> descriptorS/;"	f	class:ResourceBindingImpl_T	typeref:typename:void
-writeDescriptor	include/VkZero/Internal/uniform_buffer_internal.hpp	/^    void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,$/;"	f	struct:VkZero::UniformBufferImpl_T	typeref:typename:void
-writeDescriptor	include/VkZero/image.hpp	/^    void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,$/;"	f	struct:VkZero::MultiImageImpl_T	typeref:typename:void
-writeDescriptor	include/VkZero/image.hpp	/^    void writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,$/;"	f	struct:VkZero::MultiStagedImageImpl_T	typeref:typename:void
+writeDescriptor	src/VkZero/image.cpp	/^    void MultiStagedImageImpl_T::writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,$/;"	f	class:MultiStagedImageImpl_T	typeref:typename:void
+writeDescriptor	src/VkZero/image.cpp	/^void MultiImageImpl_T::writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,$/;"	f	class:MultiImageImpl_T	typeref:typename:void
+writeDescriptor	src/VkZero/uniform_buffer.cpp	/^void UniformBufferImpl_T::writeDescriptor(VkDevice device, VkDescriptorSet descriptorSet,$/;"	f	class:UniformBufferImpl_T	typeref:typename:void
 yaw	include/Camera.hpp	/^  float yaw = -90.0f; \/\/ Rotation around the Y-axis (left\/right)$/;"	m	class:Camera	typeref:typename:float
 ~Camera	src/Camera.cpp	/^Camera::~Camera() {}$/;"	f	class:Camera
 ~PushConstantDataImpl_T	include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  ~PushConstantDataImpl_T() { delete data; }$/;"	f	struct:VkZero::PushConstantDataImpl_T
