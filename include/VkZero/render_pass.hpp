@@ -2,16 +2,14 @@
 
 #include "VkZero/fixed_string.hpp"
 #include "VkZero/shader_group.hpp"
+#include "VkZero/types.hpp"
 #include "VkZero/window.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <functional>
-#include <memory>
 #include <tuple>
-#include <unordered_map>
 #include <utility>
 #include <vector>
-#include <vulkan/vulkan_core.h>
 
 #define RAYTRACE_HEIGHT 1080
 #define RAYTRACE_WIDTH 1920
@@ -77,14 +75,14 @@ struct AttachmentBase {
     ATTACHMENT_INPUT,
   };
 
-  AttachmentBase(const char *name, VkFormat format, int location,
+  AttachmentBase(const char *name, Format format, int location,
                  AttachmentType type);
 
   AttachmentBase(const char *name);
   struct AttachmentImpl_T *impl;
 };
 
-template <FixedString Name, VkFormat Format, int Location>
+template <FixedString Name, Format Format, int Location>
 struct ColorAttachment : public AttachmentBase {
 
   ColorAttachment()
@@ -92,11 +90,11 @@ struct ColorAttachment : public AttachmentBase {
                        AttachmentBase::AttachmentType::ATTACHMENT_COLOR) {}
 
   static constexpr FixedString name = Name.value;
-  static constexpr VkFormat get_format() { return Format; }
+  static constexpr enum Format get_format() { return Format; }
   static constexpr int get_location() { return Location; }
 };
 
-template <FixedString Name, VkFormat Format, int Location>
+template <FixedString Name, Format Format, int Location>
 struct DepthAttachment : public AttachmentBase {
 
   DepthAttachment()
@@ -104,7 +102,7 @@ struct DepthAttachment : public AttachmentBase {
                        AttachmentBase::AttachmentType::ATTACHMENT_DEPTH) {}
 
   static constexpr FixedString name = Name.value;
-  static constexpr VkFormat get_format() { return Format; }
+  static constexpr enum Format get_format() { return Format; }
   static constexpr int get_location() { return Location; }
 };
 
@@ -115,7 +113,7 @@ template <FixedString Name> struct PreserveAttachment : public AttachmentBase {
   static constexpr FixedString name = Name.value;
 };
 
-template <FixedString Name, VkFormat Format, int Location>
+template <FixedString Name, Format Format, int Location>
 struct InputAttachment : public AttachmentBase {
 
   InputAttachment()
@@ -123,7 +121,7 @@ struct InputAttachment : public AttachmentBase {
                        AttachmentBase::AttachmentType::ATTACHMENT_INPUT) {}
 
   static constexpr FixedString name = Name.value;
-  static constexpr VkFormat get_format() { return Format; }
+  static constexpr enum Format get_format() { return Format; }
   static constexpr int get_location() { return Location; }
 };
 namespace RenderPassDetails {
@@ -204,17 +202,17 @@ struct assign_global_locations<std::tuple<First, Rest...>, Start> {
     using type = T;
   };
 
-  template <FixedString N, VkFormat F, int L>
+  template <FixedString N, Format F, int L>
   struct update_location<ColorAttachment<N, F, L>> {
     using type = ColorAttachment<N, F, Start>;
   };
 
-  template <FixedString N, VkFormat F, int L>
+  template <FixedString N, Format F, int L>
   struct update_location<DepthAttachment<N, F, L>> {
     using type = DepthAttachment<N, F, Start>;
   };
 
-  template <FixedString N, VkFormat F, int L>
+  template <FixedString N, Format F, int L>
   struct update_location<InputAttachment<N, F, L>> {
     using type = InputAttachment<N, F, Start>;
   };
@@ -305,7 +303,7 @@ struct RaytracingRenderpassBase {
   RaytracingRenderpassBase(
       std::vector<
           std::pair<struct RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
-          pipelines, std::function<void(VkCommandBuffer, uint32_t)> before, std::function<void(VkCommandBuffer, uint32_t)> after);
+          pipelines, std::function<void(void*, uint32_t)> before, std::function<void(void*, uint32_t)> after);
 
   struct RaytracingRenderpassImpl_T *impl;
 };
@@ -313,9 +311,9 @@ struct RaytracingRenderpassBase {
 template <typename... RaytracingPipelines>
 class RaytracingRenderPass : public RaytracingRenderpassBase {
 public:
-  RaytracingRenderPass(std::function<void(VkCommandBuffer, uint32_t)> before, RaytracingPipelines... pipelines, std::function<void(VkCommandBuffer, uint32_t)> after)
+  RaytracingRenderPass(std::function<void(void*, uint32_t)> before, RaytracingPipelines... pipelines, std::function<void(void*, uint32_t)> after)
       : RaytracingRenderpassBase(
             {{pipelines.pipeline.impl, pipelines.pushConstantData.impl}...}, before, after) {}
-  static void NO_FUNCTION(VkCommandBuffer commandBuffer, uint32_t currentFrame) {}
+  static void NO_FUNCTION(void* commandBuffer, uint32_t currentFrame) {}
 };
 } // namespace VkZero

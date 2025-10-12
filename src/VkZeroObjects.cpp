@@ -19,7 +19,7 @@
 VkZeroObjects::VkZeroObjects(
     std::unique_ptr<VoxelWorld> &voxelWorld, std::unique_ptr<Camera> &camera,
     std::unique_ptr<VkZero::Window> &window,
-    std::function<void(VkCommandBuffer, uint32_t)> after)
+    std::function<void(void*, uint32_t)> after)
     : raytracingStorageImage{RAYTRACE_WIDTH,
                              RAYTRACE_HEIGHT,
                              1,
@@ -86,8 +86,8 @@ VkZeroObjects::VkZeroObjects(
       graphicsResourceSet{{&raytracingStorageImage}},
       graphicsPipeline(graphicsShaderGroup, graphicsResourceSet),
       graphicsRenderpassAttachmentSet{{&window->getSwapChainImages()}},
-      graphicsRenderPass{window->getSwapChainExtent().width,
-                         window->getSwapChainExtent().height,
+      graphicsRenderPass{window->getWidth(),
+                         window->getHeight(),
                          graphicsRenderpassAttachmentSet, graphicsPipeline},
       frame{raytracingRenderPass, graphicsRenderPass, window->impl} {
 }

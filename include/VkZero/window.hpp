@@ -1,9 +1,6 @@
 #pragma once
 
 #include "VkZero/image.hpp"
-#include <GLFW/glfw3.h>
-#include <memory>
-#include <vector>
 
 namespace VkZero
 {
@@ -21,7 +18,8 @@ namespace VkZero
     void getCursorPos(double *currentMouseX, double *currentMouseY);
     void showCursor();
     void getFramebufferSize(int *width, int *height);
-    VkExtent2D getSwapChainExtent();
+    uint32_t getWidth();
+    uint32_t getHeight();
     AttachmentImage& getSwapChainImages();
     
     WindowImpl impl;

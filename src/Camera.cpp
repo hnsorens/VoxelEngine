@@ -14,8 +14,8 @@
 Camera::Camera(std::unique_ptr<VkZero::Window> &window) : uniformBuffer(ubo) {
   ubo.view = glm::mat4(1.0);
   ubo.proj = glm::perspective(glm::radians(70.0f),
-                              window->getSwapChainExtent().width /
-                                  (float)window->getSwapChainExtent().height,
+                              window->getWidth() /
+                                  (float)window->getHeight(),
                               0.1f, 1000.0f);
   ubo.proj[1][1] *= -1;
   ubo.proj = glm::inverse(ubo.proj);

@@ -1,9 +1,6 @@
 #pragma once
 
 #include "VkZero/binding.hpp"
-#include "VkZero/info.hpp"
-#include <memory>
-#include <stdexcept>
 #include <tuple>
 #include <vector>
 

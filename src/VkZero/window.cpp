@@ -1,5 +1,6 @@
 #include "VkZero/window.hpp"
 #include "VkZero/Internal/core_internal.hpp"
+#include "VkZero/Internal/image_internal.hpp"
 #include "VkZero/Internal/window_internal.hpp"
 #include "VkZero/image.hpp"
 #include "VkZero/info.hpp"
@@ -284,7 +285,8 @@ AttachmentImage WindowImpl_T::createSwapchainImages() {
       }
 
     }
-    return AttachmentImage(swapChainImages.data(), swapChainImageViews.data(), swapChainImages.size());
+
+    return AttachmentImage(new MultiImageImpl_T(swapChainImages.data(), swapChainImageViews.data(), swapChainImages.size()));
 }
 
 void WindowImpl_T::cleanupSwapChain() {
@@ -293,9 +295,14 @@ void WindowImpl_T::cleanupSwapChain() {
   vkDestroySwapchainKHR(device, swapChain, nullptr);
 }
 
-VkExtent2D Window::getSwapChainExtent()
+uint32_t Window::getWidth()
 {
-  return impl->swapChainExtent;
+  return impl->swapChainExtent.width;
+}
+
+uint32_t Window::getHeight()
+{
+  return impl->swapChainExtent.height;
 }
 
 VkSwapchainKHR WindowImpl_T::getSwapChain()

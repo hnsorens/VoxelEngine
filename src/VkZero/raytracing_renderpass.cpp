@@ -79,6 +79,6 @@ void RaytracingRenderpassImpl_T::record(VkCommandBuffer commandBuffer,
 RaytracingRenderpassBase::RaytracingRenderpassBase(
       std::vector<
           std::pair<RaytracingPipelineImpl_T *, PushConstantDataImpl_T *>>
-          pipelines, std::function<void(VkCommandBuffer, uint32_t)> before, std::function<void(VkCommandBuffer, uint32_t)> after) {
+          pipelines, std::function<void(void*, uint32_t)> before, std::function<void(void*, uint32_t)> after) {
     impl = new RaytracingRenderpassImpl_T(pipelines, before, after);
   }

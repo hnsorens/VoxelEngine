@@ -26,7 +26,7 @@ using main_frag = VkZero::Shader<
     VkZero::ShaderBinding<class ShaderImage, VkZero::DescriptorType::CombinedImageSampler, 0, 0, 1>
   >,
   VkZero::ShaderAttachments<
-    VkZero::ColorAttachment<"output", VK_FORMAT_B8G8R8A8_SRGB, 0>
+    VkZero::ColorAttachment<"output", VkZero::Format::B8G8R8A8Srgb, 0>
   >
 >;
 

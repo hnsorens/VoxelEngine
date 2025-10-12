@@ -25,7 +25,7 @@ class VkZeroObjects {
 public:
   VkZeroObjects(
             std::unique_ptr<VoxelWorld> &voxelWorld,
-            std::unique_ptr<class Camera> &camera, std::unique_ptr<VkZero::Window> &window, std::function<void(VkCommandBuffer, uint32_t)> after);
+            std::unique_ptr<class Camera> &camera, std::unique_ptr<VkZero::Window> &window, std::function<void(void*, uint32_t)> after);
   ~VkZeroObjects();
   
 

@@ -3,18 +3,12 @@
 #include "shader_types.hpp"
 #include "shader_bindings.hpp"
 #include "VkZero/fixed_string.hpp"
-#include <algorithm>
 #include <cassert>
-#include <cstdio>
-#include <cstring>
-#include <memory>
-#include <stdexcept>
+#include <cstdint>
 #include <tuple>
 #include <utility>
-#include <vector>
 #include <type_traits>
 #include <string>
-#include <vulkan/vulkan_core.h>
 
 namespace VkZero
 {
@@ -159,7 +153,7 @@ namespace VkZero
     class ShaderBase
     {
     public:
-        ShaderBase(std::string path, VkShaderStageFlagBits type);
+        ShaderBase(std::string path, uint32_t type);
 
         struct ShaderImpl_T* impl;
     };
@@ -175,7 +169,7 @@ namespace VkZero
 
         using BindingsList = Bindings;
 
-        Shader() : ShaderBase(std::string{path.value}, (VkShaderStageFlagBits)Type) {}
+        Shader() : ShaderBase(std::string{path.value}, (uint32_t)Type) {}
         static constexpr ShaderType get_type() { return Type; }
         
     private:

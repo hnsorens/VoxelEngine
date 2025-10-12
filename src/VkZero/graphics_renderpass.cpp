@@ -20,9 +20,9 @@ RenderPassResourceSetBase::RenderPassResourceSetBase(
   impl = new RenderPassResourceSetImpl_T(std::move(resourceMap));
 }
 
-AttachmentBase::AttachmentBase(const char *name, VkFormat format, int location,
+AttachmentBase::AttachmentBase(const char *name, Format format, int location,
                                AttachmentType type) {
-  impl = new AttachmentImpl_T(name, format, location, (int)type);
+  impl = new AttachmentImpl_T(name, (VkFormat)format, location, (int)type);
 }
 
 AttachmentBase::AttachmentBase(const char *name) {

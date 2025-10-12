@@ -42,8 +42,8 @@ void VoxelEngine::initVulkan() {
 
   voxelWorld = std::make_unique<VoxelWorld>();
   obj = std::make_unique<VkZeroObjects>(voxelWorld, camera, Window,
-                                        [&](VkCommandBuffer cb, uint32_t cf) {
-                                          voxelWorld->updateVoxels(cb, cf);
+                                        [&](void* cb, uint32_t cf) {
+                                          voxelWorld->updateVoxels((VkCommandBuffer)cb, cf);
                                         });
 }
 

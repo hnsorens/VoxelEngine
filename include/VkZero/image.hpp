@@ -4,18 +4,16 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <vulkan/vulkan_core.h>
 
 namespace VkZero {
 
 struct MultiImageBase {
   MultiImageBase(uint32_t width, uint32_t height, uint32_t depth, Format format,
-                 VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+                 uint32_t usage, uint32_t properties,
                  uint32_t imageCount);
-  MultiImageBase(VkImage *vk_images, VkImageView *imageViews,
-                 size_t imageCount);
+  MultiImageBase(struct MultiImageImpl_T *impl);
   void changeLayout(ImageLayout newLayout, uint32_t index);
-  void changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,
+  void changeLayout(void* commandBuffer, ImageLayout newLayout,
                     uint32_t index);
   struct MultiImageImpl_T *impl;
 };
@@ -23,25 +21,25 @@ struct MultiImageBase {
 template <int MaxImageCount> class MultiImage : public MultiImageBase {
 public:
   MultiImage(uint32_t width, uint32_t height, uint32_t depth, Format format,
-             VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
+             uint32_t usage, uint32_t properties)
       : MultiImageBase(width, height, depth, format, usage, properties,
                        MaxImageCount) {}
 
-  MultiImage(VkImage *vk_images, VkImageView *imageViews, size_t imageCount)
-      : MultiImageBase(vk_images, imageViews, imageCount) {}
+  MultiImage(struct MultiImageImpl_T *impl)
+      : MultiImageBase(impl) {}
 
   static constexpr int maxImages = MaxImageCount;
 };
 
 struct MultiStagedImageBase {
   MultiStagedImageBase(uint32_t width, uint32_t height, uint32_t depth,
-                       Format format, VkImageUsageFlags usage,
-                       VkMemoryPropertyFlags properties, uint32_t imageCount);
+                       Format format, uint32_t usage,
+                       uint32_t properties, uint32_t imageCount);
   void changeLayout(ImageLayout newLayout, uint32_t index);
-  void changeLayout(VkCommandBuffer commandBuffer, ImageLayout newLayout,
+  void changeLayout(void* commandBuffer, ImageLayout newLayout,
                     uint32_t index);
   void write(char *data, uint32_t index);
-  void write(VkCommandBuffer commandBuffer, char *data, uint32_t index);
+  void write(void* commandBuffer, char *data, uint32_t index);
 
   struct MultiStagedImageImpl_T *impl;
 };
@@ -50,8 +48,8 @@ template <int MaxImageCount>
 class MultiStagedImage : public MultiStagedImageBase {
 public:
   MultiStagedImage(uint32_t width, uint32_t height, uint32_t depth,
-                   Format format, VkImageUsageFlags usage,
-                   VkMemoryPropertyFlags properties)
+                   Format format, uint32_t usage,
+                   uint32_t properties)
       : MultiStagedImageBase(width, height, depth, format, usage, properties,
                              MaxImageCount) {}
 

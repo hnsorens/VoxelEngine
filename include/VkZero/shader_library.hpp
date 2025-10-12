@@ -1,12 +1,8 @@
 #pragma once
 
-#include "VkZero/Internal/descriptor_pool_internal.hpp"
 #include "VkZero/types.hpp"
-#include "shader_types.hpp"
-#include "shader.hpp"
 #include "VkZero/fixed_string.hpp"
 #include <tuple>
-#include <memory>
 #include <vector>
 
 namespace VkZero
@@ -109,10 +105,7 @@ namespace VkZero
 
     struct ShaderLibraryBase
     {
-        ShaderLibraryBase(std::vector<DescriptorType> types)
-        {
-            DescriptorPool::instance().build(types);
-        }
+        ShaderLibraryBase(std::vector<DescriptorType> types);
     };
 
     // ShaderTypes class
