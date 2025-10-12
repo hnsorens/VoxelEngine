@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VkZero/bind_resource.hpp"
+#include "VkZero/Internal/bind_resource_internal.hpp"
 #include <cstring>
 #include <type_traits>
 #include <vector>

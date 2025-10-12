@@ -2,7 +2,7 @@
 
 #include "VkZero/Internal/core_internal.hpp"
 #include "VkZero/uniform_buffer.hpp"
-#include "VkZero/bind_resource.hpp"
+#include "VkZero/Internal/bind_resource_internal.hpp"
 #include "VkZero/info.hpp"
 #include "VkZero/resource_manager.hpp"
 #include <cstring>
