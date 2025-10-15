@@ -68,157 +68,54 @@
 !_TAG_ROLE_DESCRIPTION!Make!makefile	optional	/optionally included/
 0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:0.arguments
 0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:1.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:10.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:11.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:12.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:13.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:14.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:15.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:16.arguments
 0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:2.arguments
 0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:3.arguments
 0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:4.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:5.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:6.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:7.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:8.arguments
-0	compile_commands.json	/^      "\/usr\/bin\/g++",$/;"	s	array:9.arguments
 0	compile_commands.json	/^  {$/;"	o
 1	compile_commands.json	/^      "-c",$/;"	s	array:0.arguments
 1	compile_commands.json	/^      "-c",$/;"	s	array:1.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:10.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:11.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:12.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:13.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:14.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:15.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:16.arguments
 1	compile_commands.json	/^      "-c",$/;"	s	array:2.arguments
 1	compile_commands.json	/^      "-c",$/;"	s	array:3.arguments
 1	compile_commands.json	/^      "-c",$/;"	s	array:4.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:5.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:6.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:7.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:8.arguments
-1	compile_commands.json	/^      "-c",$/;"	s	array:9.arguments
 1	compile_commands.json	/^  {$/;"	o
-10	compile_commands.json	/^  {$/;"	o
-11	compile_commands.json	/^  {$/;"	o
-12	compile_commands.json	/^  {$/;"	o
-13	compile_commands.json	/^  {$/;"	o
-14	compile_commands.json	/^  {$/;"	o
-15	compile_commands.json	/^  {$/;"	o
-16	compile_commands.json	/^  {$/;"	o
 2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:0.arguments
 2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:1.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:10.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:11.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:12.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:13.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:14.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:15.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:16.arguments
 2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:2.arguments
 2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:3.arguments
 2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:4.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:5.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:6.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:7.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:8.arguments
-2	compile_commands.json	/^      "-std=c++23",$/;"	s	array:9.arguments
 2	compile_commands.json	/^  {$/;"	o
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:0.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:1.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:10.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:11.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:12.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:13.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:14.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:15.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:16.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:2.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:3.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:4.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:5.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:6.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:7.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:8.arguments
-3	compile_commands.json	/^      "-DGLFW_INCLUDE_VULKAN",$/;"	s	array:9.arguments
+3	compile_commands.json	/^      "-Iinclude",$/;"	s	array:0.arguments
+3	compile_commands.json	/^      "-Iinclude",$/;"	s	array:1.arguments
+3	compile_commands.json	/^      "-Iinclude",$/;"	s	array:2.arguments
+3	compile_commands.json	/^      "-Iinclude",$/;"	s	array:3.arguments
+3	compile_commands.json	/^      "-Iinclude",$/;"	s	array:4.arguments
 3	compile_commands.json	/^  {$/;"	o
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:0.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:1.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:10.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:11.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:12.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:13.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:14.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:15.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:16.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:2.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:3.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:4.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:5.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:6.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:7.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:8.arguments
-4	compile_commands.json	/^      "-Iinclude",$/;"	s	array:9.arguments
+4	compile_commands.json	/^      "-IVkZero\/include",$/;"	s	array:0.arguments
+4	compile_commands.json	/^      "-IVkZero\/include",$/;"	s	array:1.arguments
+4	compile_commands.json	/^      "-IVkZero\/include",$/;"	s	array:2.arguments
+4	compile_commands.json	/^      "-IVkZero\/include",$/;"	s	array:3.arguments
+4	compile_commands.json	/^      "-IVkZero\/include",$/;"	s	array:4.arguments
 4	compile_commands.json	/^  {$/;"	o
-5	compile_commands.json	/^      "-o",$/;"	s	array:0.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:1.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:10.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:11.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:12.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:13.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:14.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:15.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:16.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:2.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:3.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:4.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:5.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:6.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:7.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:8.arguments
-5	compile_commands.json	/^      "-o",$/;"	s	array:9.arguments
-5	compile_commands.json	/^  {$/;"	o
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:0.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:1.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:10.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:11.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:12.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:13.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:14.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:15.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:16.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:2.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:3.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:4.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:5.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:6.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:7.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:8.arguments
-6	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:9.arguments
-6	compile_commands.json	/^  {$/;"	o
-7	compile_commands.json	/^      "src\/Camera.cpp"$/;"	s	array:0.arguments
-7	compile_commands.json	/^      "src\/CommandManager.cpp"$/;"	s	array:1.arguments
-7	compile_commands.json	/^      "src\/Engine.cpp"$/;"	s	array:2.arguments
-7	compile_commands.json	/^      "src\/PipelineManager.cpp"$/;"	s	array:4.arguments
-7	compile_commands.json	/^      "src\/Raytracer.cpp"$/;"	s	array:5.arguments
-7	compile_commands.json	/^      "src\/SyncManager.cpp"$/;"	s	array:6.arguments
-7	compile_commands.json	/^      "src\/VkZero\/binding.cpp"$/;"	s	array:8.arguments
-7	compile_commands.json	/^      "src\/VkZero\/core.cpp"$/;"	s	array:9.arguments
-7	compile_commands.json	/^      "src\/VkZero\/descriptor_pool.cpp"$/;"	s	array:10.arguments
-7	compile_commands.json	/^      "src\/VkZero\/image.cpp"$/;"	s	array:11.arguments
-7	compile_commands.json	/^      "src\/VkZero\/render_pass.cpp"$/;"	s	array:12.arguments
-7	compile_commands.json	/^      "src\/VkZero\/resource_manager.cpp"$/;"	s	array:13.arguments
-7	compile_commands.json	/^      "src\/VkZero\/shader.cpp"$/;"	s	array:15.arguments
-7	compile_commands.json	/^      "src\/VkZero\/shader_builder.cpp"$/;"	s	array:14.arguments
-7	compile_commands.json	/^      "src\/VkZero\/window.cpp"$/;"	s	array:16.arguments
-7	compile_commands.json	/^      "src\/VoxelWorld.cpp"$/;"	s	array:7.arguments
-7	compile_commands.json	/^      "src\/main.cpp"$/;"	s	array:3.arguments
-7	compile_commands.json	/^  {$/;"	o
-8	compile_commands.json	/^  {$/;"	o
-9	compile_commands.json	/^  {$/;"	o
+5	compile_commands.json	/^      "-g3",$/;"	s	array:0.arguments
+5	compile_commands.json	/^      "-g3",$/;"	s	array:1.arguments
+5	compile_commands.json	/^      "-g3",$/;"	s	array:2.arguments
+5	compile_commands.json	/^      "-g3",$/;"	s	array:3.arguments
+5	compile_commands.json	/^      "-g3",$/;"	s	array:4.arguments
+6	compile_commands.json	/^      "-o",$/;"	s	array:0.arguments
+6	compile_commands.json	/^      "-o",$/;"	s	array:1.arguments
+6	compile_commands.json	/^      "-o",$/;"	s	array:2.arguments
+6	compile_commands.json	/^      "-o",$/;"	s	array:3.arguments
+6	compile_commands.json	/^      "-o",$/;"	s	array:4.arguments
+7	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:0.arguments
+7	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:1.arguments
+7	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:2.arguments
+7	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:3.arguments
+7	compile_commands.json	/^      "bin\/voxels",$/;"	s	array:4.arguments
+8	compile_commands.json	/^      "src\/Camera.cpp"$/;"	s	array:0.arguments
+8	compile_commands.json	/^      "src\/Engine.cpp"$/;"	s	array:1.arguments
+8	compile_commands.json	/^      "src\/VkZeroObjects.cpp"$/;"	s	array:3.arguments
+8	compile_commands.json	/^      "src\/VoxelWorld.cpp"$/;"	s	array:4.arguments
+8	compile_commands.json	/^      "src\/main.cpp"$/;"	s	array:2.arguments
 A1B5G5R5UnormPack16	VkZero/include/VkZero/types.hpp	/^        A1B5G5R5UnormPack16 = 1000470000,$/;"	e	enum:VkZero::Format
 A1B5G5R5UnormPack16	VkZero/include/types.hpp	/^        A1B5G5R5UnormPack16 = 1000470000,$/;"	e	enum:VkZero::Format
 A1R5G5B5UnormPack16	VkZero/include/VkZero/types.hpp	/^        A1R5G5B5UnormPack16 = 8,$/;"	e	enum:VkZero::Format
@@ -271,7 +168,6 @@ ALIGN_UP	VkZero/include/VkZero/raytracing_pipeline.hpp	/^#define ALIGN_UP(/;"	d
 ALIGN_UP	VkZero/include/VkZero/render_pass.hpp	/^#define ALIGN_UP(/;"	d
 ALIGN_UP	VkZero/include/raytracing_pipeline.hpp	/^#define ALIGN_UP(/;"	d
 ALIGN_UP	VkZero/include/render_pass.hpp	/^#define ALIGN_UP(/;"	d
-ALIGN_UP	include/Engine.hpp	/^#define ALIGN_UP(/;"	d
 ASTC10x10SfloatBlock	VkZero/include/VkZero/types.hpp	/^        ASTC10x10SfloatBlock = 1000066011,$/;"	e	enum:VkZero::Format
 ASTC10x10SfloatBlock	VkZero/include/types.hpp	/^        ASTC10x10SfloatBlock = 1000066011,$/;"	e	enum:VkZero::Format
 ASTC10x10SrgbBlock	VkZero/include/VkZero/types.hpp	/^        ASTC10x10SrgbBlock = 180,$/;"	e	enum:VkZero::Format
@@ -370,7 +266,6 @@ AccelerationStructureNV	VkZero/include/VkZero/types.hpp	/^        AccelerationSt
 AccelerationStructureNV	VkZero/include/types.hpp	/^        AccelerationStructureNV = 1000165000,$/;"	e	enum:VkZero::DescriptorType
 Adding New Shaders	README.md	/^## Adding New Shaders$/;"	s	chapter:VoxelEngine
 AllBindings	VkZero/include/VkZero/binding.hpp	/^  using AllBindings = decltype(std::tuple_cat($/;"	t	struct:VkZero::CombinedBindings
-AllBindings	VkZero/include/binding.hpp	/^  using AllBindings = decltype(std::tuple_cat($/;"	t	struct:VkZero::CombinedBindings
 Arguments_must_be_floating_point_values	include/FastNoiseLite.hpp	/^struct FastNoiseLite::Arguments_must_be_floating_point_values<double> {};$/;"	s	class:FastNoiseLite
 Arguments_must_be_floating_point_values	include/FastNoiseLite.hpp	/^struct FastNoiseLite::Arguments_must_be_floating_point_values<float> {};$/;"	s	class:FastNoiseLite
 Arguments_must_be_floating_point_values	include/FastNoiseLite.hpp	/^struct FastNoiseLite::Arguments_must_be_floating_point_values<long double> {};$/;"	s	class:FastNoiseLite
@@ -474,7 +369,6 @@ BC7SrgbBlock	VkZero/include/types.hpp	/^        BC7SrgbBlock = 146,$/;"	e	enum:V
 BC7UnormBlock	VkZero/include/VkZero/types.hpp	/^        BC7UnormBlock = 145,$/;"	e	enum:VkZero::Format
 BC7UnormBlock	VkZero/include/types.hpp	/^        BC7UnormBlock = 145,$/;"	e	enum:VkZero::Format
 Bind	VkZero/include/VkZero/binding.hpp	/^template <typename type, int binding> struct Bind {$/;"	s	namespace:VkZero
-Bind	VkZero/include/binding.hpp	/^template <typename type, int binding> struct Bind {$/;"	s	namespace:VkZero
 BindResource	VkZero/include/VkZero/Internal/bind_resource_internal.hpp	/^    class BindResource$/;"	c	namespace:VkZero
 BindingResources	VkZero/include/VkZero/shader_resource_set.hpp	/^  using BindingResources = std::tuple<Bindings...>;$/;"	t	class:VkZero::ShaderResourceSet	typeref:typename:std::tuple<Bindings...>
 BindingResources	VkZero/include/shader_resource_set.hpp	/^  using BindingResources = std::tuple<Bindings...>;$/;"	t	class:VkZero::ShaderResourceSet	typeref:typename:std::tuple<Bindings...>
@@ -487,7 +381,7 @@ BlockMatchImageQCOM	VkZero/include/types.hpp	/^        BlockMatchImageQCOM = 100
 Building	README.md	/^## Building$/;"	s	chapter:VoxelEngine
 CalculateFractalBounding	include/FastNoiseLite.hpp	/^  void CalculateFractalBounding() {$/;"	f	class:FastNoiseLite	typeref:typename:void
 Camera	include/Camera.hpp	/^class Camera {$/;"	c
-Camera	src/Camera.cpp	/^Camera::Camera(std::unique_ptr<VkZero::Window> &window) : uniformBuffer(ubo) {$/;"	f	class:Camera
+Camera	src/Camera.cpp	/^Camera::Camera(VkZero::Window &window) : uniformBuffer(ubo) {$/;"	f	class:Camera
 CellularDistanceFunction	include/FastNoiseLite.hpp	/^  enum CellularDistanceFunction {$/;"	g	class:FastNoiseLite
 CellularDistanceFunction_Euclidean	include/FastNoiseLite.hpp	/^    CellularDistanceFunction_Euclidean,$/;"	e	enum:FastNoiseLite::CellularDistanceFunction
 CellularDistanceFunction_EuclideanSq	include/FastNoiseLite.hpp	/^    CellularDistanceFunction_EuclideanSq,$/;"	e	enum:FastNoiseLite::CellularDistanceFunction
@@ -509,7 +403,6 @@ ColorAttachment	VkZero/include/render_pass.hpp	/^struct ColorAttachment : public
 ColorAttachmentOptimal	VkZero/include/VkZero/types.hpp	/^        ColorAttachmentOptimal = 2,$/;"	e	enum:VkZero::ImageLayout
 ColorAttachmentOptimal	VkZero/include/types.hpp	/^        ColorAttachmentOptimal = 2,$/;"	e	enum:VkZero::ImageLayout
 CombinedBindings	VkZero/include/VkZero/binding.hpp	/^template <typename... Shaders> struct CombinedBindings {$/;"	s	namespace:VkZero
-CombinedBindings	VkZero/include/binding.hpp	/^template <typename... Shaders> struct CombinedBindings {$/;"	s	namespace:VkZero
 CombinedImageSampler	VkZero/include/VkZero/types.hpp	/^        CombinedImageSampler = 1,$/;"	e	enum:VkZero::DescriptorType
 CombinedImageSampler	VkZero/include/types.hpp	/^        CombinedImageSampler = 1,$/;"	e	enum:VkZero::DescriptorType
 CreateDebugUtilsMessengerEXT	VkZero/src/core.cpp	/^VkResult VkZeroCoreImpl_T::CreateDebugUtilsMessengerEXT($/;"	f	class:VkZeroCoreImpl_T	typeref:typename:VkResult
@@ -1092,7 +985,6 @@ GraphicsRenderpassBase	VkZero/include/render_pass.hpp	/^struct GraphicsRenderpas
 GraphicsRenderpassBase	VkZero/src/graphics_renderpass.cpp	/^GraphicsRenderpassBase::GraphicsRenderpassBase($/;"	f	class:GraphicsRenderpassBase
 GraphicsRenderpassImpl_T	VkZero/include/VkZero/Internal/graphics_renderpass_internal.hpp	/^struct GraphicsRenderpassImpl_T : public RenderpassImpl_T {$/;"	s	namespace:VkZero
 GraphicsRenderpassImpl_T	VkZero/src/graphics_renderpass.cpp	/^GraphicsRenderpassImpl_T::GraphicsRenderpassImpl_T($/;"	f	class:GraphicsRenderpassImpl_T
-HEIGHT	include/Engine.hpp	/^const uint32_t HEIGHT = 1280;$/;"	v	typeref:typename:const uint32_t
 Hash	include/FastNoiseLite.hpp	/^  static int Hash(int seed, int xPrimed, int yPrimed) {$/;"	f	class:FastNoiseLite	typeref:typename:int
 Hash	include/FastNoiseLite.hpp	/^  static int Hash(int seed, int xPrimed, int yPrimed, int zPrimed) {$/;"	f	class:FastNoiseLite	typeref:typename:int
 Image	VkZero/include/VkZero/Internal/image_internal.hpp	/^  Image(VkImage *vk_images, VkImageView *imageViews, size_t imageCount) {$/;"	f	class:VkZero::Image
@@ -1410,12 +1302,10 @@ R8Uscaled	VkZero/include/VkZero/types.hpp	/^        R8Uscaled = 11,$/;"	e	enum:V
 R8Uscaled	VkZero/include/types.hpp	/^        R8Uscaled = 11,$/;"	e	enum:VkZero::Format
 RAYTRACE_HEIGHT	VkZero/include/VkZero/render_pass.hpp	/^#define RAYTRACE_HEIGHT /;"	d
 RAYTRACE_HEIGHT	VkZero/include/render_pass.hpp	/^#define RAYTRACE_HEIGHT /;"	d
-RAYTRACE_HEIGHT	include/Engine.hpp	/^#define RAYTRACE_HEIGHT /;"	d
 RAYTRACE_HEIGHT	include/VkZeroObjects.hpp	/^#define RAYTRACE_HEIGHT /;"	d
 RAYTRACE_HEIGHT	src/VkZeroObjects.cpp	/^#define RAYTRACE_HEIGHT /;"	d	file:
 RAYTRACE_WIDTH	VkZero/include/VkZero/render_pass.hpp	/^#define RAYTRACE_WIDTH /;"	d
 RAYTRACE_WIDTH	VkZero/include/render_pass.hpp	/^#define RAYTRACE_WIDTH /;"	d
-RAYTRACE_WIDTH	include/Engine.hpp	/^#define RAYTRACE_WIDTH /;"	d
 RAYTRACE_WIDTH	include/VkZeroObjects.hpp	/^#define RAYTRACE_WIDTH /;"	d
 RAYTRACE_WIDTH	src/VkZeroObjects.cpp	/^#define RAYTRACE_WIDTH /;"	d	file:
 RandVecs2D	include/FastNoiseLite.hpp	/^    static const T RandVecs2D[];$/;"	m	struct:FastNoiseLite::Lookup	typeref:typename:const T[]
@@ -1744,7 +1634,6 @@ VkZero	VkZero/include/vk_zero.hpp	/^namespace VkZero$/;"	n
 VkZero	VkZero/include/window.hpp	/^namespace VkZero$/;"	n
 VkZero	VkZero/src/vk_zero.cpp	/^namespace VkZero$/;"	n	file:
 VkZero	include/Camera.hpp	/^namespace VkZero$/;"	n
-VkZero	include/Engine.hpp	/^namespace VkZero {$/;"	n
 VkZero	include/VkZeroObjects.hpp	/^namespace VkZero{$/;"	n
 VkZeroCoreImpl_T	VkZero/include/VkZero/Internal/core_internal.hpp	/^  struct VkZeroCoreImpl_T$/;"	s	namespace:VkZero
 VkZeroCoreImpl_T	VkZero/src/core.cpp	/^VkZeroCoreImpl_T::VkZeroCoreImpl_T() $/;"	f	class:VkZeroCoreImpl_T
@@ -1753,15 +1642,11 @@ VkZeroObjects	include/VkZeroObjects.hpp	/^class VkZeroObjects {$/;"	c
 VkZeroObjects	src/VkZeroObjects.cpp	/^VkZeroObjects::VkZeroObjects($/;"	f	class:VkZeroObjects
 VoxelChunk	include/VoxelWorld.hpp	/^  struct VoxelChunk {$/;"	s	class:VoxelWorld
 VoxelEngine	README.md	/^# VoxelEngine$/;"	c
-VoxelEngine	include/Engine.hpp	/^class VoxelEngine {$/;"	c
 VoxelWorld	include/VoxelWorld.hpp	/^class VoxelWorld {$/;"	c
 VoxelWorld	src/VoxelWorld.cpp	/^VoxelWorld::VoxelWorld()$/;"	f	class:VoxelWorld
-WIDTH	include/Engine.hpp	/^const uint32_t WIDTH = 1920;$/;"	v	typeref:typename:const uint32_t
 Window	VkZero/include/VkZero/window.hpp	/^  class Window {$/;"	c	namespace:VkZero
 Window	VkZero/include/window.hpp	/^  class Window {$/;"	c	namespace:VkZero
 Window	VkZero/src/window.cpp	/^Window::Window(int width, int height, const char *title)$/;"	f	class:Window
-Window	include/Engine.hpp	/^  static std::unique_ptr<VkZero::Window> Window;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<VkZero::Window>
-Window	src/Engine.cpp	/^std::unique_ptr<VkZero::Window> VoxelEngine::Window;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<VkZero::Window>
 WindowImpl	VkZero/include/VkZero/window.hpp	/^  using WindowImpl = struct WindowImpl_T*;$/;"	t	namespace:VkZero	typeref:struct:WindowImpl_T *
 WindowImpl	VkZero/include/window.hpp	/^  using WindowImpl = struct WindowImpl_T*;$/;"	t	namespace:VkZero	typeref:struct:WindowImpl_T *
 WindowImpl_T	VkZero/include/VkZero/Internal/window_internal.hpp	/^struct WindowImpl_T {$/;"	s	namespace:VkZero
@@ -1775,7 +1660,6 @@ __anon009f33a00102	VkZero/src/shader_group.cpp	/^    m_shaders([&]() {$/;"	f	fil
 __anon012cde190102	VkZero/include/binding.hpp	/^            [&]() {$/;"	f	struct:VkZero::ResourceBinding	file:
 __anon0f1a59490102	VkZero/include/shader_library.hpp	/^        static constexpr bool matches = []() {$/;"	f	struct:VkZero::shader_index	file:
 __anon0f1a59490202	VkZero/include/shader_library.hpp	/^        ShaderLibrary() : ShaderLibraryBase([](){$/;"	f	class:VkZero::ShaderLibrary	file:
-__anon39fbc7830102	src/Engine.cpp	/^                                        [&](void* cb, uint32_t cf) {$/;"	f	function:VoxelEngine::initVulkan	file:
 __anon518d7da30102	src/VoxelWorld.cpp	/^    workers.emplace_back([this] { chunkWorker(); });$/;"	f	function:VoxelWorld::startWorkers	file:
 __anon518d7da30202	src/VoxelWorld.cpp	/^              [this](uint16_t a, uint16_t b) { return chunkSort(a, b); });$/;"	f	function:VoxelWorld::sortChunks	file:
 __anon518d7da30302	src/VoxelWorld.cpp	/^      queueCond.wait(lock, [&] { return chunkQueue[0] != 0 || stopThreads; });$/;"	f	function:VoxelWorld::chunkWorker	file:
@@ -1783,6 +1667,7 @@ __anon5da84a950102	VkZero/src/window.cpp	/^  window([&](){$/;"	f	file:
 __anon5da84a950202	VkZero/src/window.cpp	/^  surface([&](){$/;"	f	file:
 __anon5da84a950302	VkZero/src/window.cpp	/^  swapChain([&](){$/;"	f	file:
 __anon5da84a950402	VkZero/src/window.cpp	/^  swapchainImages([&](){$/;"	f	file:
+__anon6bd514d20102	src/main.cpp	/^  VkZeroObjects objects{world, camera, window, [&](void* commandBuffer, uint32_t currentFrame){$/;"	f	function:main	file:
 __anon7898d7790102	VkZero/include/VkZero/shader_library.hpp	/^        static constexpr bool matches = []() {$/;"	f	struct:VkZero::shader_index	file:
 __anon7898d7790202	VkZero/include/VkZero/shader_library.hpp	/^        ShaderLibrary() : ShaderLibraryBase([](){$/;"	f	class:VkZero::ShaderLibrary	file:
 __anon82b4ef460102	VkZero/src/shader_resource_set.cpp	/^    : descriptorSetLayout([&]() {$/;"	f	file:
@@ -1801,21 +1686,9 @@ all_bindings_tuple	VkZero/include/VkZero/shader_group.hpp	/^  using all_bindings
 all_bindings_tuple	VkZero/include/shader_group.hpp	/^  using all_bindings_tuple = decltype(std::tuple_cat($/;"	t	struct:VkZero::ShaderGroupDetails::shader_binding_validator
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:0
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:1
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:10
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:11
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:12
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:13
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:14
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:15
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:16
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:2
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:3
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:4
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:5
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:6
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:7
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:8
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:9
 assign_global_locations	VkZero/include/VkZero/render_pass.hpp	/^struct assign_global_locations<std::tuple<First, Rest...>, Start> {$/;"	s	namespace:VkZero::RenderPassDetails
 assign_global_locations	VkZero/include/render_pass.hpp	/^struct assign_global_locations<std::tuple<First, Rest...>, Start> {$/;"	s	namespace:VkZero::RenderPassDetails
 attachment_collector	VkZero/include/VkZero/shader_group.hpp	/^struct attachment_collector<std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero::ShaderGroupDetails
@@ -1837,8 +1710,6 @@ bindings_extractor	VkZero/include/shader.hpp	/^        struct bindings_extractor
 buffer	VkZero/include/VkZero/Internal/image_internal.hpp	/^  VkBuffer buffer;$/;"	m	struct:VkZero::StagingData_T	typeref:typename:VkBuffer
 build	VkZero/src/descriptor_pool.cpp	/^void DescriptorPool::build(std::vector<DescriptorType> types)$/;"	f	class:DescriptorPool	typeref:typename:void
 callableRegion	VkZero/include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkStridedDeviceAddressRegionKHR callableRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
-camera	include/Engine.hpp	/^  static std::unique_ptr<class Camera> camera;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<class Camera>
-camera	src/Engine.cpp	/^std::unique_ptr<Camera> VoxelEngine::camera;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<Camera>
 cameraPosition	include/Camera.hpp	/^  glm::vec3 cameraPosition =$/;"	m	class:Camera	typeref:typename:glm::vec3
 cameraTargetPoint	include/Camera.hpp	/^  glm::vec3 cameraTargetPoint = glm::vec3(1.0f, 0.0f, 0.0f);$/;"	m	class:Camera	typeref:typename:glm::vec3
 cameraVelocity	include/Camera.hpp	/^  glm::vec3 cameraVelocity = glm::vec3(0.0f, 0.0f, 0.0f);$/;"	m	class:Camera	typeref:typename:glm::vec3
@@ -1866,7 +1737,6 @@ chunkSort	src/VoxelWorld.cpp	/^bool VoxelWorld::chunkSort(uint16_t a, uint16_t b
 chunkUpdateQueue	include/VoxelWorld.hpp	/^  std::vector<uint16_t> chunkUpdateQueue;$/;"	m	class:VoxelWorld	typeref:typename:std::vector<uint16_t>
 chunkWorker	src/VoxelWorld.cpp	/^void VoxelWorld::chunkWorker() {$/;"	f	class:VoxelWorld	typeref:typename:void
 clean	Makefile	/^clean:$/;"	t
-clean	VkZero/Makefile	/^clean:$/;"	t
 cleanupSwapChain	VkZero/src/window.cpp	/^void WindowImpl_T::cleanupSwapChain() {$/;"	f	class:WindowImpl_T	typeref:typename:void
 commandBuffers	VkZero/include/VkZero/Internal/frame_internal.hpp	/^  std::vector<VkCommandBuffer> commandBuffers[MAX_FRAMES_IN_FLIGHT];$/;"	m	struct:VkZero::FrameImpl_T	typeref:typename:std::vector<VkCommandBuffer>[]
 commandPool	VkZero/include/VkZero/Internal/core_internal.hpp	/^    VkCommandPool commandPool = 0;$/;"	m	struct:VkZero::VkZeroCoreImpl_T	typeref:typename:VkCommandPool
@@ -1889,14 +1759,10 @@ create_pipeline	VkZero/src/graphics_pipeline.cpp	/^  void GraphicsPipelineImpl_T
 cross_set_binding_validity_checker	VkZero/include/VkZero/graphics_pipeline.hpp	/^constexpr bool cross_set_binding_validity_checker() {$/;"	f	namespace:VkZero::PipelineDetails	typeref:typename:bool
 cross_set_binding_validity_checker	VkZero/include/graphics_pipeline.hpp	/^constexpr bool cross_set_binding_validity_checker() {$/;"	f	namespace:VkZero::PipelineDetails	typeref:typename:bool
 currentFrame	VkZero/include/VkZero/Internal/frame_internal.hpp	/^  int currentFrame = 0;$/;"	m	struct:VkZero::FrameImpl_T	typeref:typename:int
-currentFrame	include/Engine.hpp	/^  static uint32_t currentFrame;$/;"	m	class:VoxelEngine	typeref:typename:uint32_t
-currentFrame	src/Engine.cpp	/^uint32_t VoxelEngine::currentFrame = 0;$/;"	m	class:VoxelEngine	typeref:typename:uint32_t
 current_binding	VkZero/include/VkZero/binding.hpp	/^    static constexpr int current_binding = First::get_binding();$/;"	m	struct:VkZero::CombinedBindings::filter_duplicates	typeref:typename:int
-current_binding	VkZero/include/binding.hpp	/^    static constexpr int current_binding = First::get_binding();$/;"	m	struct:VkZero::CombinedBindings::filter_duplicates	typeref:typename:int
 data	VkZero/include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  char* data;$/;"	m	struct:VkZero::PushConstantDataImpl_T	typeref:typename:char *
 data	include/VoxelWorld.hpp	/^    u_int8_t *data;$/;"	m	struct:VoxelWorld::VoxelChunk	typeref:typename:u_int8_t *
 debugCallback	VkZero/src/core.cpp	/^debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,$/;"	f	typeref:typename:VKAPI_ATTR VkBool32 VKAPI_CALL	file:
-debugCallback	include/Engine.hpp	/^  debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,$/;"	f	class:VoxelEngine	typeref:typename:VKAPI_ATTR VkBool32 VKAPI_CALL
 debugMessenger	VkZero/include/VkZero/Internal/core_internal.hpp	/^    VkDebugUtilsMessengerEXT debugMessenger;$/;"	m	struct:VkZero::VkZeroCoreImpl_T	typeref:typename:VkDebugUtilsMessengerEXT
 deltaTime	VkZero/include/VkZero/Internal/window_internal.hpp	/^  double deltaTime = 0;$/;"	m	struct:VkZero::WindowImpl_T	typeref:typename:double
 depth	VkZero/include/VkZero/Internal/image_internal.hpp	/^  uint32_t width, height, depth;$/;"	m	class:VkZero::Image	typeref:typename:uint32_t
@@ -1909,25 +1775,12 @@ device	VkZero/include/VkZero/Internal/window_internal.hpp	/^  VkDevice device;$/
 deviceExtensions	VkZero/src/core.cpp	/^const std::vector<const char *> deviceExtensions = {$/;"	v	typeref:typename:const std::vector<const char * >
 directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:0
 directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:1
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:10
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:11
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:12
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:13
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:14
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:15
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:16
 directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:2
 directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:3
 directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:4
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:5
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:6
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:7
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:8
-directory	compile_commands.json	/^    "directory": "\/home\/hnsorens\/VoxelEngine",$/;"	s	object:9
 draw	VkZero/src/frame.cpp	/^void FrameBase::draw() { impl->draw(); }$/;"	f	class:FrameBase	typeref:typename:void
 draw	VkZero/src/frame.cpp	/^void FrameImpl_T::draw() {$/;"	f	class:FrameImpl_T	typeref:typename:void
 draw	src/VkZeroObjects.cpp	/^void VkZeroObjects::draw() { frame.draw(); }$/;"	f	class:VkZeroObjects	typeref:typename:void
-drawFrame	src/Engine.cpp	/^void VoxelEngine::drawFrame() {$/;"	f	class:VoxelEngine	typeref:typename:void
 duplicate_binding_checker	VkZero/include/VkZero/shader.hpp	/^        struct duplicate_binding_checker<> {$/;"	s	namespace:VkZero::ShaderDetails
 duplicate_binding_checker	VkZero/include/VkZero/shader.hpp	/^        struct duplicate_binding_checker<First, Rest...>$/;"	s	namespace:VkZero::ShaderDetails
 duplicate_binding_checker	VkZero/include/shader.hpp	/^        struct duplicate_binding_checker<> {$/;"	s	namespace:VkZero::ShaderDetails
@@ -1939,24 +1792,11 @@ duplicate_binding_number_checker	VkZero/include/shader_resource_set.hpp	/^templa
 enableValidationLayers	VkZero/src/core.cpp	/^const bool enableValidationLayers = true;$/;"	v	typeref:typename:const bool
 endSingleTimeCommands	VkZero/src/resource_manager.cpp	/^void ResourceManager::endSingleTimeCommands($/;"	f	class:ResourceManager	typeref:typename:void
 file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/Camera.cpp",$/;"	s	object:0
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/CommandManager.cpp",$/;"	s	object:1
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/Engine.cpp",$/;"	s	object:2
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/PipelineManager.cpp",$/;"	s	object:4
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/Raytracer.cpp",$/;"	s	object:5
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/SyncManager.cpp",$/;"	s	object:6
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VkZero\/binding.cpp",$/;"	s	object:8
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VkZero\/core.cpp",$/;"	s	object:9
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VkZero\/descriptor_pool.cpp",$/;"	s	object:10
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VkZero\/image.cpp",$/;"	s	object:11
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VkZero\/render_pass.cpp",$/;"	s	object:12
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VkZero\/resource_manager.cpp",$/;"	s	object:13
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VkZero\/shader.cpp",$/;"	s	object:15
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VkZero\/shader_builder.cpp",$/;"	s	object:14
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VkZero\/window.cpp",$/;"	s	object:16
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VoxelWorld.cpp",$/;"	s	object:7
-file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/main.cpp",$/;"	s	object:3
+file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/Engine.cpp",$/;"	s	object:1
+file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VkZeroObjects.cpp",$/;"	s	object:3
+file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/VoxelWorld.cpp",$/;"	s	object:4
+file	compile_commands.json	/^    "file": "\/home\/hnsorens\/VoxelEngine\/src\/main.cpp",$/;"	s	object:2
 filter_duplicates	VkZero/include/VkZero/binding.hpp	/^  struct filter_duplicates<std::tuple<First, Rest...>, std::tuple<Result...>> {$/;"	s	struct:VkZero::CombinedBindings
-filter_duplicates	VkZero/include/binding.hpp	/^  struct filter_duplicates<std::tuple<First, Rest...>, std::tuple<Result...>> {$/;"	s	struct:VkZero::CombinedBindings
 filter_preserve_input	VkZero/include/VkZero/render_pass.hpp	/^struct filter_preserve_input<std::tuple<First, Rest...>, All> {$/;"	s	namespace:VkZero::RenderPassDetails
 filter_preserve_input	VkZero/include/render_pass.hpp	/^struct filter_preserve_input<std::tuple<First, Rest...>, All> {$/;"	s	namespace:VkZero::RenderPassDetails
 filtered	VkZero/include/VkZero/render_pass.hpp	/^  using filtered =$/;"	t	struct:VkZero::RenderPassDetails::get_common_attachments	typeref:typename:filter_preserve_input<AllAttachments,AllAttachments>::type
@@ -1966,7 +1806,6 @@ findQueueFamilies	VkZero/src/core.cpp	/^QueueFamilyIndices VkZeroCoreImpl_T::fin
 findResourceIndex	VkZero/include/VkZero/render_pass.hpp	/^constexpr std::size_t findResourceIndex() {$/;"	f	namespace:VkZero::RenderPassResourceSetDetails	typeref:typename:std::size_t
 findResourceIndex	VkZero/include/render_pass.hpp	/^constexpr std::size_t findResourceIndex() {$/;"	f	namespace:VkZero::RenderPassResourceSetDetails	typeref:typename:std::size_t
 find_binding	VkZero/include/VkZero/binding.hpp	/^struct find_binding<binding, std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero
-find_binding	VkZero/include/binding.hpp	/^struct find_binding<binding, std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero
 firstMouse	include/Camera.hpp	/^  bool firstMouse = true;$/;"	m	class:Camera	typeref:typename:bool
 flag	include/shaders.hpp	/^  uint32_t flag;$/;"	m	struct:RaytracingPushConstant	typeref:typename:uint32_t
 format	VkZero/include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  VkFormat format;$/;"	m	struct:VkZero::AttachmentImpl_T	typeref:typename:VkFormat
@@ -2015,11 +1854,9 @@ get_binding	VkZero/include/VkZero/binding.hpp	/^  static constexpr int get_bindi
 get_binding	VkZero/include/VkZero/binding.hpp	/^  static constexpr int get_binding() { return binding; }$/;"	f	struct:VkZero::Bind	typeref:typename:int
 get_binding	VkZero/include/binding.hpp	/^  static constexpr int get_binding() { return Binding; }$/;"	f	struct:VkZero::ResourceBinding	typeref:typename:int
 get_binding	VkZero/include/binding.hpp	/^  static constexpr int get_binding() { return Binding; }$/;"	f	struct:VkZero::ShaderBinding	typeref:typename:int
-get_binding	VkZero/include/binding.hpp	/^  static constexpr int get_binding() { return binding; }$/;"	f	struct:VkZero::Bind	typeref:typename:int
 get_binding_set	VkZero/include/VkZero/binding.hpp	/^  static constexpr int get_binding_set() { return BindingSet; }$/;"	f	struct:VkZero::ShaderBinding	typeref:typename:int
 get_binding_set	VkZero/include/binding.hpp	/^  static constexpr int get_binding_set() { return BindingSet; }$/;"	f	struct:VkZero::ShaderBinding	typeref:typename:int
 get_binding_type	VkZero/include/VkZero/binding.hpp	/^using get_binding_type = typename find_binding<binding, Tuple>::type;$/;"	t	namespace:VkZero	typeref:typename:find_binding<binding,Tuple>::type
-get_binding_type	VkZero/include/binding.hpp	/^using get_binding_type = typename find_binding<binding, Tuple>::type;$/;"	t	namespace:VkZero	typeref:typename:find_binding<binding,Tuple>::type
 get_common_attachments	VkZero/include/VkZero/render_pass.hpp	/^template <typename AllAttachments> struct get_common_attachments {$/;"	s	namespace:VkZero::RenderPassDetails
 get_common_attachments	VkZero/include/render_pass.hpp	/^template <typename AllAttachments> struct get_common_attachments {$/;"	s	namespace:VkZero::RenderPassDetails
 get_descriptor_count	VkZero/include/VkZero/binding.hpp	/^  static constexpr int get_descriptor_count() { return DescriptorCount; }$/;"	f	struct:VkZero::ResourceBinding	typeref:typename:int
@@ -2038,14 +1875,12 @@ get_location	VkZero/include/VkZero/render_pass.hpp	/^  static constexpr int get_
 get_location	VkZero/include/render_pass.hpp	/^  static constexpr int get_location() { return Location; }$/;"	f	struct:VkZero::ColorAttachment	typeref:typename:int
 get_location	VkZero/include/render_pass.hpp	/^  static constexpr int get_location() { return Location; }$/;"	f	struct:VkZero::DepthAttachment	typeref:typename:int
 get_location	VkZero/include/render_pass.hpp	/^  static constexpr int get_location() { return Location; }$/;"	f	struct:VkZero::InputAttachment	typeref:typename:int
-get_shader	include/Engine.hpp	/^  static auto& get_shader()$/;"	f	class:VoxelEngine	typeref:typename:auto &
 get_shader_bindings	VkZero/include/VkZero/shader_library.hpp	/^    struct get_shader_bindings<std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero
 get_shader_bindings	VkZero/include/shader_library.hpp	/^    struct get_shader_bindings<std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero
 get_stages	VkZero/include/VkZero/binding.hpp	/^  static constexpr int get_stages() { return Stages; }$/;"	f	struct:VkZero::ResourceBinding	typeref:typename:int
 get_stages	VkZero/include/binding.hpp	/^  static constexpr int get_stages() { return Stages; }$/;"	f	struct:VkZero::ResourceBinding	typeref:typename:int
 get_type	VkZero/include/VkZero/binding.hpp	/^  static constexpr DescriptorType get_type() { return type::type(); }$/;"	f	struct:VkZero::Bind	typeref:typename:DescriptorType
 get_type	VkZero/include/VkZero/shader.hpp	/^        static constexpr ShaderType get_type() { return Type; }$/;"	f	class:VkZero::Shader	typeref:typename:ShaderType
-get_type	VkZero/include/binding.hpp	/^  static constexpr DescriptorType get_type() { return type::type(); }$/;"	f	struct:VkZero::Bind	typeref:typename:DescriptorType
 get_type	VkZero/include/shader.hpp	/^        static constexpr ShaderType get_type() { return Type; }$/;"	f	class:VkZero::Shader	typeref:typename:ShaderType
 graphicsFamily	VkZero/include/VkZero/Internal/core_internal.hpp	/^    std::optional<uint32_t> graphicsFamily;$/;"	m	struct:VkZero::QueueFamilyIndices	typeref:typename:std::optional<uint32_t>
 graphicsPipeline	include/VkZeroObjects.hpp	/^  Pipeline graphicsPipeline;$/;"	m	class:VkZeroObjects	typeref:typename:Pipeline
@@ -2056,7 +1891,6 @@ graphicsRenderpassAttachmentSet	include/VkZeroObjects.hpp	/^  PipelineRenderPass
 graphicsResourceSet	include/VkZeroObjects.hpp	/^  PipelineShaderResources graphicsResourceSet;$/;"	m	class:VkZeroObjects	typeref:typename:PipelineShaderResources
 graphicsShaderGroup	include/VkZeroObjects.hpp	/^  PipelineShaderGroup graphicsShaderGroup;$/;"	m	class:VkZeroObjects	typeref:typename:PipelineShaderGroup
 has_binding	VkZero/include/VkZero/binding.hpp	/^template <int binding, typename Tuple> struct has_binding {$/;"	s	namespace:VkZero
-has_binding	VkZero/include/binding.hpp	/^template <int binding, typename Tuple> struct has_binding {$/;"	s	namespace:VkZero
 height	VkZero/include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  uint32_t width, height;$/;"	m	struct:VkZero::GraphicsRenderpassImpl_T	typeref:typename:uint32_t
 height	VkZero/include/VkZero/Internal/image_internal.hpp	/^  uint32_t width, height, depth;$/;"	m	class:VkZero::Image	typeref:typename:uint32_t
 height	VkZero/include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  uint32_t height;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:uint32_t
@@ -2109,9 +1943,6 @@ inQueue	include/VoxelWorld.hpp	/^    bool inQueue;$/;"	m	struct:VoxelWorld::Voxe
 infoType	VkZero/include/VkZero/binding.hpp	/^  using infoType = Resource *;$/;"	t	struct:VkZero::ShaderBinding	typeref:typename:Resource *
 infoType	VkZero/include/VkZero/binding.hpp	/^  using infoType = typename type::infoType;$/;"	t	struct:VkZero::Bind	typeref:typename:type::infoType
 infoType	VkZero/include/binding.hpp	/^  using infoType = Resource *;$/;"	t	struct:VkZero::ShaderBinding	typeref:typename:Resource *
-infoType	VkZero/include/binding.hpp	/^  using infoType = typename type::infoType;$/;"	t	struct:VkZero::Bind	typeref:typename:type::infoType
-initVulkan	src/Engine.cpp	/^void VoxelEngine::initVulkan() {$/;"	f	class:VoxelEngine	typeref:typename:void
-initWindow	src/Engine.cpp	/^void VoxelEngine::initWindow() {}$/;"	f	class:VoxelEngine	typeref:typename:void
 instance	VkZero/include/VkZero/Internal/core_internal.hpp	/^    VkInstance instance;$/;"	m	struct:VkZero::VkZeroCoreImpl_T	typeref:typename:VkInstance
 instance	VkZero/include/VkZero/Internal/descriptor_pool_internal.hpp	/^        static DescriptorPool& instance() {$/;"	f	class:VkZero::DescriptorPool	typeref:typename:DescriptorPool &
 isComplete	VkZero/include/VkZero/Internal/core_internal.hpp	/^    bool isComplete() {$/;"	f	struct:VkZero::QueueFamilyIndices	typeref:typename:bool
@@ -2161,7 +1992,6 @@ m_shaderGroup	VkZero/include/VkZero/Internal/graphics_pipeline_internal.hpp	/^  
 m_shaderGroup	VkZero/include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  ShaderGroupImpl *m_shaderGroup;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:ShaderGroupImpl *
 m_shaders	VkZero/include/VkZero/Internal/shader_group_internal.hpp	/^    std::vector<VkPipelineShaderStageCreateInfo> m_shaders;$/;"	m	struct:VkZero::ShaderGroupImpl	typeref:typename:std::vector<VkPipelineShaderStageCreateInfo>
 main	src/main.cpp	/^int main() {$/;"	f	typeref:typename:int
-mainLoop	src/Engine.cpp	/^void VoxelEngine::mainLoop() {$/;"	f	class:VoxelEngine	typeref:typename:void
 main_frag	include/shaders.hpp	/^using main_frag = VkZero::Shader<$/;"	t
 main_rgen	include/shaders.hpp	/^using main_rgen = VkZero::Shader<$/;"	t
 main_rmiss	include/shaders.hpp	/^using main_rmiss = VkZero::Shader<$/;"	t	typeref:typename:VkZero::Shader<"main_rmiss","bin/rmiss.spv",VkZero::SHADER_RMISS>
@@ -2198,29 +2028,15 @@ new_first	VkZero/include/VkZero/render_pass.hpp	/^  using new_first = First;$/;"
 new_first	VkZero/include/render_pass.hpp	/^  using new_first = First;$/;"	t	struct:VkZero::RenderPassDetails::assign_global_locations	typeref:typename:First
 nextImage	VkZero/include/VkZero/Internal/window_internal.hpp	/^  bool nextImage(uint32_t &imageIndex, VkSemaphore &imageSemaphore) {$/;"	f	struct:VkZero::WindowImpl_T	typeref:typename:bool
 noise	include/VoxelWorld.hpp	/^  FastNoiseLite noise;$/;"	m	class:VoxelWorld	typeref:typename:FastNoiseLite
-obj	include/Engine.hpp	/^  static std::unique_ptr<class VkZeroObjects> obj;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<class VkZeroObjects>
-obj	src/Engine.cpp	/^std::unique_ptr<VkZeroObjects> VoxelEngine::obj;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<VkZeroObjects>
 offset	src/Camera.cpp	/^    int lowerBound, upperBound, offset, modValue, shift;$/;"	m	struct:Camera::update::__anona64332f60108	typeref:typename:int	file:
 onMouseMove	src/Camera.cpp	/^void Camera::onMouseMove(double xPos, double yPos) {$/;"	f	class:Camera	typeref:typename:void
 operator ==	VkZero/include/VkZero/fixed_string.hpp	/^  constexpr bool operator==(const FixedString<M> &other) const {$/;"	f	struct:VkZero::FixedString	typeref:typename:bool
 operator ==	VkZero/include/fixed_string.hpp	/^  constexpr bool operator==(const FixedString<M> &other) const {$/;"	f	struct:VkZero::FixedString	typeref:typename:bool
 output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:0
 output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:1
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:10
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:11
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:12
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:13
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:14
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:15
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:16
 output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:2
 output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:3
 output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:4
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:5
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:6
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:7
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:8
-output	compile_commands.json	/^    "output": "\/home\/hnsorens\/VoxelEngine\/bin\/voxels"$/;"	s	object:9
 pairwise_compatibility_checker	VkZero/include/VkZero/shader_group.hpp	/^  struct pairwise_compatibility_checker<First, Rest...> {$/;"	s	struct:VkZero::ShaderGroupDetails::shader_binding_validator
 pairwise_compatibility_checker	VkZero/include/VkZero/shader_group.hpp	/^  template <typename... Ts> struct pairwise_compatibility_checker {$/;"	s	struct:VkZero::ShaderGroupDetails::shader_binding_validator
 pairwise_compatibility_checker	VkZero/include/shader_group.hpp	/^  struct pairwise_compatibility_checker<First, Rest...> {$/;"	s	struct:VkZero::ShaderGroupDetails::shader_binding_validator
@@ -2265,11 +2081,9 @@ queueCond	include/VoxelWorld.hpp	/^  std::condition_variable queueCond;$/;"	m	cl
 queueFamilyIndices	VkZero/include/VkZero/Internal/core_internal.hpp	/^    QueueFamilyIndices queueFamilyIndices;$/;"	m	struct:VkZero::VkZeroCoreImpl_T	typeref:typename:QueueFamilyIndices
 queueMutex	include/VoxelWorld.hpp	/^  std::mutex queueMutex;$/;"	m	class:VoxelWorld	typeref:typename:std::mutex
 ranges	VkZero/include/VkZero/Internal/shader_group_internal.hpp	/^  std::vector<VkPushConstantRange> ranges;$/;"	m	struct:VkZero::ShaderPushConstantsImpl_T	typeref:typename:std::vector<VkPushConstantRange>
-rayCast	src/Camera.cpp	/^glm::ivec3 Camera::rayCast(std::unique_ptr<VoxelWorld> &voxelWorld,$/;"	f	class:Camera	typeref:typename:glm::ivec3
+rayCast	src/Camera.cpp	/^glm::ivec3 Camera::rayCast(VoxelWorld &voxelWorld,$/;"	f	class:Camera	typeref:typename:glm::ivec3
 rayIntersectsCube	src/Camera.cpp	/^bool Camera::rayIntersectsCube(glm::vec3 corner, float size,$/;"	f	class:Camera	typeref:typename:bool
 raygenRegion	VkZero/include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkStridedDeviceAddressRegionKHR raygenRegion;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkStridedDeviceAddressRegionKHR
-raytracingCommandBuffers	include/Engine.hpp	/^  static std::vector<VkCommandBuffer> raytracingCommandBuffers;$/;"	m	class:VoxelEngine	typeref:typename:std::vector<VkCommandBuffer>
-raytracingCommandBuffers	src/Engine.cpp	/^std::vector<VkCommandBuffer> VoxelEngine::raytracingCommandBuffers;$/;"	m	class:VoxelEngine	typeref:typename:std::vector<VkCommandBuffer>
 raytracingLightStorageImageW	include/VkZeroObjects.hpp	/^  VkZero::SwapImage raytracingLightStorageImageW;$/;"	m	class:VkZeroObjects	typeref:typename:VkZero::SwapImage
 raytracingLightStorageImageX	include/VkZeroObjects.hpp	/^  VkZero::SwapImage raytracingLightStorageImageX;$/;"	m	class:VkZeroObjects	typeref:typename:VkZero::SwapImage
 raytracingLightStorageImageY	include/VkZeroObjects.hpp	/^  VkZero::SwapImage raytracingLightStorageImageY;$/;"	m	class:VkZeroObjects	typeref:typename:VkZero::SwapImage
@@ -2303,8 +2117,6 @@ resources	VkZero/include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  st
 resources	VkZero/include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  std::vector<ShaderResourceSetImpl_T *> resources;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:std::vector<ShaderResourceSetImpl_T * >
 resources	VkZero/src/binding.cpp	/^  std::vector<BindResource *> resources;$/;"	v	typeref:typename:std::vector<BindResource * >
 run	Makefile	/^run:$/;"	t
-run	VkZero/Makefile	/^run:$/;"	t
-run	src/Engine.cpp	/^void VoxelEngine::run() {$/;"	f	class:VoxelEngine	typeref:typename:void
 same_count	VkZero/include/VkZero/shader_group.hpp	/^    static constexpr bool same_count =$/;"	m	struct:VkZero::ShaderGroupDetails::shader_binding_validator::binding_compatibility_checker	typeref:typename:bool
 same_count	VkZero/include/shader_group.hpp	/^    static constexpr bool same_count =$/;"	m	struct:VkZero::ShaderGroupDetails::shader_binding_validator::binding_compatibility_checker	typeref:typename:bool
 same_slot	VkZero/include/VkZero/shader_group.hpp	/^    static constexpr bool same_slot =$/;"	m	struct:VkZero::ShaderGroupDetails::shader_binding_validator::binding_compatibility_checker	typeref:typename:bool
@@ -2315,9 +2127,6 @@ sampler	VkZero/include/VkZero/Internal/image_internal.hpp	/^  VkSampler sampler;
 sbtBuffer	VkZero/include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkBuffer sbtBuffer;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkBuffer
 sbtMemory	VkZero/include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkDeviceMemory sbtMemory;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkDeviceMemory
 sbtSize	VkZero/include/VkZero/Internal/raytracing_pipeline_internal.hpp	/^  VkDeviceSize sbtSize;$/;"	m	struct:VkZero::RaytracingPipelineImpl_T	typeref:typename:VkDeviceSize
-section	include/Engine.hpp	/^  static uint8_t section;$/;"	m	class:VoxelEngine	typeref:typename:uint8_t
-section	src/Engine.cpp	/^uint8_t VoxelEngine::section = 0;$/;"	m	class:VoxelEngine	typeref:typename:uint8_t
-semiRandomFloat	include/Engine.hpp	/^static float semiRandomFloat(float x, float y, float z) {$/;"	f	typeref:typename:float
 setupDebugMessenger	VkZero/src/core.cpp	/^void VkZeroCoreImpl_T::setupDebugMessenger() {$/;"	f	class:VkZeroCoreImpl_T	typeref:typename:void
 shaderInfo	VkZero/include/VkZero/Internal/shader_internal.hpp	/^        VkPipelineShaderStageCreateInfo shaderInfo {};$/;"	m	struct:VkZero::ShaderImpl_T	typeref:typename:VkPipelineShaderStageCreateInfo
 shaderModule	VkZero/include/VkZero/Internal/shader_internal.hpp	/^        VkShaderModule shaderModule;$/;"	m	struct:VkZero::ShaderImpl_T	typeref:typename:VkShaderModule
@@ -2339,8 +2148,7 @@ shaders	VkZero/include/VkZero/shader_group.hpp	/^    using shaders = std::tuple<
 shaders	VkZero/include/VkZero/shader_library.hpp	/^        std::tuple<Shaders...> shaders;$/;"	m	class:VkZero::ShaderLibrary	typeref:typename:std::tuple<Shaders...>
 shaders	VkZero/include/shader_group.hpp	/^    using shaders = std::tuple<Shaders...>;$/;"	t	class:VkZero::ShaderGroup	typeref:typename:std::tuple<Shaders...>
 shaders	VkZero/include/shader_library.hpp	/^        std::tuple<Shaders...> shaders;$/;"	m	class:VkZero::ShaderLibrary	typeref:typename:std::tuple<Shaders...>
-shaders	include/Engine.hpp	/^  static std::unique_ptr<GlobalShaderLibrary> shaders;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<GlobalShaderLibrary>
-shaders	src/Engine.cpp	/^std::unique_ptr<GlobalShaderLibrary> VoxelEngine::shaders;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<GlobalShaderLibrary>
+shaders	include/VkZeroObjects.hpp	/^  GlobalShaderLibrary shaders;$/;"	m	class:VkZeroObjects	typeref:typename:GlobalShaderLibrary
 shift	src/Camera.cpp	/^    int lowerBound, upperBound, offset, modValue, shift;$/;"	m	struct:Camera::update::__anona64332f60108	typeref:typename:int	file:
 shouldClose	VkZero/src/window.cpp	/^bool Window::shouldClose()$/;"	f	class:Window	typeref:typename:bool
 shouldClose	VkZero/src/window.cpp	/^bool WindowImpl_T::shouldClose() const {$/;"	f	class:WindowImpl_T	typeref:typename:bool
@@ -2393,11 +2201,8 @@ type	VkZero/include/VkZero/shader.hpp	/^            using type = std::conditiona
 type	VkZero/include/VkZero/shader_library.hpp	/^        using type = decltype($/;"	t	struct:VkZero::DescriptorTypes
 type	VkZero/include/VkZero/shader_library.hpp	/^        using type = decltype($/;"	t	struct:VkZero::get_shader_bindings
 type	VkZero/include/VkZero/shader_library.hpp	/^        using type = std::conditional_t<$/;"	t	struct:VkZero::unique_types
-type	VkZero/include/binding.hpp	/^    using type = typename std::conditional_t<$/;"	t	struct:VkZero::CombinedBindings::filter_duplicates
 type	VkZero/include/binding.hpp	/^  static constexpr DescriptorType type() { return ResourceType; }$/;"	f	struct:VkZero::ResourceBinding	typeref:typename:DescriptorType
 type	VkZero/include/binding.hpp	/^  static constexpr DescriptorType type() { return ResourceType; }$/;"	f	struct:VkZero::ShaderBinding	typeref:typename:DescriptorType
-type	VkZero/include/binding.hpp	/^  using type = typename filter_duplicates<AllBindings>::type;$/;"	t	struct:VkZero::CombinedBindings	typeref:typename:filter_duplicates<AllBindings>::type
-type	VkZero/include/binding.hpp	/^  using type = typename std::conditional_t<$/;"	t	struct:VkZero::find_binding
 type	VkZero/include/render_pass.hpp	/^    using type = ColorAttachment<N, F, Start>;$/;"	t	struct:VkZero::RenderPassDetails::assign_global_locations::update_location	typeref:typename:ColorAttachment<N,F,Start>
 type	VkZero/include/render_pass.hpp	/^    using type = DepthAttachment<N, F, Start>;$/;"	t	struct:VkZero::RenderPassDetails::assign_global_locations::update_location	typeref:typename:DepthAttachment<N,F,Start>
 type	VkZero/include/render_pass.hpp	/^    using type = InputAttachment<N, F, Start>;$/;"	t	struct:VkZero::RenderPassDetails::assign_global_locations::update_location	typeref:typename:InputAttachment<N,F,Start>
@@ -2426,7 +2231,7 @@ unique_types	VkZero/include/VkZero/shader_library.hpp	/^    struct unique_types<
 unique_types	VkZero/include/shader_library.hpp	/^    struct unique_types<std::tuple<First, Rest...>> {$/;"	s	namespace:VkZero
 update	VkZero/src/uniform_buffer.cpp	/^void UniformBufferBase::update(int currentFrame)$/;"	f	class:UniformBufferBase	typeref:typename:void
 update	VkZero/src/uniform_buffer.cpp	/^void UniformBufferImpl_T::update(int currentFrame)$/;"	f	class:UniformBufferImpl_T	typeref:typename:void
-update	src/Camera.cpp	/^void Camera::update(std::unique_ptr<VkZero::Window> &Window,$/;"	f	class:Camera	typeref:typename:void
+update	src/Camera.cpp	/^void Camera::update(VkZero::Window &Window,$/;"	f	class:Camera	typeref:typename:void
 updateVoxelChunkMap	src/VoxelWorld.cpp	/^void VoxelWorld::updateVoxelChunkMap(int modValue, int offset) {$/;"	f	class:VoxelWorld	typeref:typename:void
 updateVoxels	src/VoxelWorld.cpp	/^void VoxelWorld::updateVoxels(void* commandBuffer, int currentImage) {$/;"	f	class:VoxelWorld	typeref:typename:void
 update_location	VkZero/include/VkZero/render_pass.hpp	/^  struct update_location<ColorAttachment<N, F, L>> {$/;"	s	struct:VkZero::RenderPassDetails::assign_global_locations
@@ -2457,7 +2262,6 @@ value	VkZero/include/VkZero/shader_library.hpp	/^        static constexpr int va
 value	VkZero/include/VkZero/shader_library.hpp	/^        static constexpr int value = matches ? 0 : (1 + shader_index<Name, Rest...>::value);$/;"	m	struct:VkZero::shader_index	typeref:typename:int
 value	VkZero/include/VkZero/shader_resource_set.hpp	/^  static constexpr bool value = false;$/;"	m	struct:VkZero::ShaderResourceSetDetails::duplicate_binding_number_checker	typeref:typename:bool
 value	VkZero/include/VkZero/shader_resource_set.hpp	/^  static constexpr bool value =$/;"	m	struct:VkZero::ShaderResourceSetDetails::duplicate_binding_number_checker	typeref:typename:bool
-value	VkZero/include/binding.hpp	/^  static constexpr bool value =$/;"	m	struct:VkZero::has_binding	typeref:typename:bool
 value	VkZero/include/fixed_string.hpp	/^  char value[N] = {};$/;"	m	struct:VkZero::FixedString	typeref:typename:char[]
 value	VkZero/include/render_pass.hpp	/^  using value = decltype(std::tuple_cat($/;"	t	struct:VkZero::RenderPassDetails::get_all_attachments
 value	VkZero/include/render_pass.hpp	/^  using value = typename assign_global_locations<filtered>::type;$/;"	t	struct:VkZero::RenderPassDetails::get_common_attachments	typeref:typename:assign_global_locations<filtered>::type
@@ -2486,8 +2290,6 @@ voxelChunkMapData	include/VoxelWorld.hpp	/^  uint16_t *voxelChunkMapData;$/;"	m	
 voxelChunkMapImage	include/VoxelWorld.hpp	/^  VkZero::StagedSharedImage voxelChunkMapImage;$/;"	m	class:VoxelWorld	typeref:typename:VkZero::StagedSharedImage
 voxelData	include/VoxelWorld.hpp	/^  std::vector<VoxelChunk> voxelData;$/;"	m	class:VoxelWorld	typeref:typename:std::vector<VoxelChunk>
 voxelImages	include/VoxelWorld.hpp	/^  std::vector<VkZero::StagedSharedImage> voxelImages;$/;"	m	class:VoxelWorld	typeref:typename:std::vector<VkZero::StagedSharedImage>
-voxelWorld	include/Engine.hpp	/^  static std::unique_ptr<class VoxelWorld> voxelWorld;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<class VoxelWorld>
-voxelWorld	src/Engine.cpp	/^std::unique_ptr<VoxelWorld> VoxelEngine::voxelWorld;$/;"	m	class:VoxelEngine	typeref:typename:std::unique_ptr<VoxelWorld>
 voxel_base	include/VoxelWorld.hpp	/^#define voxel_base(/;"	d
 voxel_mat	include/VoxelWorld.hpp	/^#define voxel_mat(/;"	d
 width	VkZero/include/VkZero/Internal/graphics_renderpass_internal.hpp	/^  uint32_t width, height;$/;"	m	struct:VkZero::GraphicsRenderpassImpl_T	typeref:typename:uint32_t

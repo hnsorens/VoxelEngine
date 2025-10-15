@@ -34,7 +34,7 @@ Window::Window(int width, int height, const char *title)
 
 WindowImpl_T::WindowImpl_T(int width, int height, const char *title) :
   window([&](){
-    GLFWwindow* window = glfwCreateWindow(width, height, "Voxels", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
     glfwSetKeyCallback(window, keyCallback);

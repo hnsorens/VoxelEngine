@@ -8,18 +8,18 @@
 #include <memory>
 #include <stdexcept>
 
-Camera::Camera(std::unique_ptr<VkZero::Window> &window) : uniformBuffer(ubo) {
+Camera::Camera(VkZero::Window &window) : uniformBuffer(ubo) {
   ubo.view = glm::mat4(1.0);
   ubo.proj = glm::perspective(glm::radians(70.0f),
-                              window->getWidth() /
-                                  (float)window->getHeight(),
+                              window.getWidth() /
+                                  (float)window.getHeight(),
                               0.1f, 1000.0f);
   ubo.proj[1][1] *= -1;
   ubo.proj = glm::inverse(ubo.proj);
 }
 Camera::~Camera() {}
-void Camera::update(std::unique_ptr<VkZero::Window> &Window,
-                    std::unique_ptr<VoxelWorld> &voxelWorld, int currentFrame) {
+void Camera::update(VkZero::Window &Window,
+                    VoxelWorld &voxelWorld, int currentFrame) {
   struct {
     float &pos;
     int lowerBound, upperBound, offset, modValue, shift;
@@ -27,8 +27,8 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
                 {cameraPosition.y, -640, -340, 128, 64, 8},
                 {cameraPosition.z, -640, -340, 128, 512, 64}};
 
-  cameraPosition.z += cameraVelocity.z * Window->getDeltaTime();
-  cameraTargetPoint.z += cameraVelocity.z * Window->getDeltaTime();
+  cameraPosition.z += cameraVelocity.z * Window.getDeltaTime();
+  cameraTargetPoint.z += cameraVelocity.z * Window.getDeltaTime();
   ;
   glm::ivec3 intCameraPosition = glm::ivec3(cameraPosition) * -1;
 
@@ -42,7 +42,7 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
                          ((intCameraPosition.y + y) / 128) * 8 +
                          ((intCameraPosition.x + x) / 128);
       is_grounded |= (MAT_HAS_COLLISION(voxel_mat(voxChunk(
-          voxelWorld->voxelData[voxelWorld->voxelChunkMapData[chunkID]].data,
+          voxelWorld.voxelData[voxelWorld.voxelChunkMapData[chunkID]].data,
           intCameraPosition.x + x, intCameraPosition.y + y,
           intCameraPosition.z +
               15)))); // MAT_HAS_COLLISION(voxel_mat(vox(intCameraPosition.x
@@ -59,39 +59,39 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
   } else if (is_ouch) {
     cameraVelocity.z = -fabsf(cameraVelocity.z) * 0.8;
   } else {
-    cameraVelocity.z -= 20 * 7 * Window->getDeltaTime();
+    cameraVelocity.z -= 20 * 7 * Window.getDeltaTime();
     ;
   }
 
-  if (Window->isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+  if (Window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
     // Hide the cursor and capture mouse movement
 
-    Window->hideCursor();
+    Window.hideCursor();
 
     float deltaTime = 0.1f;
 
-    movementSpeed = Window->isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
+    movementSpeed = Window.isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 11.0 : 7.0;
     bool reset = false;
-    if (Window->isKeyPressed(GLFW_KEY_S)) {
+    if (Window.isKeyPressed(GLFW_KEY_S)) {
       reset = true;
       cameraPosition += movementSpeed * deltaTime *
                         glm::normalize(cameraTargetPoint - cameraPosition) *
                         glm::vec3(1, 1, 0);
     }
-    if (Window->isKeyPressed(GLFW_KEY_W)) {
+    if (Window.isKeyPressed(GLFW_KEY_W)) {
       reset = true;
       cameraPosition -= movementSpeed * deltaTime *
                         glm::normalize(cameraTargetPoint - cameraPosition) *
                         glm::vec3(1, 1, 0);
     }
-    if (Window->isKeyPressed(GLFW_KEY_D)) {
+    if (Window.isKeyPressed(GLFW_KEY_D)) {
       reset = true;
       cameraPosition -=
           glm::normalize(glm::cross(cameraTargetPoint - cameraPosition,
                                     glm::vec3(0.0f, 0.0f, 1.0f))) *
           movementSpeed * deltaTime * glm::vec3(1, 1, 0);
     }
-    if (Window->isKeyPressed(GLFW_KEY_A)) {
+    if (Window.isKeyPressed(GLFW_KEY_A)) {
       reset = true;
       cameraPosition +=
           glm::normalize(glm::cross(cameraTargetPoint - cameraPosition,
@@ -100,11 +100,11 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
     }
 
     // Q and E for vertical movement
-    if (Window->isKeyPressed(GLFW_KEY_Q)) {
+    if (Window.isKeyPressed(GLFW_KEY_Q)) {
       cameraPosition.z -= movementSpeed * 2 * deltaTime;
     }
-    if ((Window->isKeyPressed(GLFW_KEY_SPACE) ||
-         Window->isKeyPressed(GLFW_KEY_E)) &&
+    if ((Window.isKeyPressed(GLFW_KEY_SPACE) ||
+         Window.isKeyPressed(GLFW_KEY_E)) &&
         is_grounded) {
       cameraVelocity.z += 600 * deltaTime;
     }
@@ -114,7 +114,7 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
     }
 
     double currentMouseX, currentMouseY;
-    Window->getCursorPos(&currentMouseX, &currentMouseY);
+    Window.getCursorPos(&currentMouseX, &currentMouseY);
 
     if (firstMouse) {
       lastMouseX = static_cast<float>(currentMouseX);
@@ -158,7 +158,7 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
     cameraTargetPoint = cameraPosition + direction;
   } else {
     // Release the cursor and reset first mouse flag
-    Window->showCursor();
+    Window.showCursor();
     firstMouse = true;
   }
 
@@ -168,24 +168,24 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
   for (auto &check : checks) {
     if (check.pos < check.lowerBound) {
       check.pos += check.offset;
-      voxelWorld->updateVoxelChunkMap(check.modValue, check.shift);
+      voxelWorld.updateVoxelChunkMap(check.modValue, check.shift);
     } else if (check.pos > check.upperBound) {
       check.pos -= check.offset;
-      voxelWorld->updateVoxelChunkMap(check.modValue,
+      voxelWorld.updateVoxelChunkMap(check.modValue,
                                       check.modValue - check.shift);
     }
   }
 
-  voxelWorld->sortChunks();
+  voxelWorld.sortChunks();
 
   // Raycast and print distance
-  if (Window->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
+  if (Window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
     bool hit = false;
     glm::ivec3 hitPosition =
         rayCast(voxelWorld, -cameraPosition, cameraTargetPoint - cameraPosition,
                 hit, 25.0f);
     if (hit) {
-      voxelWorld->getChunk(hitPosition)[((int)hitPosition.z % 128) * 128 * 128 +
+      voxelWorld.getChunk(hitPosition)[((int)hitPosition.z % 128) * 128 * 128 +
                                         ((int)hitPosition.y % 128) * 128 +
                                         ((int)hitPosition.x % 128)] = 0;
 
@@ -193,12 +193,12 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
         for (int y = -4; y <= 4; y++) {
           for (int z = -4; z <= 4; z++) {
             glm::ivec3 offset = glm::ivec3(x, y, z);
-            if (voxel_mat(voxelWorld->getChunk(
+            if (voxel_mat(voxelWorld.getChunk(
                     hitPosition +
                     offset)[(((int)hitPosition.z + z) % 128) * 128 * 128 +
                             (((int)hitPosition.y + y) % 128) * 128 +
                             (((int)hitPosition.x + x) % 128)]) != MAT_AIR)
-              voxelWorld->getChunk(
+              voxelWorld.getChunk(
                   hitPosition +
                   offset)[(((int)hitPosition.z + z) % 128) * 128 * 128 +
                           (((int)hitPosition.y + y) % 128) * 128 +
@@ -207,9 +207,9 @@ void Camera::update(std::unique_ptr<VkZero::Window> &Window,
         }
       }
 
-      uint16_t chunkID = voxelWorld->getChunkID(hitPosition);
+      uint16_t chunkID = voxelWorld.getChunkID(hitPosition);
 
-      voxelWorld->chunkUpdateQueue[++voxelWorld->chunkUpdateQueue[0]] = chunkID;
+      voxelWorld.chunkUpdateQueue[++voxelWorld.chunkUpdateQueue[0]] = chunkID;
     }
   }
 
@@ -240,14 +240,14 @@ bool Camera::rayIntersectsCube(glm::vec3 corner, float size,
   return tMax >= tMin && tMax >= 0;
 }
 
-glm::ivec3 Camera::rayCast(std::unique_ptr<VoxelWorld> &voxelWorld,
+glm::ivec3 Camera::rayCast(VoxelWorld &voxelWorld,
                            glm::vec3 rayOrigin, glm::vec3 rayDir,
                            bool &something_hit, float maxDistance) {
   float tMax = 0, tMin = 0;
 
   glm::ivec3 origin = glm::ivec3(rayOrigin);
 
-  uint8_t value = voxelWorld->getChunk(
+  uint8_t value = voxelWorld.getChunk(
       origin)[((int)origin.z % 128) * 128 * 128 + ((int)origin.y % 128) * 128 +
               ((int)origin.x % 128)];
   uint8_t layer = ((value >> 5) & 7);
@@ -264,7 +264,7 @@ glm::ivec3 Camera::rayCast(std::unique_ptr<VoxelWorld> &voxelWorld,
     hit += rayDir * distanceToBox;
     hit += rayDir * 0.001f;
 
-    value = voxelWorld->getChunk(
+    value = voxelWorld.getChunk(
         hit)[((int)hit.z % 128) * 128 * 128 + ((int)hit.y % 128) * 128 +
              ((int)hit.x % 128)];
     layer = ((value >> 5) & 7);
@@ -283,7 +283,7 @@ glm::ivec3 Camera::rayCast(std::unique_ptr<VoxelWorld> &voxelWorld,
       hit += rayDir * distanceToBox;
       rayDistance += distanceToBox;
 
-      value = voxelWorld->getChunk(
+      value = voxelWorld.getChunk(
           hit)[((int)hit.z % 128) * 128 * 128 + ((int)hit.y % 128) * 128 +
                ((int)hit.x % 128)];
       layer = ((value >> 5) & 7);

@@ -23,11 +23,11 @@ class Window;
 class VkZeroObjects {
 public:
   VkZeroObjects(
-            std::unique_ptr<VoxelWorld> &voxelWorld,
-            std::unique_ptr<class Camera> &camera, std::unique_ptr<VkZero::Window> &window, std::function<void(void*, uint32_t)> after);
+            VoxelWorld &voxelWorld,
+            class Camera &camera, VkZero::Window &window, std::function<void(void*, uint32_t)> after);
   ~VkZeroObjects();
   
-
+  GlobalShaderLibrary shaders;
   using RaytracingPushConstants = VkZero::ShaderPushConstants<VkZero::PushConstant<RaytracingPushConstant, VkZero::SHADER_RGEN>>;
   using RaytracingShaderGroup = VkZero::ShaderGroup<RaytracingPushConstants, main_rmiss, main_rgen>;
   using RaytracingResourceSet = VkZero::ShaderResourceSet<

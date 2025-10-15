@@ -14,8 +14,8 @@
 #define RAYTRACE_WIDTH 1920
 
 VkZeroObjects::VkZeroObjects(
-    std::unique_ptr<VoxelWorld> &voxelWorld, std::unique_ptr<Camera> &camera,
-    std::unique_ptr<VkZero::Window> &window,
+    VoxelWorld &voxelWorld, Camera &camera,
+    VkZero::Window &window,
     std::function<void(void*, uint32_t)> after)
     : raytracingStorageImage{RAYTRACE_WIDTH,
                              RAYTRACE_HEIGHT,
@@ -64,12 +64,12 @@ VkZeroObjects::VkZeroObjects(
                                        VK_IMAGE_USAGE_SAMPLED_BIT,
                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT},
       raytracingShaderGroup(raytracingPushConstants,
-                            VoxelEngine::get_shader<"main_rmiss">(),
-                            VoxelEngine::get_shader<"main_rgen">()),
+                            shaders.get<"main_rmiss">(),
+                            shaders.get<"main_rgen">()),
       raytracingResourceSet{
-          {&raytracingStorageImage},         {&camera->uniformBuffer},
-          {&raytracingPositionStorageImage}, {voxelWorld->voxelImages.data()},
-          {&voxelWorld->voxelChunkMapImage}, {&raytracingLightStorageImageX},
+          {&raytracingStorageImage},         {&camera.uniformBuffer},
+          {&raytracingPositionStorageImage}, {voxelWorld.voxelImages.data()},
+          {&voxelWorld.voxelChunkMapImage}, {&raytracingLightStorageImageX},
           {&raytracingLightStorageImageY},   {&raytracingLightStorageImageZ},
           {&raytracingLightStorageImageW}},
       raytracingPipeline(RAYTRACE_WIDTH, RAYTRACE_HEIGHT, raytracingShaderGroup,
@@ -78,15 +78,15 @@ VkZeroObjects::VkZeroObjects(
                            {raytracingPipeline, raytracingPushConstantData},
                            after),
       graphicsShaderGroup(graphicsPushConstants,
-                          VoxelEngine::get_shader<"main_vert">(),
-                          VoxelEngine::get_shader<"main_frag">()),
+                          shaders.get<"main_vert">(),
+                          shaders.get<"main_frag">()),
       graphicsResourceSet{{&raytracingStorageImage}},
       graphicsPipeline(graphicsShaderGroup, graphicsResourceSet),
-      graphicsRenderpassAttachmentSet{{&window->getSwapChainImages()}},
-      graphicsRenderPass{window->getWidth(),
-                         window->getHeight(),
+      graphicsRenderpassAttachmentSet{{&window.getSwapChainImages()}},
+      graphicsRenderPass{window.getWidth(),
+                         window.getHeight(),
                          graphicsRenderpassAttachmentSet, graphicsPipeline},
-      frame{raytracingRenderPass, graphicsRenderPass, window->impl} {
+      frame{raytracingRenderPass, graphicsRenderPass, window.impl} {
 }
 
 VkZeroObjects::~VkZeroObjects() {}

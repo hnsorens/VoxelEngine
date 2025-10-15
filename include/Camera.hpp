@@ -16,11 +16,11 @@ namespace VkZero
 }
 class Camera {
 public:
-  Camera(std::unique_ptr<VkZero::Window> &window);
+  Camera(VkZero::Window &window);
   ~Camera();
 
-  void update(std::unique_ptr<VkZero::Window> &Window,
-              std::unique_ptr<class VoxelWorld> &voxelWorld, int currentFrame);
+  void update(VkZero::Window &Window,
+              class VoxelWorld &voxelWorld, int currentFrame);
   void processMouseMovement(float xoffset, float yoffset);
   void processKeyboardInput(int key, float deltaTime);
   glm::mat4 getViewMatrix() const;
@@ -30,7 +30,7 @@ public:
   float getPitch() const;
 
   void onMouseMove(double xPos, double yPos);
-  glm::ivec3 rayCast(std::unique_ptr<class VoxelWorld> &voxelWorld,
+  glm::ivec3 rayCast(class VoxelWorld &voxelWorld,
                      glm::vec3 rayOrigin, glm::vec3 rayDir, bool &something_hit,
                      float maxDistance);
   bool rayIntersectsCube(glm::vec3 corner, float size, glm::vec3 rayOrigin,
